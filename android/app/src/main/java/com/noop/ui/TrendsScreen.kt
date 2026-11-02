@@ -195,18 +195,8 @@ fun TrendsScreen(vm: AppViewModel) {
             }
         }
 
-        // --- Week in review , the Charge / Effort / Rest trio in NOOP's pip language (PipBar +
-        // CountUpText), mirroring the iOS TrendsView.weekInReview card. White count-up numbers over
-        // segmented count-up bars; self-hides when none of the three carry a window mean. ---
-        item {
-            WeekInReviewCard(
-                charge = recovery,
-                effort = strain,
-                rest = rest,
-                effortScale = effortScale,
-                modifier = Modifier.staggeredAppear(index = 1),
-            )
-        }
+        // Redesign: the pip-bar "Week in review" card repeated the weekly digest above it and is no
+        // longer drawn here.
 
         // --- Range control ---
         item {
@@ -214,22 +204,23 @@ fun TrendsScreen(vm: AppViewModel) {
                 modifier = Modifier.staggeredAppear(index = 2),
                 verticalArrangement = Arrangement.spacedBy(Metrics.space8),
             ) {
-                Row(
+                // Redesign: the range picker spans the width (equal pills, never wrapping); the window caption
+                // sits under it on one line instead of squeezing beside it.
+                SegmentedPillControl(
+                    items = TrendsRange.entries.toList(),
+                    selection = range,
+                    label = { it.label },
+                    onSelect = { range = it },
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    SegmentedPillControl(
-                        items = TrendsRange.entries.toList(),
-                        selection = range,
-                        label = { it.label },
-                        onSelect = { range = it },
-                    )
-                    Spacer(Modifier.weight(1f))
-                    TrendsRangeCaption(range = range, fullSubtitle = rangeSubtitle)
-                }
+                    adaptsToAvailableWidth = true,
+                )
                 Text(
-                    recovery.caption,
-                    style = NoopType.footnote,
+                    if (recovery.widened) {
+                        uiString(R.string.redesign_trends_caption_widened, recovery.values.size, rangeLongName(recovery.effective))
+                    } else {
+                        uiString(R.string.redesign_trends_caption, recovery.values.size, rangeLongName(range))
+                    },
+                    style = NoopType.caption,
                     color = if (recovery.widened) Palette.statusWarning else Palette.textTertiary,
                 )
             }
@@ -667,6 +658,17 @@ private fun caption(count: Int, eff: TrendsRange, selected: TrendsRange): String
     } else {
         "$count $unit · ${selected.longName}"
     }
+}
+
+/** Localized long name of a trend window, for the caption under the range picker. */
+@Composable
+private fun rangeLongName(range: TrendsRange): String = when (range) {
+    TrendsRange.Week -> uiString(R.string.redesign_range_long_week)
+    TrendsRange.Month -> uiString(R.string.redesign_range_long_month)
+    TrendsRange.Quarter -> uiString(R.string.redesign_range_long_quarter)
+    TrendsRange.Half -> uiString(R.string.redesign_range_long_half)
+    TrendsRange.Year -> uiString(R.string.redesign_range_long_year)
+    TrendsRange.All -> uiString(R.string.redesign_range_long_all)
 }
 
 // MARK: - ChartCard , the uniform fixed-height trend card

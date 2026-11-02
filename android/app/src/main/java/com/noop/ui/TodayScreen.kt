@@ -73,6 +73,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
@@ -1451,42 +1452,21 @@ fun TodayScreen(
             // control exactly, so the wordmark stays optically centred while owning the space BETWEEN them.
             // Overlap is now unexpressible at any label width, in any locale, because the two occupy
             // different slots rather than the same one.
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                // #2169: the balancing spacer becomes the control, but ONLY while there is something to
-                // connect. A permanently visible control has to explain itself; one that appears exactly
-                // when the strap is away says what it is for by being there, and cannot be read as a
-                // reload button on a screen that never reloads. Connected, it goes back to being a
-                // spacer, so the wordmark is centred by the same control-sized gutter either way and
-                // nothing moves as the strap comes and goes.
-                //
-                // Scanning counts as needed: a scan running means not yet connected, and hiding the
-                // control mid-attempt would take away the only in-progress signal the header has.
-                // The SLOT is permanent and only the control inside it fades, rather than swapping the
-                // two. A 4.0 that is dropping and auto-reconnecting flips `connected` repeatedly, and an
-                // instant swap turns that into a blinking icon beside the wordmark; a fade reads as a
-                // pulse instead. Keeping the gutter itself always present also means the wordmark cannot
-                // shift even mid-transition, which an if/else between a control and a spacer allows.
-                val scanAffordance by animateFloatAsState(
-                    targetValue = if (liveSnap.connected) 0f else 1f,
-                    animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
-                )
-                Box(
-                    modifier = Modifier.size(HeaderClusterControl),
-                    contentAlignment = Alignment.Center,
+            // Redesign: no decorative wordmark band. The connect control appears only while the strap is
+            // away; the layout editor moved to a quiet link at the foot of the page.
+            if (!liveSnap.connected) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    if (scanAffordance > 0.01f) {
-                        Box(modifier = Modifier.graphicsLayer { alpha = scanAffordance }) {
-                            RescanDisc(scanning = liveSnap.scanning, onClick = requestScan)
-                        }
-                    }
+                    RescanDisc(scanning = liveSnap.scanning, onClick = requestScan)
+                    Text(
+                        uiString(R.string.redesign_today_strap_away),
+                        style = NoopType.subhead,
+                        color = Palette.textSecondary,
+                    )
                 }
-                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    LiquidWordmark()
-                }
-                CustomizeDisc(onClick = { showLayoutEditor = true })
             }
             // The reply to a tap that went nowhere. Wording comes from the BLE layer, the same text
             // Live and Onboarding show, so this adds no copy of its own.
@@ -1714,7 +1694,7 @@ fun TodayScreen(
                                     lastScoredCharge = lastScoredCharge,
                                     effortScale = effortScale,
                                     liveTodayStrain = if (selectedDayOffset == 0) liveTodayStrain else null,
-                                    heroSourceLabel = heroSourceLabel,
+                                    heroSourceLabel = null,
                                     onScoreInfo = openGuide,
                                     onChargeTap = { showChargeBreakdown = true },
                                     // #1164: today's Rest is provisional while the strap has banked records
@@ -1965,6 +1945,17 @@ fun TodayScreen(
                 expanded = sourcesExpanded,
                 onToggle = { sourcesExpanded = !sourcesExpanded },
             )
+        }
+        item {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                TextButton(onClick = { showLayoutEditor = true }) {
+                    Text(
+                        uiString(R.string.redesign_today_customise),
+                        style = NoopType.subhead.copy(fontWeight = FontWeight.Medium),
+                        color = Palette.accent,
+                    )
+                }
+            }
         }
     }
         // Material3's PullToRefreshContainer draws its indicator circle even at rest (progress 0, not
@@ -2635,16 +2626,15 @@ private fun LiquidTodayHeader(
                 dayTitle,
                 // ~28sp Bold rounded, matching iOS `StrandFont.rounded(28)`. A soft shadow so it reads on the
                 // day-of-sky. NoopType.number is the house tabular sans; Bold at 28 is the display day title.
-                style = NoopType.number(28f, weight = FontWeight.Bold)
-                    .copy(shadow = Shadow(color = Color.Black.copy(alpha = 0.4f), offset = Offset(0f, 1f), blurRadius = 10f)),
-                color = Color.White,
+                style = NoopType.title1,
+                color = Palette.textPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
                 humanDate,
-                style = NoopType.caption.copy(shadow = Shadow(color = Color.Black.copy(alpha = 0.35f), offset = Offset(0f, 1f), blurRadius = 8f)),
-                color = Color.White.copy(alpha = 0.78f),
+                style = NoopType.subhead,
+                color = Palette.textSecondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -3166,7 +3156,8 @@ private fun ScoreHeroRow(
                             HeroScoreVessel(
                                 fraction = (restScore ?: 0.0) / 100.0,
                                 value = restScore ?: 0.0,
-                                tint = Palette.recoveryColor(restScore ?: 0.0),
+                                // Redesign: each score world keeps one hue — sleep is always the sleep violet.
+                                tint = Palette.restColor,
                                 diameter = ring,
                                 showsValue = restScore != null,
                                 animated = heroVesselsAnimated,
@@ -4196,7 +4187,12 @@ private fun YourCardsSection(
         Column(verticalArrangement = Arrangement.spacedBy(Metrics.gap)) {
             // Header: "YOUR CARDS" overline + a right-aligned blue EDIT action (the WHOOP ✎ affordance).
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Overline(uiString(R.string.today_section_your_cards), modifier = Modifier.weight(1f))
+                Text(
+                    uiString(R.string.today_section_your_cards),
+                    style = NoopType.title2,
+                    color = Palette.textPrimary,
+                    modifier = Modifier.weight(1f),
+                )
                 TodayEditAction(
                     onClick = onCustomise,
                     contentDescription = uiString(R.string.l10n_today_screen_customise_your_cards_2428d761),
@@ -6168,7 +6164,10 @@ private fun MetricGrid(
 
     // Resolve the enabled tiles to their descriptors (keeping the metric for the tap mapping), dropping
     // any unknown key defensively.
-    val allTiles = enabledMetrics.mapNotNull { m -> descriptors[m]?.let { m to it } }
+    // Redesign: Charge / Effort / Rest already lead the page as the hero rings; the grid carries the rest.
+    val allTiles = enabledMetrics
+        .filterNot { it == KeyMetric.CHARGE || it == KeyMetric.EFFORT || it == KeyMetric.REST }
+        .mapNotNull { m -> descriptors[m]?.let { m to it } }
     // Tile tap -> its focused trend TIMELINE (the Sleep night-detail pattern), uniformly for every tile
     // with a windowed series: Recovery/Effort/Rest open their new trend details; the vitals +
     // Steps/Calories open the same vital_detail trends the Health cards use. Today's Charge DRIVERS stay
@@ -6197,14 +6196,15 @@ private fun MetricGrid(
 
     // iOS `keyMetricsSection` LazyVGrid: 3 columns, spacing 8. Build from rows so tile heights tile uniformly
     // and a partial last row pads with empty weight so the columns stay aligned.
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        tiles.chunked(3).forEach { rowTiles ->
+    Column(verticalArrangement = Arrangement.spacedBy(Metrics.gap)) {
+        // Redesign: two columns so every label and value fits on one line at phone width.
+        tiles.chunked(2).forEach { rowTiles ->
             // Detailed rows equalise heights (IntrinsicSize.Max + fillMaxHeight, the #399 idiom): a
             // graph-less tile (Steps/Weight/Calories) sharing a row with graphed neighbours must not
             // shrink its card. Compact rows keep the plain layout, byte-identical to before.
             Row(
-                modifier = if (detailed) Modifier.height(IntrinsicSize.Max) else Modifier,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.height(IntrinsicSize.Max),
+                horizontalArrangement = Arrangement.spacedBy(Metrics.gap),
             ) {
                 rowTiles.forEach { (metric, tile) ->
                     LiquidKeyTile(
@@ -6213,10 +6213,10 @@ private fun MetricGrid(
                         detailed = detailed,
                         windowDays = windowDays,
                         onClick = tapFor(metric),
-                        modifier = Modifier.weight(1f).then(if (detailed) Modifier.fillMaxHeight() else Modifier),
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
                     )
                 }
-                repeat(3 - rowTiles.size) { Spacer(Modifier.weight(1f)) }
+                repeat(2 - rowTiles.size) { Spacer(Modifier.weight(1f)) }
             }
         }
         // S5: the "Show all metrics" / "Show fewer" expander — a centered link like iOS. Toggles visibility
@@ -6323,54 +6323,37 @@ private fun LiquidKeyTile(
     }
     Column(
         modifier = base
-            .clip(RoundedCornerShape(16.dp))
-            .frostedCardSurface(cornerRadius = 16.dp)
-            .padding(horizontal = 12.dp, vertical = 11.dp)
+            .clip(RoundedCornerShape(Metrics.cardRadius))
+            .frostedCardSurface(cornerRadius = Metrics.cardRadius)
+            .padding(horizontal = 16.dp, vertical = 14.dp)
             .semantics { contentDescription = uiString(R.string.l10n_today_screen_data_label_data_value_data_unit_27f6fd6b, data.label, displayValue, data.unit).trim() },
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        // iOS ktile parity: a small metric glyph before the overline label, tinted to the tile colour at
-        // 0.72 opacity (LiquidTodayView `Image(systemName:).foregroundStyle(tint.opacity(0.72))`). Decorative
-        // — the tile's own semantics already announce the label/value, so the icon is contentDescription-null.
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = data.tint.copy(alpha = 0.72f),
-                modifier = Modifier.size(12.dp),
-            )
-            Text(
-                data.label.uppercase(),
-                style = NoopType.overline.copy(fontSize = 9.sp, letterSpacing = 1.2.sp),
-                color = Palette.textTertiary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-        }
-        Row(verticalAlignment = Alignment.Bottom) {
+        // Redesign: label · value + unit · one quiet caption. The per-tile icon and fill tube are gone.
+        Text(
+            data.label,
+            style = NoopType.subhead.copy(fontWeight = FontWeight.Medium),
+            color = Palette.textSecondary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 displayValue,
-                style = NoopType.number(17f),
+                style = NoopType.tileValue,
                 color = if (hasValue) Palette.textPrimary else Palette.textTertiary,
                 maxLines = 1,
             )
             if (data.unit.isNotEmpty() && hasValue) {
                 Text(
-                    uiString(R.string.l10n_today_screen_data_unit_c768ef8c, data.unit),
-                    style = NoopType.caption,
-                    color = Palette.textPrimary,
+                    data.unit,
+                    style = NoopType.subhead.copy(fontWeight = FontWeight.Medium),
+                    color = Palette.textSecondary,
                     maxLines = 1,
+                    modifier = Modifier.padding(bottom = 3.dp),
                 )
             }
         }
-        // #1491: the Steps subtitle — the calibration status behind an estimate (#760/#792, computed and
-        // then dropped on the floor until now: `stepsEstimateCaption` was passed into this grid and never
-        // read), or, on a blank tile, what actually unblocks it. One line, ellipsised, and only rendered
-        // when a tile supplies one, so every other tile keeps its current height.
         data.caption?.let { cap ->
             Text(
                 cap,
@@ -6380,20 +6363,7 @@ private fun LiquidKeyTile(
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        // Detailed rows are height-equalised (fillMaxHeight): pin the bar + graph to the bottom edge so a
-        // graph-less tile's bar lines up with its neighbours' bars rather than floating mid-card.
         if (detailed) Spacer(Modifier.weight(1f))
-        LiquidTube(
-            frac = data.frac ?: 0.0,
-            tint = data.tint,
-            height = 8.dp,
-            animated = false,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        // Detailed tiles: the windowed trend graph under the bar (same Sparkline leaf the Sleep tiles use,
-        // at the shared tile spark height), tinted to the metric so the graph reads as the same signal.
-        // Cap to the editor's chosen window (7 / 14 / 30) so "1 month" draws its full span; the w-based
-        // series is already windowed, but calories/rest sparks run longer, so this trims them to match.
         if (detailed) {
             val tail = data.spark.takeLast(windowDays)
             if (tail.size >= 2) {
@@ -6625,7 +6595,6 @@ private fun HeartRateTrendCard(
         SectionHeader(uiString(R.string.today_section_heart_rate), overline = selectedLabel)
         NoopCard {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Overline(uiString(R.string.today_hr_beats_per_minute))
                 if (selectedDay == today) {
                     HrWindowPills(hrWindow) { hrWindowOrdinal = it.ordinal }
                 }
@@ -6658,7 +6627,8 @@ private fun HeartRateTrendCard(
     // contained it, and the resting dip read higher than it was. The y-rail below stays on the means,
     // because that is the series it labels: raw extremes there would squash the drawn curve into the
     // middle of its own axis. Avg is left on the means deliberately, see the PR.
-    val min = remember(winBuckets) { winBuckets.minOf { it.minBpm } }.roundToInt()
+    // A zero bucket minimum is a gap marker, not a heart rate; never report it as the low.
+    val min = remember(winBuckets) { winBuckets.map { it.minBpm }.filter { it > 0 }.minOrNull() ?: 0.0 }.roundToInt()
     val max = remember(winBuckets) { winBuckets.maxOf { it.maxBpm } }.roundToInt()
     val avg = bpm.average().roundToInt()
 
@@ -6694,7 +6664,6 @@ private fun HeartRateTrendCard(
             // Header, mirrors the macOS ChartCard (title + subtitle, trailing read-out).
             Row(verticalAlignment = Alignment.Top) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Overline(uiString(R.string.today_hr_beats_per_minute))
                     // #985: the buckets stay the same 5-minute means whatever the window (view-only
                     // narrowing, no re-read), so the resolution half of the label never changes — only
                     // the span half tells the truth about what's on screen.
@@ -7193,20 +7162,8 @@ private fun OverviewHRChart(
                     modifier = Modifier.markerOffset(sleepStartX, density, topPadDp),
                 )
             }
-            if (chargeX != null) {
-                ChartMarkerPill(
-                    text = uiString(R.string.l10n_today_screen_recovery_roundtoint_charge_92fbaa5e, recovery.roundToInt()),
-                    color = Palette.recoveryColor(recovery),
-                    modifier = Modifier.markerOffset(chargeX, density, topPadDp),
-                )
-            }
-            if (effortX != null) {
-                ChartMarkerPill(
-                    text = uiString(R.string.l10n_today_screen_unitformatter_effortdisplay_strain_effortscale_effort_53dbd951, UnitFormatter.effortDisplay(strain, effortScale)),
-                    color = Palette.effortTint(strain / StrainScorer.maxStrain),
-                    modifier = Modifier.markerOffset(plotW, density, topPadDp, alignEnd = true),
-                )
-            }
+            // Redesign: the Charge / Effort pills on the chart restated the hero scores and clipped at the
+            // plot edge; the chart now carries only the sleep band label and workout glyphs.
             // Sport glyph at each workout's in-window HR peak.
             workouts.forEach { w ->
                 val peak = hrPeakIn(buckets, w.startTs, w.endTs)
@@ -7322,26 +7279,76 @@ private fun TodayWorkoutsSection(workouts: List<WorkoutRow>, onSelect: (WorkoutR
     // #1694: the feed was read-only, so the only way to a session's detail was More > Workouts. The
     // tap opens the SAME read-only WorkoutDetailSheet the Workouts list uses — nothing there can edit
     // or delete, so a tap from Today carries no risk that list does not already carry.
-    Column(verticalArrangement = Arrangement.spacedBy(Metrics.gap)) {
-        feed.forEach { workout ->
-            val interaction = remember(workout.startTs, workout.source) { MutableInteractionSource() }
-            StatTile(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .liquidPress(interaction)
-                    .clickable(
-                        interactionSource = interaction,
-                        indication = null,
-                        onClickLabel = uiString(R.string.today_action_show_workout),
-                        onClick = { onSelect(workout) },
-                    ),
-                label = WorkoutEditing.displaySport(workout.sport),
-                value = localizedMetricValue(workoutDuration(workout)),
-                caption = workoutCaption(workout),
-                accent = workout.strain?.let { Palette.effortTint(it / StrainScorer.maxStrain) } ?: Palette.textPrimary,
-                delta = workout.energyKcal?.let { "${it.roundToInt()} kcal" },
-                deltaColor = Palette.metricAmber,
-            )
+    // Redesign: one card holding a compact row per session (sport · when · duration · kcal) instead of a
+    // tall tile each, so the feed reads as a list and the sport name never shouts in caps.
+    NoopCard(padding = 0.dp) {
+        Column {
+            feed.forEachIndexed { index, workout ->
+                if (index > 0) {
+                    Box(
+                        Modifier
+                            .padding(start = 72.dp)
+                            .fillMaxWidth()
+                            .height(Metrics.divider)
+                            .background(Palette.hairline),
+                    )
+                }
+                val tint = workout.strain?.let { Palette.effortTint(it / StrainScorer.maxStrain) } ?: Palette.effortColor
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            onClickLabel = uiString(R.string.today_action_show_workout),
+                            onClick = { onSelect(workout) },
+                        )
+                        .heightIn(min = 64.dp)
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(tint.copy(alpha = 0.14f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Filled.FitnessCenter, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
+                    }
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            WorkoutEditing.displaySport(workout.sport),
+                            style = NoopType.body.copy(fontWeight = FontWeight.Medium),
+                            color = Palette.textPrimary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            workoutCaption(workout),
+                            style = NoopType.caption,
+                            color = Palette.textTertiary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            localizedMetricValue(workoutDuration(workout)),
+                            style = NoopType.number(16f),
+                            color = Palette.textPrimary,
+                            maxLines = 1,
+                        )
+                        workout.energyKcal?.let {
+                            Text(
+                                uiString(R.string.redesign_kcal, it.roundToInt()),
+                                style = NoopType.caption,
+                                color = Palette.textTertiary,
+                                maxLines = 1,
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

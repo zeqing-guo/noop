@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -481,8 +482,10 @@ object BottomBarStyleStore {
 
     fun load(ctx: Context) {
         val prefs = NoopPrefs.of(ctx.applicationContext)
-        overlay = prefs.getBoolean(NoopPrefs.KEY_OVERLAY_BOTTOM_BAR, true)
-        autoHide = prefs.getBoolean(NoopPrefs.KEY_BOTTOM_BAR_AUTO_HIDE, true)
+        // Redesign: the bar is a solid, always-visible slot the screens sit above (no floating glass,
+        // no auto-hide), so content is never drawn under it.
+        overlay = false
+        autoHide = false
         coachEnabled = NoopPrefs.coachEnabled(ctx.applicationContext)
         // Both are read through the same clamps the setters use, so a hand-edited or downgraded pref
         // cannot put the bar in a state the UI has no way to leave.
@@ -1145,34 +1148,15 @@ private fun GlassBottomBar(
     // twice over: a second copy of "which tabs exist" is what let Coach light two slots at once, and a
     // conditional tab makes that failure available again to anyone who filters in one place only.
     val visibleTrailing = barTrailingTabsFor(BottomBarStyleStore.coachEnabled)
-    val barShape = RoundedCornerShape(50)
-    Box(
+    // Redesign: a solid full-width bar on the canvas with a hairline above it — no floating capsule.
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            // Clear the gesture-nav bar (home indicator) first, then add breathing room so the capsule
-            // floats free of the bottom edge rather than jamming against it — iOS clears the home-indicator
-            // safe area + 4pt; here navigationBarsPadding + 12dp gives the same lift.
-            .navigationBarsPadding()
-            .padding(horizontal = 22.dp)
-            .padding(top = 4.dp, bottom = Metrics.space12),
-        contentAlignment = Alignment.Center,
+            .background(Palette.surfaceBase)
+            .navigationBarsPadding(),
     ) {
-        Surface(
-            shape = barShape,
-            // "Glass": a translucent raised surface — a frosted island, not a hard slab. Compose has no
-            // cheap blur, so translucency (≈0.80) + a hairline rim is the Liquid-Glass stand-in. A soft,
-            // low drop shadow reads as floating without a glow.
-            // The glass alpha is the user's transparency step; 0.80 was the shipped constant and remains
-            // the default (step 6), so an untouched install is unchanged.
-            color = Palette.surfaceRaised.copy(alpha = BottomBarStyleStore.barAlpha),
-            tonalElevation = 2.dp,
-            shadowElevation = 4.dp,
-            modifier = Modifier
-                .fillMaxWidth()
-                // Cap the width so the pill stays a centred floating island on tablets, not a full-bleed bar.
-                .widthIn(max = 480.dp)
-                .border(0.5.dp, Palette.hairline.copy(alpha = 0.6f), barShape),
-        ) {
+        Box(Modifier.fillMaxWidth().height(Metrics.divider).background(Palette.hairline))
+        run {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1180,7 +1164,8 @@ private fun GlassBottomBar(
                     // targets grow with it, and `barHeight` is measured afterwards so screens keep
                     // clearing the bar at any size. A graphics scale would blur it and leave the hit
                     // areas behind.
-                    .padding(horizontal = 8.dp, vertical = 7.dp * BottomBarStyleStore.scale),
+                    .height(64.dp)
+                    .padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
             ) {
@@ -1232,7 +1217,7 @@ private fun BarSlot(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    val tint = if (active) Palette.accent else Palette.textSecondary
+    val tint = if (active) Palette.accent else Palette.textTertiary
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(14.dp))
@@ -1241,19 +1226,18 @@ private fun BarSlot(
                 indication = null,
                 onClick = onClick,
             )
-            .padding(vertical = 3.dp * BottomBarStyleStore.scale)
+            .padding(vertical = 6.dp)
             .semantics { contentDescription = label },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
         // Icon and label scale together with the padding above, so the slot grows as one piece rather
         // than a bigger box around the same small glyph.
-        Icon(icon, contentDescription = null, tint = tint,
-             modifier = Modifier.size(Metrics.iconSmall * BottomBarStyleStore.scale))
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
         Text(
             label,
             style = NoopType.footnote.copy(
-                fontSize = 10.sp * BottomBarStyleStore.scale,
+                fontSize = 11.sp,
                 fontWeight = if (active) FontWeight.SemiBold else FontWeight.Medium,
             ),
             color = tint,

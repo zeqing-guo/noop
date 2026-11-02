@@ -133,7 +133,8 @@ fun Modifier.frostedCardSurface(
     // "Card transparency" setting: scale the whole glass surface (fill + border + wash) by the user's
     // opacity so cards fade toward the background. Reading the reactive value here makes the slider
     // live-preview. Content drawn above the surface is unaffected, so numbers/labels stay readable.
-    val op = CardAppearance.opacity
+    // Redesign: one opaque card surface everywhere; the transparency slider and tint washes are retired.
+    val op = 1f
     this
         // Elevation idiom: DARK is flat (the hairline + hue carry the edge). LIGHT raises the white card
         // off the warm-paper canvas with a soft drop shadow — the hairline alone is too faint on paper.
@@ -148,7 +149,7 @@ fun Modifier.frostedCardSurface(
             val fill = Palette.surfaceRaised.copy(alpha = Palette.surfaceRaised.alpha * op)
             val border = Palette.hairline.copy(alpha = Palette.hairline.alpha * op)
 
-            if (tint == null) {
+            if (true) {
                 // NEUTRAL card (iOS FrostedCardSurface tint == nil): a FLAT raised surface — no vertical
                 // bevel gradient, no accent wash, and a PLAIN hairline border (no accent bias).
                 drawRoundRect(color = fill, cornerRadius = corner)
@@ -163,8 +164,8 @@ fun Modifier.frostedCardSurface(
                 drawRoundRect(
                     brush = Brush.linearGradient(
                         colorStops = arrayOf(
-                            0.0f to tint.copy(alpha = 0.05f * washStrength * op),
-                            0.5f to tint.copy(alpha = 0.015f * washStrength * op),
+                            0.0f to (tint ?: Palette.accent).copy(alpha = 0.05f * washStrength * op),
+                            0.5f to (tint ?: Palette.accent).copy(alpha = 0.015f * washStrength * op),
                             1.0f to Color.Transparent,
                         ),
                         start = Offset(0f, 0f),
@@ -260,9 +261,9 @@ fun SyncingHistoryNote(chunks: Int, modifier: Modifier = Modifier) {
 @Composable
 fun Overline(text: String, modifier: Modifier = Modifier, color: Color = Palette.textSecondary) {
     Text(
-        text = text.uppercase(),
+        text = text,
         style = NoopType.overline,
-        color = color,
+        color = if (color == Palette.textSecondary) Palette.textTertiary else color,
         modifier = modifier,
     )
 }
@@ -276,21 +277,24 @@ fun SectionHeader(
     trailing: String? = null,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
+    // Redesign: one line — the section title, with an optional quiet trailing note. The old overline
+    // kicker above the title doubled every heading ("Activity / Recent workouts") and is no longer drawn.
+    Row(
+        modifier = modifier.fillMaxWidth().padding(top = 4.dp),
+        verticalAlignment = Alignment.Bottom,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        if (overline != null || trailing != null) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top,
-            ) {
-                if (overline != null) Overline(overline, modifier = Modifier.weight(1f))
-                if (trailing != null) {
-                    Text(trailing, style = NoopType.footnote, color = Palette.textSecondary)
-                }
-            }
+        Text(
+            title.ifBlank { overline.orEmpty() },
+            style = NoopType.title2,
+            color = Palette.textPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        if (trailing != null) {
+            Text(trailing, style = NoopType.caption, color = Palette.textTertiary, maxLines = 1)
         }
-        Text(title, style = NoopType.title2, color = Palette.textPrimary)
     }
 }
 
@@ -634,6 +638,24 @@ fun InsightCard(
 
 // MARK: - SegmentedPillControl — the ONE segmented control
 
+/** Redesign: the compact range tokens (W / M / 3M / 7D / ALL …) used by every range picker, localized in
+ *  one place so no screen shows an untranslated abbreviation. Any other label passes through unchanged. */
+@Composable
+fun localizedRangeToken(raw: String): String = when (raw.trim()) {
+    "D" -> uiString(R.string.redesign_range_d)
+    "W" -> uiString(R.string.redesign_range_w)
+    "M" -> uiString(R.string.redesign_range_m)
+    "3M" -> uiString(R.string.redesign_range_3m)
+    "6M" -> uiString(R.string.redesign_range_6m)
+    "1Y", "Y" -> uiString(R.string.redesign_range_1y)
+    "ALL", "All", "all" -> uiString(R.string.redesign_range_all)
+    "7D" -> uiString(R.string.redesign_range_7d)
+    "14D" -> uiString(R.string.redesign_range_14d)
+    "30D" -> uiString(R.string.redesign_range_30d)
+    "90D" -> uiString(R.string.redesign_range_90d)
+    else -> raw
+}
+
 @Composable
 fun <T> SegmentedPillControl(
     items: List<T>,
@@ -663,9 +685,10 @@ fun <T> SegmentedPillControl(
         modifier = modifier
             .selectableGroup()
             .then(if (accessibilityLabel != null) Modifier.semantics { contentDescription = accessibilityLabel } else Modifier)
-            .then(if (scrollsForLargeText) Modifier.horizontalScroll(rangeScrollState) else Modifier)
+            // Redesign: a natural-width row scrolls sideways instead of wrapping a label onto two lines.
+            .then(if (!usesEqualWidth) Modifier.horizontalScroll(rangeScrollState) else Modifier)
             .then(if (usesEqualWidth) Modifier.fillMaxWidth() else Modifier)
-            .height(36.dp)
+            .height(40.dp)
             .clip(outerShape)
             .background(Palette.surfaceInset)
             .border(1.dp, Palette.hairline, outerShape)
@@ -680,12 +703,7 @@ fun <T> SegmentedPillControl(
             // on dark; a flat blue accent + white ink on light (so light selection matches the blue
             // chrome, not gold). Unselected stays clear with tertiary text; disabled dims further.
             val pillShape = RoundedCornerShape(50)
-            val pillBg = if (selected) {
-                if (Palette.isLight) Modifier.background(Palette.accent, pillShape)
-                else Modifier.background(Brush.linearGradient(*Palette.goldGradient.toTypedArray()), pillShape)
-            } else {
-                Modifier
-            }
+            val pillBg = if (selected) Modifier.background(Palette.accent, pillShape) else Modifier
             Box(
                 modifier = Modifier
                     // Fill the track height so the pill's inset is equal top/bottom/left/right.
@@ -705,15 +723,18 @@ fun <T> SegmentedPillControl(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = label(item),
-                    style = NoopType.captionNumber,
-                    maxLines = if (adaptsToAvailableWidth) 1 else Int.MAX_VALUE,
+                    text = localizedRangeToken(label(item)),
+                    style = NoopType.captionNumber.copy(
+                        fontSize = 13.sp,
+                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                    ),
+                    maxLines = 1,
+                    softWrap = false,
                     overflow = if (adaptsToAvailableWidth) TextOverflow.Ellipsis else TextOverflow.Clip,
                     color = when {
-                        selected && Palette.isLight -> androidx.compose.ui.graphics.Color.White
-                        selected -> Palette.goldDeepText
+                        selected -> Palette.surfaceBase
                         !itemEnabled -> Palette.textTertiary.copy(alpha = 0.45f)
-                        else -> Palette.textTertiary
+                        else -> Palette.textSecondary
                     },
                 )
             }
@@ -1272,7 +1293,7 @@ fun ScreenScaffold(
     // supplies its own compact header (Today, title = null) can pass a smaller value to tighten the
     // gap above its first element — Compose forbids negative padding, so this is how iOS's
     // `.padding(top: -16)` tightening is expressed.
-    topPadding: Dp = 28.dp,
+    topPadding: Dp = 16.dp,
     leading: (@Composable () -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
     // Optional full-bleed view drawn behind the scroll content at the TOP of the screen (e.g. Today's
@@ -1288,6 +1309,11 @@ fun ScreenScaffold(
     fullBleedBackground: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    // Redesign: screens sit on the one flat canvas — the day-cycle sky / custom image backdrops are retired.
+    @Suppress("NAME_SHADOWING", "UNUSED_VALUE")
+    val topBackground: (@Composable () -> Unit)? = null
+    @Suppress("NAME_SHADOWING", "UNUSED_VALUE")
+    val fullBleedBackground = false
     // The scrolling content column. Its OUTER modifier differs by path: with no topBackground it is the
     // original root Column (the caller's `modifier` + an opaque-canvas background — byte-for-byte the old
     // layout); with a topBackground the canvas + scene paint in the wrapping Box's background (below) and
@@ -1308,10 +1334,10 @@ fun ScreenScaffold(
                 // backdrop paints behind and around the glass, while the scrolling content still stops
                 // clear of the bar. Zero when the overlay is off, so the slot layout is untouched.
                 .padding(
-                    start = 28.dp,
-                    end = 28.dp,
-                    top = topPadding,
-                    bottom = 28.dp + BottomBarStyleStore.barHeightForContent(),
+                    start = Metrics.screenPadding,
+                    end = Metrics.screenPadding,
+                    top = topPadding.coerceAtMost(16.dp),
+                    bottom = 24.dp + BottomBarStyleStore.barHeightForContent(),
                 ),
             // #765: one shared inter-card spacing token (was a bare `20.dp`), so the eager + lazy scaffolds
             // and every screen through them keep the SAME uniform gap between top-level cards.
@@ -1409,7 +1435,7 @@ fun LazyScreenScaffold(
     // Mirrors ScreenScaffold: a screen with a scene-backed header (Today-style) can tighten the gap
     // above its first row, and supply leading/trailing header actions + a screen-level scene backdrop.
     // All defaulted, so the existing flat callers (Intelligence) are byte-for-byte untouched.
-    topPadding: Dp = 28.dp,
+    topPadding: Dp = 16.dp,
     // The inter-row vertical spacing between top-level items. Defaults to the shared `screenRowSpacing`
     // (20dp) so every existing caller is byte-for-byte untouched; the liquid Today passes a tighter value
     // to match the iOS Today's compact `VStack(spacing: 12)` section rhythm (the maintainer's "iOS is
@@ -1431,6 +1457,11 @@ fun LazyScreenScaffold(
     listState: LazyListState = rememberLazyListState(),
     content: LazyListScope.() -> Unit,
 ) {
+    // Redesign: screens sit on the one flat canvas — the day-cycle sky / custom image backdrops are retired.
+    @Suppress("NAME_SHADOWING", "UNUSED_VALUE")
+    val topBackground: (@Composable () -> Unit)? = null
+    @Suppress("NAME_SHADOWING", "UNUSED_VALUE")
+    val fullBleedBackground = false
     // The header row: optional leading action, the title/subtitle, optional trailing action. Omitted
     // entirely when both title and subtitle are null (a screen supplying its own custom header). Matches
     // ScreenScaffold's header block so the eager + lazy scaffolds read identically.
@@ -1474,7 +1505,7 @@ fun LazyScreenScaffold(
         LazyColumn(
             modifier = listModifier,
             state = listState,
-            contentPadding = PaddingValues(start = 28.dp, top = topPadding, end = 28.dp, bottom = 28.dp),
+            contentPadding = PaddingValues(start = Metrics.screenPadding, top = topPadding.coerceAtMost(16.dp), end = Metrics.screenPadding, bottom = 24.dp + BottomBarStyleStore.barHeightForContent()),
             // #765: the shared inter-card spacing token by default (Today/Explore + the eager screens share
             // one uniform card rhythm); a caller may pass a tighter [rowSpacing] (the liquid Today does, for
             // the iOS-compact section rhythm).

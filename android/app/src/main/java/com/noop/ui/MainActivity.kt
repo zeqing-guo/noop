@@ -1014,8 +1014,9 @@ object NoopPrefs {
      *  readable. Mirrors macOS @AppStorage("noop.showDayCycleBackground"). */
     const val KEY_SHOW_DAY_CYCLE_BACKGROUND = "noop.showDayCycleBackground"
 
-    fun showDayCycleBackground(context: Context): Boolean =
-        of(context).getBoolean(KEY_SHOW_DAY_CYCLE_BACKGROUND, true)
+    // Redesign: the day-cycle sky is retired; every screen sits on the flat NOOP Dark canvas.
+    @Suppress("UNUSED_PARAMETER")
+    fun showDayCycleBackground(context: Context): Boolean = false
 
     fun setShowDayCycleBackground(context: Context, enabled: Boolean) {
         of(context).edit().putBoolean(KEY_SHOW_DAY_CYCLE_BACKGROUND, enabled).apply()
@@ -1041,8 +1042,8 @@ object NoopPrefs {
     // Default ON: the day-cycle sky extends behind the whole scroll out of the box. Still user-toggleable
     // in Settings ("Sky behind cards"); only never-toggled users pick up the new default. Twin of the iOS
     // @AppStorage(SkyBehindCardsPrefs.enabledKey) defaults.
-    fun skyBehindCards(context: Context): Boolean =
-        of(context).getBoolean(KEY_SKY_BEHIND_CARDS, true)
+    @Suppress("UNUSED_PARAMETER")
+    fun skyBehindCards(context: Context): Boolean = false
 
     fun setSkyBehindCards(context: Context, enabled: Boolean) {
         of(context).edit().putBoolean(KEY_SKY_BEHIND_CARDS, enabled).apply()
@@ -1119,8 +1120,9 @@ object NoopPrefs {
      *  preferred them. */
     const val KEY_TODAY_RING_GAUGES = "noop.todayRingGauges"
 
-    fun todayRingGauges(context: Context): Boolean =
-        of(context).getBoolean(KEY_TODAY_RING_GAUGES, true)
+    // Redesign: ring gauges only; the liquid vessels are retired.
+    @Suppress("UNUSED_PARAMETER")
+    fun todayRingGauges(context: Context): Boolean = true
 
     fun setTodayRingGauges(context: Context, enabled: Boolean) {
         of(context).edit().putBoolean(KEY_TODAY_RING_GAUGES, enabled).apply()

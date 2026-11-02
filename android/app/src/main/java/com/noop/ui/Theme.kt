@@ -51,7 +51,8 @@ object Palette {
 
     // Chart style — when CLASSIC, the DATA accessors below return the throwback red→green ramps
     // (light/dark tuned). Reads ChartStylePrefs.style (snapshot state) so a flip re-colours live.
-    val isClassic: Boolean get() = ChartStylePrefs.style == ChartStyle.CLASSIC
+    // Redesign: one data palette only; the Classic throwback ramps are retired.
+    val isClassic: Boolean get() = false
     private val classic: ClassicRamp get() = if (isLight) ClassicLight else ClassicDark
 
     // Surfaces.
@@ -82,22 +83,11 @@ object Palette {
     // Accent — user-selectable chrome anchor (mint default / WHOOP blue / custom). Chrome ONLY; the
     // recovery/strain/sleep DATA worlds are never themed by this. Reads AccentPrefs snapshot state so a
     // change is live. Twin of macOS StrandPalette.accent* branching on AccentColor.
-    val accent get() = when (AccentPrefs.color) {
-        AccentColor.MINT -> active.accent
-        AccentColor.WHOOP_BLUE -> if (isLight) Color(0xFF234F9E) else Color(0xFF60A0E0)
-        AccentColor.CUSTOM -> AccentColor.parseHex(AccentPrefs.customHex, active.accent)
-    }
-    val accentHover get() = when (AccentPrefs.color) {
-        AccentColor.MINT -> active.accentHover
-        AccentColor.WHOOP_BLUE -> if (isLight) Color(0xFF3A6FC0) else Color(0xFF8FBEEC)
-        AccentColor.CUSTOM -> AccentColor.lighten(AccentPrefs.customHex)
-    }
-    val accentMuted get() = when (AccentPrefs.color) {
-        AccentColor.MINT -> active.accentMuted
-        AccentColor.WHOOP_BLUE -> (if (isLight) Color(0xFF234F9E) else Color(0xFF60A0E0)).copy(alpha = 0.18f)
-        AccentColor.CUSTOM -> AccentColor.parseHex(AccentPrefs.customHex, active.accent).copy(alpha = 0.18f)
-    }
-    val focusRing get() = if (AccentPrefs.color == AccentColor.MINT) active.focusRing else accent
+    // Redesign: one chrome accent (mint). The accent picker is retired so every screen shares one anchor.
+    val accent get() = active.accent
+    val accentHover get() = active.accentHover
+    val accentMuted get() = active.accentMuted
+    val focusRing get() = active.focusRing
     const val disabledOpacity = 0.45f
 
     // Recovery / Charge gradient.
@@ -405,7 +395,7 @@ object Metrics {
     val space18 = 18.dp
     val space24 = 24.dp
     val sourceBadgeHeight = 18.dp
-    val cardRadius = 18.dp   // Bevel continuous radius (18–22dp)
+    val cardRadius = 16.dp
     val cornerXs = 2.dp
     val cornerSm = 12.dp
     val cornerBadge = 6.dp
@@ -417,10 +407,10 @@ object Metrics {
     // and LazyScreenScaffold use this for `spacedBy(...)`, so every Today/Explore card sits on the same
     // rhythm instead of a bare `20.dp` literal repeated per scaffold (and Today no longer injects ad-hoc
     // Spacer rows that broke that rhythm). One token = uniform, consistent gaps across the screens.
-    val screenRowSpacing = 20.dp
-    val screenPadding = 24.dp
+    val screenRowSpacing = 16.dp
+    val screenPadding = 16.dp
     val tileHeight = 108.dp   // every metric tile is this tall
-    val chartHeight = 220.dp
+    val chartHeight = 200.dp
     val dialogScrollableMaxHeight = 560.dp
     val divider = 1.dp
     val compactChartHeight = chartHeight - 90.dp
@@ -479,20 +469,20 @@ object NoopType {
 
     /** The tight tracking for big display numbers (≈ -0.04em). Already applied inside
      *  display(); exposed to mirror StrandFont.displayTracking. */
-    fun displayTracking(size: Float = 72f): Float = -size * 0.04f
+    fun displayTracking(size: Float = 72f): Float = -size * 0.02f
 
-    val title1 = TextStyle(fontFamily = sans, fontWeight = FontWeight.Bold, fontSize = 28.sp)
-    val title2 = TextStyle(fontFamily = sans, fontWeight = FontWeight.SemiBold, fontSize = 22.sp)
-    val headline = TextStyle(fontFamily = sans, fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
-    val body = TextStyle(fontFamily = sans, fontWeight = FontWeight.Normal, fontSize = 15.sp)
-    val subhead = TextStyle(fontFamily = sans, fontWeight = FontWeight.Normal, fontSize = 13.sp)
-    val caption = TextStyle(fontFamily = sans, fontWeight = FontWeight.Normal, fontSize = 12.sp)
+    val title1 = TextStyle(fontFamily = sans, fontWeight = FontWeight.Bold, fontSize = 26.sp, lineHeight = 32.sp)
+    val title2 = TextStyle(fontFamily = sans, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, lineHeight = 24.sp)
+    val headline = TextStyle(fontFamily = sans, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, lineHeight = 22.sp)
+    val body = TextStyle(fontFamily = sans, fontWeight = FontWeight.Normal, fontSize = 15.sp, lineHeight = 21.sp)
+    val subhead = TextStyle(fontFamily = sans, fontWeight = FontWeight.Normal, fontSize = 13.sp, lineHeight = 18.sp)
+    val caption = TextStyle(fontFamily = sans, fontWeight = FontWeight.Normal, fontSize = 12.sp, lineHeight = 16.sp)
     val footnote = TextStyle(fontFamily = sans, fontWeight = FontWeight.Normal, fontSize = 11.sp)
 
     /** Overline 11 / Bold, +1.4 tracking, ALL-CAPS at use site. */
     val overline = TextStyle(
-        fontFamily = sans, fontWeight = FontWeight.Bold, fontSize = 11.sp,
-        letterSpacing = 1.4.sp,
+        fontFamily = sans, fontWeight = FontWeight.SemiBold, fontSize = 12.sp,
+        letterSpacing = 0.4.sp,
     )
 
     /** Mono 13 — raw / log views. */
@@ -516,7 +506,7 @@ object NoopType {
     val tileValue = number(24f)
     val tileValueLarge = number(26f)
 
-    const val overlineTracking = 1.4f
+    const val overlineTracking = 0.4f
 }
 
 // MARK: - Material3 bridge
@@ -577,11 +567,8 @@ private val NoopShapes = Shapes(
  */
 @Composable
 fun NoopTheme(content: @Composable () -> Unit) {
-    val dark = when (AppearancePrefs.mode) {
-        AppearanceMode.LIGHT -> false
-        AppearanceMode.DARK -> true
-        AppearanceMode.SYSTEM -> isSystemInDarkTheme()
-    }
+    // Redesign: NOOP Dark is the only scheme; the light/system modes are retired.
+    val dark = true
     val tokens = if (dark) DarkTokens else LightTokens
     if (Palette.active !== tokens) Palette.active = tokens
 

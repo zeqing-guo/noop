@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings introduced by the NOOP Dark redesign. -->
+<resources>
+    <string name="redesign_today_strap_away">Strap not connected. Tap to scan.</string>
+    <string name="redesign_today_customise">Customise Today</string>
+    <string name="redesign_kcal">%1$d kcal</string>
+    <string name="redesign_range_d">D</string>
+    <string name="redesign_range_w">W</string>
+    <string name="redesign_range_m">M</string>
+    <string name="redesign_range_3m">3M</string>
+    <string name="redesign_range_6m">6M</string>
+    <string name="redesign_range_1y">1Y</string>
+    <string name="redesign_range_all">All</string>
+    <string name="redesign_range_7d">7D</string>
+    <string name="redesign_range_14d">14D</string>
+    <string name="redesign_range_30d">30D</string>
+    <string name="redesign_range_90d">90D</string>
+    <string name="redesign_range_long_week">the past week</string>
+    <string name="redesign_range_long_month">the past month</string>
+    <string name="redesign_range_long_quarter">the past 3 months</string>
+    <string name="redesign_range_long_half">the past 6 months</string>
+    <string name="redesign_range_long_year">the past year</string>
+    <string name="redesign_range_long_all">all history</string>
+    <string name="redesign_trends_caption">%1$d readings · %2$s</string>
+    <string name="redesign_trends_caption_widened">%1$d readings · sparse, widened to %2$s</string>
+</resources>

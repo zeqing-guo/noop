@@ -76,76 +76,47 @@ fun LiquidVessel(
     tint: Color,
     animated: Boolean = true,
     modifier: Modifier = Modifier,
-    // Runs when the vessel itself is tapped. ANY caller that wraps a vessel in a clickable parent has to
-    // hand that same action down here as well.
-    //
-    // On the animated render the vessel owns a `clickable` for its splash, and in Compose a child's
-    // clickable CONSUMES the event, so the clickable parent never sees a touch that lands on the vessel.
-    // The hero rings and the Coupled cards were wrapped rather than wired, so their taps went nowhere.
-    // Passing the action IN, instead of wrapping, is what lets one tap both splash and act.
-    //
-    // `onTap` SUPPLEMENTS a clickable parent, it does not replace one. The still render (reduce-motion,
-    // power-save, quiet motion, or `animated = false`) attaches no clickable at all, so there a tap
-    // reaches the parent by itself. That is why the rings kept working for anyone with reduced motion,
-    // and why this went unnoticed for so long.
     onTap: (() -> Unit)? = null,
 ) {
+    // Redesign: every "vessel" gauge is drawn as a flat ring — an inset track plus one round-capped arc in
+    // the metric's hue — so no screen shows a grey liquid blob for an empty value. Same API, same sizing.
+    val target = (value ?: 0.0).coerceIn(0.0, 1.0).toFloat()
     val renderStill = rememberPoseStill()
-
-    if (animated && !renderStill) {
-        val view = LocalView.current
-        // The mutable physics, remembered across recompositions so the slosh is continuous. Seeded at the
-        // fill line (iOS `LiquidSim(target: value ?? 0)`); the target is re-supplied every frame in step().
-        val sim = remember { LiquidSim(target = value ?: 0.0) }
-
-        // One shared tilt source per visible liquid screen — acquire on enter, release on leave (iOS
-        // .onAppear/.onDisappear). Keyed on the context so it re-runs if the composition's context changes.
-        val context = LocalContext.current
-        DisposableEffect(context) {
-            LiquidMotion.shared.acquire(context)
-            onDispose { LiquidMotion.shared.release() }
-        }
-
-        // Monotonic seconds clock (from-zero accumulator; only the sinusoid phase matters — same as
-        // LiquidSky.kt). Drives sim.step + render.
-        var seconds by remember { mutableDoubleStateOf(0.0) }
-        LaunchedEffect(Unit) {
-            var last = 0L
-            while (true) {
-                withFrameNanos { frame ->
-                    if (last != 0L) seconds += (frame - last) / 1_000_000_000.0
-                    last = frame
-                }
-            }
-        }
-
-        Canvas(
-            modifier = modifier
-                .aspectRatio(1f)
-                .clickable(
+    val fraction by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = target,
+        animationSpec = if (animated && !renderStill) androidx.compose.animation.core.tween(600)
+        else androidx.compose.animation.core.snap(),
+        label = "ringFill",
+    )
+    val track = Palette.surfaceInset
+    Canvas(
+        modifier = modifier
+            .aspectRatio(1f)
+            .then(
+                if (onTap != null) Modifier.clickable(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() },
-                ) {
-                    sim.splash(12)
-                    // A LIGHT tap impact, matching iOS `.sensoryFeedback(.impact(weight: .light))`. Compose's
-                    // HapticFeedbackType on this BOM only offers LongPress (heavy) / TextHandleMove, so route a
-                    // light KEYBOARD_TAP through the platform view — the closest available light-impact tick.
-                    view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
-                    // Last: the splash and the tick are local feedback, and the action may navigate away.
-                    onTap?.invoke()
-                },
-        ) {
-            sim.step(now = seconds, tilt = LiquidMotion.shared.tilt, target = value ?: 0.0)
-            with(LiquidRender) { vessel(size = size, sim = sim, now = seconds, tint = tint) }
-        }
-    } else {
-        // One-shot, cached render — posed at the fill line, no clock, no motion acquire.
-        val posed = remember(value) { LiquidSim.posed(value ?: 0.0) }
-        // Deliberately NO clickable here: this branch has no splash to swallow with, so a tap falls
-        // straight through to whatever clickable parent the caller wrapped it in, which is the behaviour
-        // every caller already wants. Adding one would only take the parent's press animation away.
-        Canvas(modifier = modifier.aspectRatio(1f)) {
-            with(LiquidRender) { vessel(size = size, sim = posed, now = 0.0, tint = tint) }
+                    onClick = onTap,
+                ) else Modifier
+            ),
+    ) {
+        val stroke = size.minDimension * 0.09f
+        val inset = stroke / 2f
+        val arcSize = androidx.compose.ui.geometry.Size(size.width - stroke, size.height - stroke)
+        val topLeft = androidx.compose.ui.geometry.Offset(inset, inset)
+        drawArc(
+            color = track, startAngle = 0f, sweepAngle = 360f, useCenter = false,
+            topLeft = topLeft, size = arcSize,
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = stroke),
+        )
+        if (value != null && fraction > 0f) {
+            drawArc(
+                color = tint, startAngle = -90f, sweepAngle = 360f * fraction, useCenter = false,
+                topLeft = topLeft, size = arcSize,
+                style = androidx.compose.ui.graphics.drawscope.Stroke(
+                    width = stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round,
+                ),
+            )
         }
     }
 }
