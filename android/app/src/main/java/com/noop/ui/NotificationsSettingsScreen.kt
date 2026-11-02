@@ -86,23 +86,27 @@ import java.util.Calendar
 // MARK: - Domain model (mirrors NotificationSettingsStore.swift)
 
 /** Haptic pattern fired on the strap; only the repeat count varies. */
-internal enum class BuzzPattern(val label: String, val loops: Int) {
-    Single("Single", 1),
-    Double("Double", 2),
-    Triple("Triple", 3),
-    Long("Long", 5),
+internal enum class BuzzPattern(private val labelRes: Int, val loops: Int) {
+    Single(R.string.i18n_g1_notif_pattern_single, 1),
+    Double(R.string.i18n_g1_notif_pattern_double, 2),
+    Triple(R.string.i18n_g1_notif_pattern_triple, 3),
+    Long(R.string.i18n_g1_notif_pattern_long, 5);
+
+    val label: String get() = uiString(labelRes)
 }
 
 /** Grouping for the settings screen, with its header icon + default pattern. */
 internal enum class NotifCategory(
-    val title: String,
+    private val titleRes: Int,
     val icon: ImageVector,
     val defaultPattern: BuzzPattern,
 ) {
-    Email("Email", Icons.Filled.Email, BuzzPattern.Double),
-    Messaging("Messaging", Icons.AutoMirrored.Filled.Chat, BuzzPattern.Single),
-    Meetings("Meetings", Icons.Filled.Videocam, BuzzPattern.Triple),
-    Calendar("Calendar & Reminders", Icons.Filled.CalendarMonth, BuzzPattern.Double),
+    Email(R.string.i18n_g1_notif_cat_email, Icons.Filled.Email, BuzzPattern.Double),
+    Messaging(R.string.i18n_g1_notif_cat_messaging, Icons.AutoMirrored.Filled.Chat, BuzzPattern.Single),
+    Meetings(R.string.i18n_g1_notif_cat_meetings, Icons.Filled.Videocam, BuzzPattern.Triple),
+    Calendar(R.string.i18n_g1_notif_cat_calendar, Icons.Filled.CalendarMonth, BuzzPattern.Double);
+
+    val title: String get() = uiString(titleRes)
 }
 
 /** A notification-capable app NOOP can mirror to the wrist. `id` is the persistence key. */
@@ -118,11 +122,11 @@ internal data class NotifApp(
  * Unlike macOS we cannot enumerate which are actually installed (restricted package
  * visibility), so we present the full set as configurable examples.
  */
-private val notifCatalog: List<NotifApp> = listOf(
+private val notifCatalog: List<NotifApp> get() = listOf(
     NotifApp("com.google.android.gm", "Gmail", NotifCategory.Email, Icons.Filled.Email),
     NotifApp("com.microsoft.office.outlook", "Outlook", NotifCategory.Email, Icons.Filled.Email),
     NotifApp("com.whatsapp", "WhatsApp", NotifCategory.Messaging, Icons.AutoMirrored.Filled.Chat),
-    NotifApp("com.google.android.apps.messaging", "Messages", NotifCategory.Messaging, Icons.AutoMirrored.Filled.Chat),
+    NotifApp("com.google.android.apps.messaging", uiString(R.string.i18n_g1_notif_app_messages), NotifCategory.Messaging, Icons.AutoMirrored.Filled.Chat),
     NotifApp("com.Slack", "Slack", NotifCategory.Messaging, Icons.AutoMirrored.Filled.Chat),
     NotifApp("org.telegram.messenger", "Telegram", NotifCategory.Messaging, Icons.AutoMirrored.Filled.Chat),
     // Teams' ringing-call notifications are handled by the Calls card below (VoIP path). This
@@ -130,13 +134,13 @@ private val notifCatalog: List<NotifApp> = listOf(
     // posts), which read as messages, so it lives under Messaging with the chat glyph.
     NotifApp("com.microsoft.teams", "Microsoft Teams", NotifCategory.Messaging, Icons.AutoMirrored.Filled.Chat),
     NotifApp("us.zoom.videomeetings", "Zoom", NotifCategory.Meetings, Icons.Filled.Videocam),
-    NotifApp("com.google.android.calendar", "Calendar", NotifCategory.Calendar, Icons.Filled.CalendarMonth),
+    NotifApp("com.google.android.calendar", uiString(R.string.i18n_g1_notif_app_calendar), NotifCategory.Calendar, Icons.Filled.CalendarMonth),
 )
 
 private fun appsIn(category: NotifCategory): List<NotifApp> =
     notifCatalog.filter { it.category == category }
 
-private val activeCategories: List<NotifCategory> =
+private val activeCategories: List<NotifCategory> get() =
     NotifCategory.entries.filter { appsIn(it).isNotEmpty() }
 
 // MARK: - SharedPreferences store (mirrors the UserDefaults-backed Swift store)
@@ -269,14 +273,13 @@ fun NotificationsSettingsScreen(vm: AppViewModel) {
 
     ScreenScaffold(
         title = uiString(R.string.l10n_notifications_settings_screen_notifications_753a22b2),
-        subtitle = "Buzz your strap when these apps notify you. Everything runs on this device.",
+        subtitle = uiString(R.string.i18n_g1_notif_subtitle),
     ) {
         // MARK: Master card
         AlertSection(
             icon = Icons.Filled.NotificationsActive,
             title = uiString(R.string.l10n_notifications_settings_screen_wrist_alerts_75581d51),
-            blurb = "When on, NOOP taps your wrist for the apps you pick below, so you can leave " +
-                "your phone and still feel what matters.",
+            blurb = uiString(R.string.i18n_g1_notif_master_blurb),
         ) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(uiString(R.string.l10n_notifications_settings_screen_enable_wrist_alerts_462b9e0f), style = NoopType.body, color = Palette.textPrimary)
@@ -298,7 +301,7 @@ fun NotificationsSettingsScreen(vm: AppViewModel) {
             ) {
                 StatePill(strapPillTitle(live), tone = strapPillTone(live), pulsing = live.connected)
                 StatePill(
-                    "$enabledCount app${if (enabledCount == 1) "" else "s"} on",
+                    if (enabledCount == 1) uiString(R.string.i18n_g1_notif_apps_on_one, enabledCount) else uiString(R.string.i18n_g1_notif_apps_on_many, enabledCount),
                     tone = if (enabledCount > 0) StrandTone.Positive else StrandTone.Neutral,
                     showsDot = false,
                 )
@@ -364,12 +367,12 @@ fun NotificationsSettingsScreen(vm: AppViewModel) {
         AlertSection(
             icon = Icons.Filled.Alarm,
             title = uiString(R.string.notif_timer_alarm_title),
-            blurb = "Buzz your wrist when your phone's Clock app finishes a timer or rings an alarm.",
+            blurb = uiString(R.string.i18n_g1_notif_alarm_blurb),
         ) {
             Column(modifier = Modifier.alphaIf(if (masterEnabled) 1f else Palette.disabledOpacity)) {
                 FormToggleRow(
                     label = uiString(R.string.notif_timer_alarm_title),
-                    help = "Requires wrist alerts (above) to be on. Buzzes once when a timer/alarm notification fires.",
+                    help = uiString(R.string.i18n_g1_notif_alarm_help),
                     checked = alarmTimerEnabled,
                     enabled = masterEnabled,
                     onChange = {
@@ -412,11 +415,11 @@ fun NotificationsSettingsScreen(vm: AppViewModel) {
         AlertSection(
             icon = Icons.Filled.Tune,
             title = uiString(R.string.l10n_notifications_settings_screen_behaviour_171ca038),
-            blurb = "Fine-tune when alerts reach your wrist.",
+            blurb = uiString(R.string.i18n_g1_notif_fine_tune),
         ) {
             FormToggleRow(
                 label = uiString(R.string.l10n_notifications_settings_screen_only_buzz_when_worn_6211cee3),
-                help = "Skip alerts when the strap is off your wrist.",
+                help = uiString(R.string.i18n_g1_notif_worn_help),
                 checked = onlyWhenWorn,
                 onChange = {
                     onlyWhenWorn = it
@@ -426,9 +429,7 @@ fun NotificationsSettingsScreen(vm: AppViewModel) {
             RowDivider()
             FormToggleRow(
                 label = uiString(R.string.l10n_notifications_settings_screen_all_other_apps_51a8af2c),
-                help = "Also buzz for apps that aren't in the lists above (e.g. BeReal). Android " +
-                    "doesn't let NOOP see every installed app, so this is how you cover the rest. " +
-                    "Can be chatty; quiet hours and \"only when worn\" still apply.",
+                help = uiString(R.string.i18n_g1_notif_all_other_help),
                 checked = allOtherApps,
                 onChange = {
                     allOtherApps = it
@@ -438,7 +439,7 @@ fun NotificationsSettingsScreen(vm: AppViewModel) {
             RowDivider()
             FormToggleRow(
                 label = uiString(R.string.l10n_notifications_settings_screen_quiet_hours_706b24d0),
-                help = "Mute wrist alerts overnight.",
+                help = uiString(R.string.i18n_g1_notif_quiet_help),
                 checked = quietHoursEnabled,
                 onChange = {
                     quietHoursEnabled = it
@@ -455,16 +456,16 @@ fun NotificationsSettingsScreen(vm: AppViewModel) {
                     Text(uiString(R.string.l10n_notifications_settings_screen_from_3f66052a), style = NoopType.body, color = Palette.textPrimary)
                     TimeChip(
                         minutes = quietStartMinutes,
-                        accessibilityLabel = "Quiet hours start",
+                        accessibilityLabel = uiString(R.string.i18n_g1_notif_quiet_start),
                         onPicked = {
                             quietStartMinutes = it
                             NotifPrefs.setInt(context, NotifPrefs.QUIET_START, it)
                         },
                     )
-                    Text("to", style = NoopType.body, color = Palette.textSecondary)
+                    Text(uiString(R.string.i18n_g1_notif_quiet_to), style = NoopType.body, color = Palette.textSecondary)
                     TimeChip(
                         minutes = quietEndMinutes,
-                        accessibilityLabel = "Quiet hours end",
+                        accessibilityLabel = uiString(R.string.i18n_g1_notif_quiet_end),
                         onPicked = {
                             quietEndMinutes = it
                             NotifPrefs.setInt(context, NotifPrefs.QUIET_END, it)
@@ -479,14 +480,11 @@ fun NotificationsSettingsScreen(vm: AppViewModel) {
         AlertSection(
             icon = Icons.Filled.NotificationsActive,
             title = uiString(R.string.l10n_notifications_settings_screen_daily_reports_c1a22a74),
-            blurb = "Optional phone notifications, off by default. These arrive after your strap syncs " +
-                "and NOOP scores the data, so they land soon after, not the exact second you wake or " +
-                "finish a workout. Everything is worked out on this phone.",
+            blurb = uiString(R.string.i18n_g1_notif_phone_blurb),
         ) {
             FormToggleRow(
                 label = uiString(R.string.l10n_notifications_settings_screen_morning_recap_45ec05c5),
-                help = "After last night is processed, a notification with your Charge and Rest. Posts " +
-                    "once a day, after your strap has synced the night.",
+                help = uiString(R.string.i18n_g1_notif_morning_help),
                 checked = morningReport,
                 onChange = {
                     morningReport = it
@@ -496,8 +494,7 @@ fun NotificationsSettingsScreen(vm: AppViewModel) {
             RowDivider()
             FormToggleRow(
                 label = uiString(R.string.l10n_notifications_settings_screen_post_workout_summary_13e488f5),
-                help = "When a new workout syncs in, a notification with its Effort, duration and average " +
-                    "heart rate. Shows up after the session reaches NOOP on the next sync.",
+                help = uiString(R.string.i18n_g1_notif_workout_help),
                 checked = postWorkoutReport,
                 onChange = {
                     postWorkoutReport = it
@@ -511,8 +508,7 @@ fun NotificationsSettingsScreen(vm: AppViewModel) {
             // #593: NOOP's own optimal-strain-reached nudge (not WHOOP's copy).
             FormToggleRow(
                 label = uiString(R.string.l10n_notifications_settings_screen_optimal_strain_reached_2862ec2b),
-                help = "Once a day, a notification when your Effort reaches the low end of today's optimal " +
-                    "strain range (from your recovery). Posts after your strap syncs and NOOP scores the day.",
+                help = uiString(R.string.i18n_g1_notif_effort_help),
                 checked = strainTargetReport,
                 onChange = {
                     strainTargetReport = it
@@ -526,9 +522,9 @@ fun NotificationsSettingsScreen(vm: AppViewModel) {
 // MARK: - Strap status (mirrors the three-state mapping from the Mac screen)
 
 private fun strapPillTitle(live: com.noop.ble.LiveState): String = when {
-    live.connected -> "Strap connected"
-    live.bonded -> "Strap idle"
-    else -> "Strap not connected"
+    live.connected -> uiString(R.string.i18n_g1_notif_strap_connected)
+    live.bonded -> uiString(R.string.i18n_g1_notif_strap_idle)
+    else -> uiString(R.string.i18n_g1_notif_strap_not_connected)
 }
 
 private fun strapPillTone(live: com.noop.ble.LiveState): StrandTone = when {
@@ -556,7 +552,7 @@ private fun CallsCard(
     AlertSection(
         icon = Icons.Filled.Call,
         title = uiString(R.string.l10n_notifications_settings_screen_calls_0a19b7e2),
-        blurb = "Tap your wrist for incoming phone calls and strict best-effort VoIP calls.",
+        blurb = uiString(R.string.i18n_g1_notif_calls_blurb),
     ) {
         Column(modifier = Modifier.alphaIf(contentAlpha)) {
             Row(
@@ -575,8 +571,8 @@ private fun CallsCard(
                     )
                 }
                 if (callsEnabled) {
-                    PatternMenu(pattern = pattern, enabled = masterEnabled, appName = "calls", onSelect = onPattern)
-                    TestIconButton(enabled = masterEnabled && bonded, appName = "calls", onClick = onTest)
+                    PatternMenu(pattern = pattern, enabled = masterEnabled, appName = uiString(R.string.i18n_g1_notif_calls_name), onSelect = onPattern)
+                    TestIconButton(enabled = masterEnabled && bonded, appName = uiString(R.string.i18n_g1_notif_calls_name), onClick = onTest)
                 }
                 NoopSwitch(
                     checked = callsEnabled,
@@ -589,7 +585,7 @@ private fun CallsCard(
                 RowDivider()
                 FormToggleRow(
                     label = uiString(R.string.l10n_notifications_settings_screen_phone_calls_b79420d9),
-                    help = "Needs Phone permission; NOOP never reads numbers or call logs.",
+                    help = uiString(R.string.i18n_g1_notif_phone_perm_help),
                     checked = phoneCallsEnabled,
                     enabled = masterEnabled,
                     onChange = onPhoneCallsEnabled,
@@ -605,7 +601,7 @@ private fun CallsCard(
                 RowDivider()
                 FormToggleRow(
                     label = uiString(R.string.l10n_notifications_settings_screen_voip_calls_96c5a102),
-                    help = "Detects call-style notifications from known calling apps.",
+                    help = uiString(R.string.i18n_g1_notif_voip_help),
                     checked = voipCallsEnabled,
                     enabled = masterEnabled,
                     onChange = onVoipCallsEnabled,
@@ -740,7 +736,7 @@ private fun AppRow(
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(app.name, style = NoopType.body, color = Palette.textPrimary)
             Text(
-                if (enabled) "Buzzes your wrist" else "Off",
+                if (enabled) uiString(R.string.i18n_g1_notif_buzzes_wrist) else uiString(R.string.i18n_g1_notif_off),
                 style = NoopType.footnote,
                 color = if (enabled) Palette.accent else Palette.textTertiary,
             )
@@ -956,7 +952,7 @@ private fun AlertSection(
     icon: ImageVector,
     title: String,
     blurb: String? = null,
-    overline: String = "Alerts",
+    overline: String = uiString(R.string.i18n_g1_notif_alerts_overline),
     content: @Composable () -> Unit,
 ) {
     NoopCard(padding = 20.dp, tint = Palette.accent) {

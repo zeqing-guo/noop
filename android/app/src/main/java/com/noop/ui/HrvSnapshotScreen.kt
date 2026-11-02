@@ -180,21 +180,21 @@ fun HrvSnapshotScreen(
     // spacing identical (LazyColumn reproduces the eager `spacedBy(20.dp)`).
     LazyScreenScaffold(
         title = uiString(R.string.l10n_hrv_snapshot_screen_hrv_reading_a2cf71f3),
-        subtitle = "A still, seated snapshot of your heart-rate variability",
+        subtitle = uiString(R.string.i18n_g4_hrv_subtitle),
     ) {
         // Status row.
         item {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             when (phase) {
-                HrvPhase.Idle -> StatePill("Ready", tone = StrandTone.Neutral)
-                HrvPhase.Capturing -> StatePill("Capturing", tone = StrandTone.Accent, pulsing = true)
-                HrvPhase.Done -> StatePill("Reading complete", tone = StrandTone.Positive)
+                HrvPhase.Idle -> StatePill(uiString(R.string.i18n_g4_hrv_ready), tone = StrandTone.Neutral)
+                HrvPhase.Capturing -> StatePill(uiString(R.string.i18n_g4_hrv_capturing), tone = StrandTone.Accent, pulsing = true)
+                HrvPhase.Done -> StatePill(uiString(R.string.i18n_g4_hrv_reading_complete), tone = StrandTone.Positive)
             }
             Spacer(Modifier.width(8.dp))
             if (bonded) {
-                StatePill("Strap live", tone = StrandTone.Positive)
+                StatePill(uiString(R.string.i18n_g4_hrv_strap_live), tone = StrandTone.Positive)
             } else {
-                StatePill("Not connected", tone = StrandTone.Warning)
+                StatePill(uiString(R.string.i18n_g4_hrv_not_connected), tone = StrandTone.Warning)
             }
             Spacer(Modifier.weight(1f))
             IconButton(onClick = onClose) {
@@ -231,7 +231,7 @@ fun HrvSnapshotScreen(
                         value = dialValue(phase, runningRmssd, result),
                         unit = if (phase == HrvPhase.Idle) "RMSSD" else "MS RMSSD",
                         sub = if (phase == HrvPhase.Capturing) {
-                            "${secondsRemaining}s left · ${captureBuffer.value.size} beats"
+                            uiString(R.string.i18n_g4_hrv_seconds_left_beats, secondsRemaining, captureBuffer.value.size)
                         } else null,
                     )
                 }
@@ -306,7 +306,7 @@ fun HrvSnapshotScreen(
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Palette.accent),
                 ) {
                     Icon(Icons.Filled.Download, contentDescription = null, modifier = Modifier.padding(end = 6.dp))
-                    Text(if (saved) "Saved" else "Save", style = NoopType.body)
+                    Text(if (saved) uiString(R.string.i18n_g4_hrv_saved) else uiString(R.string.i18n_g4_hrv_save), style = NoopType.body)
                 }
             }
         }
@@ -324,7 +324,7 @@ fun HrvSnapshotScreen(
         item {
         NoopCard(tint = Palette.restColor) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Overline("How this is measured")
+                Overline(uiString(R.string.i18n_g4_hrv_how_measured))
                 Text(
                     uiString(R.string.l10n_hrv_snapshot_screen_a_60_second_snapshot_of_your_35f03f7c),
                     style = NoopType.footnote, color = Palette.textTertiary,
@@ -356,7 +356,7 @@ private fun CaptureDial(fraction: Float, value: String, unit: String, sub: Strin
         label = uiString(R.string.l10n_hrv_snapshot_screen_hrvdial_4c244c45),
     )
     val a11y = when {
-        sub != null -> "Capturing. $value milliseconds RMSSD so far. $sub."
+        sub != null -> uiString(R.string.i18n_g4_hrv_dial_a11y_capturing, value, sub)
         else -> "$value $unit"
     }
     Box(
@@ -415,7 +415,7 @@ private fun CaptureDial(fraction: Float, value: String, unit: String, sub: Strin
 private fun ResultCard(result: HrvAnalyzer.HrvResult) {
     NoopCard(padding = 18.dp, tint = Palette.restColor) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Overline("Your reading")
+            Overline(uiString(R.string.i18n_g4_hrv_your_reading))
 
             if (result.rmssd == null) {
                 Row(
@@ -455,7 +455,7 @@ private fun ResultCard(result: HrvAnalyzer.HrvResult) {
                         modifier = Modifier.weight(1f),
                         label = uiString(R.string.l10n_hrv_snapshot_screen_beats_12aafda0),
                         value = "${result.nClean}",
-                        caption = "used",
+                        caption = uiString(R.string.i18n_g4_hrv_used),
                         accent = Palette.metricCyan,
                     )
                 }
@@ -526,23 +526,23 @@ private fun dialValue(phase: HrvPhase, runningRmssd: Double?, result: HrvAnalyze
     }
 
 private fun primaryLabel(phase: HrvPhase): String = when (phase) {
-    HrvPhase.Idle -> "Take an HRV reading"
-    HrvPhase.Capturing -> "Cancel"
-    HrvPhase.Done -> "Take another reading"
+    HrvPhase.Idle -> uiString(R.string.i18n_g4_hrv_take_reading)
+    HrvPhase.Capturing -> uiString(R.string.i18n_g4_hrv_cancel)
+    HrvPhase.Done -> uiString(R.string.i18n_g4_hrv_take_another)
 }
 
 private fun instruction(phase: HrvPhase, bonded: Boolean, result: HrvAnalyzer.HrvResult?): String =
     when (phase) {
         HrvPhase.Idle -> if (bonded) {
-            "Sit still and breathe normally. Tap below to take a 60-second reading."
+            uiString(R.string.i18n_g4_hrv_instr_idle)
         } else {
-            "Connect your strap on the Live screen to take a reading."
+            uiString(R.string.i18n_g4_hrv_instr_connect)
         }
-        HrvPhase.Capturing -> "Sit still, breathe normally. Keep your wrist relaxed and steady."
+        HrvPhase.Capturing -> uiString(R.string.i18n_g4_hrv_instr_capturing)
         HrvPhase.Done -> if (result != null && result.rmssd == null) {
-            "Not enough clean beats - sit still and try again."
+            uiString(R.string.i18n_g4_hrv_instr_not_enough)
         } else {
-            "Done. Save this reading to keep it in your trends."
+            uiString(R.string.i18n_g4_hrv_instr_done)
         }
     }
 

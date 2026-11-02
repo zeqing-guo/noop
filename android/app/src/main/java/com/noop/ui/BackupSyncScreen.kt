@@ -108,7 +108,7 @@ fun BackupSyncScreen() {
                         // would still ack and trim the strap PAST records we can't store, discarding real history.
                         // Relaunching the process re-opens Room against the restored file. Do it automatically
                         // rather than trust the user to read a toast (which is exactly how #57 happened).
-                        Toast.makeText(context, "Backup restored — restarting NOOP…", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, uiString(R.string.i18n_g4_backup_restored_restarting), Toast.LENGTH_LONG).show()
                         // NonCancellable: this coroutine runs in the screen's scope, which is cancelled the
                         // instant the user navigates away. The restart is a data-safety guarantee (the DB is
                         // already swapped), so it must complete even if the composition leaves — otherwise the
@@ -158,12 +158,12 @@ fun BackupSyncScreen() {
         ActivityResultContracts.OpenDocument(),
     ) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
-        pendingRestore = "the selected file" to uri
+        pendingRestore = uiString(R.string.i18n_g4_backup_the_selected_file) to uri
     }
 
     LazyScreenScaffold(
         title = uiString(R.string.l10n_backup_sync_screen_backup_sync_81758ffa),
-        subtitle = "Save a full backup to a folder you choose - point it at Google Drive / Dropbox for off-device sync.",
+        subtitle = uiString(R.string.i18n_g4_backup_subtitle),
     ) {
         // 1 · Destination folder
         item {
@@ -171,8 +171,8 @@ fun BackupSyncScreen() {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(uiString(R.string.l10n_backup_sync_screen_backup_folder_2a33df93), style = NoopType.headline, color = Palette.textPrimary)
                     Text(
-                        treeUri?.let { "Saving to: ${folderLabel(it)}" }
-                            ?: "No folder chosen yet. Pick one your cloud app already syncs, or any local folder.",
+                        treeUri?.let { uiString(R.string.i18n_g4_backup_saving_to, folderLabel(it)) }
+                            ?: uiString(R.string.i18n_g4_backup_no_folder),
                         style = NoopType.footnote, color = Palette.textTertiary,
                     )
                     Text(
@@ -195,7 +195,7 @@ fun BackupSyncScreen() {
                         )
                     }
                     NoopButton(
-                        text = if (treeUri == null) "Choose folder" else "Change folder",
+                        text = if (treeUri == null) uiString(R.string.i18n_g4_backup_choose_folder) else uiString(R.string.i18n_g4_backup_change_folder),
                         leadingIcon = Icons.Filled.FolderOpen,
                         kind = NoopButtonKind.Secondary,
                         enabled = !busy,
@@ -298,7 +298,7 @@ fun BackupSyncScreen() {
                         Spacer(Modifier.width(16.dp))
                         TimeChip(
                             minutes = backupMinute,
-                            accessibilityLabel = "Daily backup time",
+                            accessibilityLabel = uiString(R.string.i18n_g4_backup_daily_time),
                             onPicked = { m ->
                                 backupMinute = m
                                 BackupSyncPrefs.setBackupMinute(context, m)
@@ -308,9 +308,9 @@ fun BackupSyncScreen() {
                     }
                     Text(
                         if (lastMs > 0L) {
-                            "Last backup: ${DateUtils.getRelativeTimeSpanString(lastMs)}"
+                            uiString(R.string.i18n_g4_backup_last_backup, DateUtils.getRelativeTimeSpanString(lastMs))
                         } else {
-                            "No backup yet."
+                            uiString(R.string.i18n_g4_backup_no_backup_yet)
                         },
                         style = NoopType.caption, color = Palette.textTertiary,
                     )
@@ -338,7 +338,7 @@ fun BackupSyncScreen() {
                         }
                     }
                     NoopButton(
-                        text = if (busy) "Working…" else "Back up now",
+                        text = if (busy) uiString(R.string.i18n_g4_backup_working) else uiString(R.string.i18n_g4_backup_back_up_now),
                         leadingIcon = Icons.Filled.CloudUpload,
                         fullWidth = true,
                         enabled = treeUri != null && !busy,
@@ -354,9 +354,9 @@ fun BackupSyncScreen() {
                                     Toast.makeText(
                                         context,
                                         if (ok) {
-                                            "Backed up to your folder."
+                                            uiString(R.string.i18n_g4_backup_backed_up)
                                         } else {
-                                            "Backup failed - re-pick the folder and try again."
+                                            uiString(R.string.i18n_g4_backup_failed)
                                         },
                                         Toast.LENGTH_LONG,
                                     ).show()
@@ -444,7 +444,7 @@ fun BackupSyncScreen() {
                                 .clickable {
                                     showSnapshotPicker = false
                                     pendingRestore = if (snap.timeMs > 0L) {
-                                        "the backup from $whenLabel"
+                                        uiString(R.string.i18n_g4_backup_from_when, whenLabel)
                                     } else {
                                         snap.name
                                     } to snap.uri
@@ -515,6 +515,6 @@ private val RESTORE_MIME_TYPES = arrayOf(
 
 /** A short, human label for a SAF tree Uri (the part after the volume colon). */
 private fun folderLabel(treeUri: Uri): String {
-    val seg = treeUri.lastPathSegment ?: return "selected folder"
+    val seg = treeUri.lastPathSegment ?: return uiString(R.string.i18n_g4_backup_selected_folder)
     return seg.substringAfterLast(':').ifBlank { seg }
 }

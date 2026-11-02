@@ -140,6 +140,12 @@ data class CompareMetric(
         "°C" -> UnitFormatter.temperatureUnit(temperature)
         else -> unit
     }
+
+    /** Localized display title; [title] stays the English, parity-locked identity. */
+    val displayTitle: String get() = COMPARE_TITLE_RES[key]?.let { uiString(it) } ?: title
+
+    /** Localized [note], resolved only when shown. */
+    val displayNote: String? get() = note?.let { n -> COMPARE_NOTE_RES[key]?.let { uiString(it) } ?: n }
 }
 
 /**
@@ -224,16 +230,68 @@ private object CompareCatalog {
     }
 }
 
+/** Display-time translations for the catalog. The catalog itself keeps its English, parity-locked titles
+ *  and category ids (and stays resource-free, so JVM tests can build it); these resolve only when shown. */
+private val COMPARE_TITLE_RES: Map<String, Int> = mapOf(
+    "avg_hr" to R.string.i18n_g4_compare_title_avg_hr,
+    "max_hr" to R.string.i18n_g4_compare_title_max_hr,
+    "energy_kcal" to R.string.i18n_g4_compare_title_energy_kcal,
+    "fitness_age" to R.string.i18n_g4_compare_title_fitness_age,
+    "vo2max_est" to R.string.i18n_g4_compare_title_vo2max_est,
+    "vitality" to R.string.i18n_g4_compare_title_vitality,
+    "body_age" to R.string.i18n_g4_compare_title_body_age,
+    "recovery" to R.string.i18n_g4_compare_title_recovery,
+    "hrv" to R.string.i18n_g4_compare_title_hrv,
+    "rhr" to R.string.i18n_g4_compare_title_rhr,
+    "resp_rate" to R.string.i18n_g4_compare_title_resp_rate,
+    "spo2" to R.string.i18n_g4_compare_title_spo2,
+    "skin_temp" to R.string.i18n_g4_compare_title_skin_temp,
+    "sleep_performance" to R.string.i18n_g4_compare_title_sleep_performance,
+    "sleep_total_min" to R.string.i18n_g4_compare_title_sleep_total_min,
+    "sleep_efficiency" to R.string.i18n_g4_compare_title_sleep_efficiency,
+    "sleep_deep_min" to R.string.i18n_g4_compare_title_sleep_deep_min,
+    "sleep_rem_min" to R.string.i18n_g4_compare_title_sleep_rem_min,
+    "sleep_light_min" to R.string.i18n_g4_compare_title_sleep_light_min,
+    "strain" to R.string.i18n_g4_compare_title_strain,
+    "steps" to R.string.i18n_g4_compare_title_steps,
+    "steps_est" to R.string.i18n_g4_compare_title_steps_est,
+    "active_kcal" to R.string.i18n_g4_compare_title_active_kcal,
+    "weight" to R.string.i18n_g4_compare_title_weight,
+    "body_fat" to R.string.i18n_g4_compare_title_body_fat,
+    "lean_mass" to R.string.i18n_g4_compare_title_lean_mass,
+    "calories_in" to R.string.i18n_g4_compare_title_calories_in,
+    "protein_g" to R.string.i18n_g4_compare_title_protein_g,
+    "carbs_g" to R.string.i18n_g4_compare_title_carbs_g,
+    "fat_g" to R.string.i18n_g4_compare_title_fat_g,
+    "mood" to R.string.i18n_g4_compare_title_mood,
+)
+
+private val COMPARE_NOTE_RES: Map<String, Int> = mapOf(
+    "bmi" to R.string.i18n_g4_compare_note_bmi,
+)
+
+private val COMPARE_CATEGORY_RES: Map<String, Int> = mapOf(
+    "Heart" to R.string.i18n_g4_compare_cat_heart,
+    "Charge" to R.string.i18n_g4_compare_cat_charge,
+    "Rest" to R.string.i18n_g4_compare_cat_rest,
+    "Effort" to R.string.i18n_g4_compare_cat_effort,
+    "Health" to R.string.i18n_g4_compare_cat_health,
+    "Nutrition" to R.string.i18n_g4_compare_cat_nutrition,
+    "Mind" to R.string.i18n_g4_compare_cat_mind,
+)
+
 // MARK: - Range control (shared spec — W / M / 3M / 6M / 1Y / ALL)
 
 /** The canonical Strand range window. [days] == null means ALL of history. */
-private enum class CompareRange(val label: String, val days: Int?, val phrase: String) {
-    Week("W", 7, "the last 7 days"),
-    Month("M", 30, "30 days"),
-    Quarter("3M", 90, "3 months"),
-    Half("6M", 180, "6 months"),
-    Year("1Y", 365, "1 year"),
-    All("ALL", null, "all history");
+private enum class CompareRange(val label: String, val days: Int?, private val phraseRes: Int) {
+    Week("W", 7, R.string.i18n_g4_compare_phrase_the_last_7_days),
+    Month("M", 30, R.string.i18n_g4_compare_phrase_30_days),
+    Quarter("3M", 90, R.string.i18n_g4_compare_phrase_3_months),
+    Half("6M", 180, R.string.i18n_g4_compare_phrase_6_months),
+    Year("1Y", 365, R.string.i18n_g4_compare_phrase_1_year),
+    All("ALL", null, R.string.i18n_g4_compare_phrase_all_history);
+
+    val phrase: String get() = uiString(phraseRes)
 
     /** This range plus every LARGER range, ascending — the auto-expand search order. */
     val widening: List<CompareRange>
@@ -469,14 +527,14 @@ fun CompareScreen(vm: AppViewModel) {
 
     val rangeCaption: String = run {
         val total = activeSeries.sumOf { it.rows.size }
-        val unit = if (total == 1) "reading" else "readings"
-        val base = "$total $unit across ${activeSeries.size} · ${range.phrase}"
-        if (anyWidened) "$base · sparse widened" else base
+        val base = if (total == 1) uiString(R.string.i18n_g4_compare_readings_one, total, activeSeries.size, range.phrase)
+            else uiString(R.string.i18n_g4_compare_readings, total, activeSeries.size, range.phrase)
+        if (anyWidened) uiString(R.string.i18n_g4_compare_sparse_widened, base) else base
     }
 
     LazyScreenScaffold(
         title = uiString(R.string.l10n_compare_screen_compare_8d105cf4),
-        subtitle = "Overlay signals, draw conclusions.",
+        subtitle = uiString(R.string.i18n_g4_compare_subtitle),
         // Liquid sky backdrop (LiquidScreenSky.kt) in the scaffold's topBackground slot, gated on the
         // day-cycle preference — the same pilot plumbing the liquid Today uses.
         topBackground = screenBackdropSlot(showDayCycleBackground, skyBehindCards),
@@ -488,7 +546,7 @@ fun CompareScreen(vm: AppViewModel) {
         // ── Metric picker section (chips + range control)
         item {
         Column(verticalArrangement = Arrangement.spacedBy(Metrics.gap)) {
-            SectionHeader("Metrics", overline = "Overlay 2-4 signals")
+            SectionHeader(uiString(R.string.i18n_g4_compare_metrics), overline = uiString(R.string.i18n_g4_compare_overlay_2_4))
             NoopCard {
                 Column(verticalArrangement = Arrangement.spacedBy(Metrics.gap)) {
                     SegmentedPillControl(
@@ -559,7 +617,7 @@ fun CompareScreen(vm: AppViewModel) {
 
         if (selected.size < minSelection) {
             item {
-                EmptyNote("Pick at least two metrics above to overlay them and read how they move together.")
+                EmptyNote(uiString(R.string.i18n_g4_compare_pick_two))
             }
         } else {
             val nonEmpty = activeSeries.filter { it.rows.isNotEmpty() }
@@ -568,12 +626,11 @@ fun CompareScreen(vm: AppViewModel) {
                     item {
                         DataPendingNote(
                             title = uiString(R.string.l10n_compare_screen_compare_needs_at_least_two_metrics_2bfe1fad),
-                            body = "Compare needs at least two metrics with history. Import your " +
-                                "WHOOP export in Data Sources first.",
+                            body = uiString(R.string.i18n_g4_compare_needs_two_body),
                         )
                     }
                 } else {
-                    item { EmptyNote("Reading your history…") }
+                    item { EmptyNote(uiString(R.string.i18n_g4_compare_reading_history)) }
                 }
             } else {
                 item { OverlaySection(nonEmpty, range, anyWidened) }
@@ -645,7 +702,7 @@ private fun AddMetricMenu(
                 modifier = Modifier.size(16.dp),
             )
             Text(
-                if (atMax) "Max 4" else "Add metric",
+                if (atMax) uiString(R.string.i18n_g4_compare_max_4) else uiString(R.string.i18n_g4_compare_add_metric),
                 style = NoopType.subhead,
                 color = tint,
                 maxLines = 1,
@@ -661,7 +718,7 @@ private fun AddMetricMenu(
                 val metrics = CompareCatalog.inCategory(category)
                 if (metrics.isNotEmpty()) {
                     Text(
-                        category.uppercase(),
+                        (COMPARE_CATEGORY_RES[category]?.let { uiString(it) } ?: category).uppercase(),
                         style = NoopType.overline,
                         color = Palette.textTertiary,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -687,11 +744,11 @@ private fun AddMetricMenu(
                             text = {
                                 Column {
                                     Text(
-                                        metric.title,
+                                        metric.displayTitle,
                                         style = NoopType.body,
                                         color = if (enabled) Palette.textPrimary else Palette.textTertiary,
                                     )
-                                    metric.note?.let {
+                                    metric.displayNote?.let {
                                         Text(
                                             it,
                                             style = NoopType.footnote,
@@ -724,7 +781,7 @@ private fun FlowChips(
                 rowChips.forEach { metric ->
                     MetricChip(
                         modifier = Modifier.weight(1f),
-                        title = metric.title,
+                        title = metric.displayTitle,
                         color = colorFor(metric),
                         onRemove = { onRemove(metric) },
                     )
@@ -797,17 +854,17 @@ private fun OverlaySection(
     anyWidened: Boolean,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(Metrics.gap)) {
-        SectionHeader("Overlay", overline = range.phrase, trailing = "${series.size} series")
+        SectionHeader(uiString(R.string.i18n_g4_compare_overlay), overline = range.phrase, trailing = uiString(R.string.i18n_g4_compare_n_series, series.size))
         // Anchor the overlay card to the brand-green chrome world; each line keeps its own categorical
         // series colour so the overlaid lines stay distinguishable against the wash.
         NoopCard(tint = Palette.accent) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Overline("Normalized overlay")
+                Overline(uiString(R.string.i18n_g4_compare_normalized_overlay))
                 Text(
                     if (anyWidened) {
-                        "Each line min-max normalized · sparse series widened past ${range.phrase}"
+                        uiString(R.string.i18n_g4_compare_normalized_widened, range.phrase)
                     } else {
-                        "Each line min-max normalized within ${range.phrase}"
+                        uiString(R.string.i18n_g4_compare_normalized_within, range.phrase)
                     },
                     style = NoopType.footnote,
                     color = Palette.textTertiary,
@@ -822,9 +879,9 @@ private fun OverlaySection(
 
                 // Endpoint axis labels (low / high), mirroring the normalized macOS y-axis.
                 Row(modifier = Modifier.fillMaxWidth()) {
-                    Text("low", style = NoopType.footnote, color = Palette.textTertiary)
+                    Text(uiString(R.string.i18n_g4_compare_low), style = NoopType.footnote, color = Palette.textTertiary)
                     Spacer(Modifier.weight(1f))
-                    Text("high", style = NoopType.footnote, color = Palette.textTertiary)
+                    Text(uiString(R.string.i18n_g4_compare_high), style = NoopType.footnote, color = Palette.textTertiary)
                 }
 
                 HorizontalDivider(color = Palette.hairline)
@@ -1147,7 +1204,7 @@ private fun CompareChartTooltip(
                         .background(preparedSeries.color),
                 )
                 Text(
-                    source.metric.title,
+                    source.metric.displayTitle,
                     style = NoopType.caption,
                     color = Palette.textSecondary,
                     maxLines = 1,
@@ -1199,7 +1256,7 @@ private fun Legend(series: List<CompareSeries>) {
                         .background(s.color),
                 )
                 Text(
-                    s.metric.title,
+                    s.metric.displayTitle,
                     style = NoopType.subhead,
                     color = Palette.textPrimary,
                     maxLines = 1,
@@ -1256,9 +1313,9 @@ private fun CorrelationSection(series: List<CompareSeries>, range: CompareRange)
 
     Column(verticalArrangement = Arrangement.spacedBy(Metrics.gap)) {
         SectionHeader(
-            "How They Move Together",
-            overline = "Pearson r · ${range.phrase}",
-            trailing = if (pairs.isEmpty()) null else "${pairs.size} pairs",
+            uiString(R.string.i18n_g4_compare_how_move_together),
+            overline = uiString(R.string.i18n_g4_compare_pearson_r, range.phrase),
+            trailing = if (pairs.isEmpty()) null else uiString(R.string.i18n_g4_compare_n_pairs, pairs.size),
         )
 
         if (pairs.isEmpty()) {
@@ -1291,7 +1348,7 @@ private fun PairCard(p: PairResult) {
                     Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(p.b.color))
                 }
                 Text(
-                    uiString(R.string.l10n_compare_screen_p_a_metric_title_p_b_06c36e56, p.a.metric.title, p.b.metric.title),
+                    uiString(R.string.l10n_compare_screen_p_a_metric_title_p_b_06c36e56, p.a.metric.displayTitle, p.b.metric.displayTitle),
                     style = NoopType.headline,
                     color = Palette.textPrimary,
                     maxLines = 2,
@@ -1337,16 +1394,16 @@ private fun PairCard(p: PairResult) {
 // MARK: - Insight language (ported from CompareView)
 
 private fun insightSentence(p: PairResult): String {
-    val head = ("${p.a.metric.title} ↔ ${p.b.metric.title}: r = ${signedR(p.r)} " +
-        "(${strengthWord(p.r)} ${directionWord(p.r)}) over ${p.n} shared days.")
+    val qualifier = uiString(R.string.i18n_g4_compare_strength_direction, strengthWord(p.r), directionWord(p.r)).trim()
+    val head = uiString(R.string.i18n_g4_compare_insight_head, p.a.metric.displayTitle, p.b.metric.displayTitle, signedR(p.r), qualifier, p.n)
         .replace("  ", " ").replace(" )", ")")
     if (abs(p.r) < 0.3) {
-        return "$head No clear relationship - they move largely independently."
+        return uiString(R.string.i18n_g4_compare_insight_none, head)
     }
-    val aT = p.a.metric.title.lowercase()
-    val bT = p.b.metric.title.lowercase()
-    val verb = if (p.r < 0) "tends to fall" else "tends to rise"
-    return "$head When $aT rises, $bT $verb - a ${strengthWord(p.r)} ${directionWord(p.r)} link."
+    val aT = p.a.metric.displayTitle.lowercase()
+    val bT = p.b.metric.displayTitle.lowercase()
+    val verb = if (p.r < 0) uiString(R.string.i18n_g4_compare_tends_to_fall) else uiString(R.string.i18n_g4_compare_tends_to_rise)
+    return uiString(R.string.i18n_g4_compare_insight_link, head, aT, bT, verb, qualifier)
 }
 
 private fun signedR(r: Double): String {
@@ -1357,17 +1414,17 @@ private fun signedR(r: Double): String {
 private fun strengthWord(r: Double): String {
     val a = abs(r)
     return when {
-        a < 0.1 -> "negligible"
-        a < 0.3 -> "weak"
-        a < 0.5 -> "moderate"
-        a < 0.7 -> "strong"
-        else -> "very strong"
+        a < 0.1 -> uiString(R.string.i18n_g4_compare_negligible)
+        a < 0.3 -> uiString(R.string.i18n_g4_compare_weak)
+        a < 0.5 -> uiString(R.string.i18n_g4_compare_moderate)
+        a < 0.7 -> uiString(R.string.i18n_g4_compare_strong)
+        else -> uiString(R.string.i18n_g4_compare_very_strong)
     }
 }
 
 private fun directionWord(r: Double): String {
     if (abs(r) < 0.1) return ""
-    return if (r >= 0) "positive" else "negative"
+    return if (r >= 0) uiString(R.string.i18n_g4_compare_positive) else uiString(R.string.i18n_g4_compare_negative)
 }
 
 private fun correlationColor(r: Double): Color {

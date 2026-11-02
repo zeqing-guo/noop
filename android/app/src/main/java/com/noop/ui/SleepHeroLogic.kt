@@ -5,12 +5,14 @@ import com.noop.data.DailyMetric
 import com.noop.data.SleepSession
 
 /** A short Rest state word for the hero gauge — same banding the synthesis hero uses. */
-internal fun sleepScoreWord(score: Double): String = when {
-    score < 50.0 -> "Poor"
-    score < 70.0 -> "Fair"
-    score < 85.0 -> "Good"
-    else -> "Optimal"
-}
+internal fun sleepScoreWord(score: Double): String = DisplayPhrases.t(
+    when {
+        score < 50.0 -> "Poor"
+        score < 70.0 -> "Fair"
+        score < 85.0 -> "Good"
+        else -> "Optimal"
+    },
+)
 
 /**
  * The nav header's date/time line for the night at [offset].
@@ -48,11 +50,13 @@ internal fun navHeaderClockLabel(
  * night. Shared by the Rest hero overline and the hypnogram nav header so both name the SAME night
  * the hero's score is resolved for. Mirrors iOS SleepView.nightRelativeLabel.
  */
-internal fun nightRelativeLabel(offset: Int): String = when (offset) {
-    0 -> "Last night"
-    1 -> "1 night ago"
-    else -> "$offset nights ago"
-}
+internal fun nightRelativeLabel(offset: Int): String = DisplayPhrases.t(
+    when (offset) {
+        0 -> "Last night"
+        1 -> "1 night ago"
+        else -> "$offset nights ago"
+    },
+)
 
 /**
  * How many nights back the carousel night at [offset] is FROM TODAY.

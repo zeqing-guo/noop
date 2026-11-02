@@ -44,6 +44,8 @@ class NoopApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // Redesign: phrases returned by pure logic render in the app language (identity in JVM tests).
+        com.noop.ui.DisplayPhrases.translator = { com.noop.ui.resourcePhraseTranslator(it) }
         // Install before any app-owned startup work so even an early failure is preserved for the
         // recovery screen on the next launch.
         CrashCapture.install(this)

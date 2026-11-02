@@ -1,5 +1,6 @@
 package com.noop.ui
 
+import com.noop.R
 import com.noop.analytics.StagePercentages
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -70,12 +71,11 @@ import kotlin.math.roundToInt
 /** One-line spoken summary of a numeric series: count + latest + low/high. Empty → "No data". */
 private fun seriesSummary(values: List<Double>, noun: String): String {
     val clean = values.filter { it.isFinite() }
-    if (clean.isEmpty()) return "$noun, no data"
+    if (clean.isEmpty()) return uiString(R.string.i18n_g4_charts_noun_no_data, noun)
     val last = clean.last()
     val lo = clean.min()
     val hi = clean.max()
-    return "$noun, ${clean.size} points, latest ${formatLineValue(last)}, " +
-        "low ${formatLineValue(lo)}, high ${formatLineValue(hi)}"
+    return uiString(R.string.i18n_g4_charts_series_summary, noun, clean.size, formatLineValue(last), formatLineValue(lo), formatLineValue(hi))
 }
 
 /**
@@ -270,7 +270,7 @@ fun Sparkline(
     // ONE collapsed semantics node (see "Accessibility summaries"): the delegate reads a single trend
     // summary instead of walking the canvas. clearAndSetSemantics drops any child nodes (there are none
     // here) and contributes exactly this contentDescription. Changes no drawing.
-    val axSummary = seriesSummary(values, "Trend")
+    val axSummary = seriesSummary(values, uiString(R.string.i18n_g4_charts_trend))
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -478,7 +478,7 @@ fun LineChart(
     // ONE collapsed semantics node for the whole chart (line + fill + selection marker subtree) so the
     // accessibility delegate reads a single trend summary rather than descending into the canvas. The
     // summary uses the same finite-filtered values the line draws. Changes no drawing or interaction.
-    val axSummary = seriesSummary(cleanValues, "Trend")
+    val axSummary = seriesSummary(cleanValues, uiString(R.string.i18n_g4_charts_trend))
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -685,8 +685,8 @@ fun MultiLineChart(
     // the a11y delegate reads a single line rather than walking the canvas. Changes no drawing.
     val axSummary = run {
         val all = cleanSeries.flatMap { it.values }
-        if (all.isEmpty()) "Trends, no data"
-        else "Trends, ${cleanSeries.size} series, low ${formatLineValue(all.min())}, high ${formatLineValue(all.max())}"
+        if (all.isEmpty()) uiString(R.string.i18n_g4_charts_trends_no_data)
+        else uiString(R.string.i18n_g4_charts_trends_summary, cleanSeries.size, formatLineValue(all.min()), formatLineValue(all.max()))
     }
 
     Canvas(modifier = modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = axSummary }) {
@@ -865,7 +865,7 @@ fun BarChart(
 
     // ONE collapsed semantics node so the a11y delegate reads a single bar-series summary instead of
     // walking every bar. Summarises the (zeroed-non-finite) source values the bars are scaled from.
-    val axSummary = seriesSummary(cleanValues, "Bars")
+    val axSummary = seriesSummary(cleanValues, uiString(R.string.i18n_g4_charts_bars))
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -1118,7 +1118,7 @@ fun SegmentBar(
     // drawWithCache (keyed on segments + the implicit size); the draw lambda replays the segment list.
     // ONE collapsed semantics node so the a11y delegate doesn't walk each segment. The segments are a
     // caller-supplied colour breakdown with no inherent label, so the summary is just the segment count.
-    val axSummary = if (segments.isEmpty()) "Breakdown, no data" else "Breakdown, ${segments.size} segments"
+    val axSummary = if (segments.isEmpty()) uiString(R.string.i18n_g4_charts_breakdown_no_data) else uiString(R.string.i18n_g4_charts_breakdown_summary, segments.size)
     Box(modifier = modifier.fillMaxWidth().height(height).clearAndSetSemantics { contentDescription = axSummary }.drawWithCache {
         val w = size.width
         val h = size.height
@@ -1353,7 +1353,7 @@ fun TimelineChart(
 
     // ONE collapsed semantics node (summary of the VISIBLE window) so the a11y delegate reads a single
     // line instead of walking the canvas; recomputes as the zoom/pan window changes. Changes no drawing.
-    val axSummary = seriesSummary(vis.map { it.value }, "Timeline")
+    val axSummary = seriesSummary(vis.map { it.value }, uiString(R.string.i18n_g4_charts_timeline))
     Box(
         modifier = modifier
             .fillMaxWidth()

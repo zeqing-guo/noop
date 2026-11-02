@@ -83,7 +83,7 @@ private fun StageBreakdownRow(stage: String, minutes: Double, total: Double, col
                 .background(color),
         )
         Text(
-            stage.uppercase(Locale.getDefault()),
+            DisplayPhrases.t(stage).uppercase(Locale.getDefault()),
             style = NoopType.overline,
             color = Palette.textPrimary,
             maxLines = 1,

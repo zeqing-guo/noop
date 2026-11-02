@@ -390,7 +390,7 @@ private fun WeeklyDigestNav(
                 NoopCard { WeeklyDigestContent(digest = digest, compact = true) }
             }
             NoopButton(
-                text = "Share recap",
+                text = uiString(R.string.i18n_g1_trends_share_recap),
                 leadingIcon = Icons.Filled.IosShare,
                 kind = NoopButtonKind.Secondary,
                 onClick = {
@@ -544,13 +544,15 @@ private fun PipScoreRow(
 // MARK: - Range control model (ported from TrendsView.Range)
 
 /** W(7) / M(30) / 3M(90) / 6M(180) / 1Y(365) / ALL. */
-private enum class TrendsRange(val days: Int?, val label: String, val longName: String) {
-    Week(7, "W", "week"),
-    Month(30, "M", "month"),
-    Quarter(90, "3M", "3 months"),
-    Half(180, "6M", "6 months"),
-    Year(365, "1Y", "year"),
-    All(null, "ALL", "all history");
+private enum class TrendsRange(val days: Int?, private val labelRes: Int, val longName: String) {
+    Week(7, R.string.i18n_g1_range_w, "week"),
+    Month(30, R.string.i18n_g1_range_m, "month"),
+    Quarter(90, R.string.i18n_g1_range_3m, "3 months"),
+    Half(180, R.string.i18n_g1_range_6m, "6 months"),
+    Year(365, R.string.i18n_g1_range_1y, "year"),
+    All(null, R.string.i18n_g1_range_all, "all history");
+
+    val label: String get() = uiString(labelRes)
 
     /** This range plus every LARGER range, ascending , the auto-expand search order. */
     val widening: List<TrendsRange>
@@ -1091,14 +1093,14 @@ private fun RecoveryHistoryCard(days: List<DailyMetric>, range: TrendsRange) {
         days.takeLast(span).mapNotNull { it.recovery }
     }
     val title = if (range == TrendsRange.All && days.size > 365) {
-        "Charge , all history"
+        uiString(R.string.i18n_g1_trends_charge_all_history)
     } else {
-        "Charge , past year"
+        uiString(R.string.i18n_g1_trends_charge_past_year)
     }
 
     NoopCard {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            SectionHeader(title, overline = stringResource(R.string.trends_calendar), trailing = "${recovery.size} days")
+            SectionHeader(title, overline = stringResource(R.string.trends_calendar), trailing = uiString(R.string.i18n_g1_n_days, recovery.size))
             if (recovery.size >= 2) {
                 BarChart(
                     values = recovery,

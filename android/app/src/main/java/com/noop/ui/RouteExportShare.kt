@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.core.content.FileProvider
+import com.noop.R
 import com.noop.analytics.RouteMath
 import com.noop.data.WorkoutRow
 import com.noop.ingest.RouteExport
@@ -43,12 +44,12 @@ object RouteExportShare {
             val send = Intent(Intent.ACTION_SEND).apply {
                 type = mime
                 putExtra(Intent.EXTRA_STREAM, uri)
-                putExtra(Intent.EXTRA_SUBJECT, "NOOP workout route")
+                putExtra(Intent.EXTRA_SUBJECT, uiString(R.string.i18n_g3_noop_workout_route))
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            context.startActivity(Intent.createChooser(send, "Share route"))
+            context.startActivity(Intent.createChooser(send, uiString(R.string.i18n_g3_share_route)))
         }.onFailure {
-            Toast.makeText(context, "Couldn't export the route: ${it.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, uiString(R.string.i18n_g3_route_export_failed, it.message.toString()), Toast.LENGTH_LONG).show()
         }
     }
 }

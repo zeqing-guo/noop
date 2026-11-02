@@ -151,13 +151,13 @@ fun TestCentreScreen(vm: AppViewModel, onOpenGroundTruthCollector: () -> Unit = 
 
     ScreenScaffold(
         title = uiString(R.string.l10n_test_centre_screen_test_centre_37b36828),
-        subtitle = "Turn on a test for the thing that's wrong, wear the strap, then tap Report. Everything stays on this phone.",
+        subtitle = uiString(R.string.i18n_g3_turn_on_a_test_for_the),
     ) {
         // --- Section 1: Domain test modes ---
         SettingsSectionTC(
             icon = Icons.Filled.BugReport,
             title = uiString(R.string.l10n_test_centre_screen_test_modes_e21f1d3c),
-            blurb = "Each test logs extra detail for one part of the app while you wear the strap, then bundles it for a bug report.",
+            blurb = uiString(R.string.i18n_g3_each_test_logs_extra_detail_for),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 val modes = TestCentreLayout.visibleModes(is5MG)
@@ -244,7 +244,7 @@ fun TestCentreScreen(vm: AppViewModel, onOpenGroundTruthCollector: () -> Unit = 
             SettingsSectionTC(
                 icon = Icons.Filled.Science,
                 title = stringResource(R.string.raw_diag_title),
-                blurb = "Developer tools for protocol research. These are separate from the bounded Raw Data Collector above.",
+                blurb = uiString(R.string.i18n_g3_developer_tools_for_protocol_research_these),
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     DeveloperToggleRow(
@@ -258,7 +258,7 @@ fun TestCentreScreen(vm: AppViewModel, onOpenGroundTruthCollector: () -> Unit = 
                     )
                     DeveloperToggleRow(
                         title = stringResource(R.string.raw_diag_broadcast_hr),
-                        detail = "Writes the reversible WHOOP 5/MG advertising flag for Garmin, Zwift, and gym equipment.",
+                        detail = uiString(R.string.i18n_g3_writes_the_reversible_whoop_5_mg),
                         checked = broadcastHr,
                         onCheckedChange = {
                             broadcastHr = it
@@ -268,9 +268,7 @@ fun TestCentreScreen(vm: AppViewModel, onOpenGroundTruthCollector: () -> Unit = 
                     )
                     DeveloperToggleRow(
                         title = stringResource(R.string.raw_diag_pair),
-                        detail = "Experimental explicit Android bonding. Normal 5/MG support does not " +
-                            "require this switch. A strap that refuses pairing defers its handshake for one " +
-                            "connect while this is on, so leave it off unless you are testing #1635.",
+                        detail = uiString(R.string.i18n_g3_experimental_explicit_android_bonding_normal_5),
                         checked = explicitBond,
                         onCheckedChange = {
                             explicitBond = it
@@ -279,11 +277,7 @@ fun TestCentreScreen(vm: AppViewModel, onOpenGroundTruthCollector: () -> Unit = 
                     )
                     DeveloperToggleRow(
                         title = stringResource(R.string.raw_diag_unbonded_offload),
-                        detail = "Subscribes the puffin notify characteristics on a link with no " +
-                            "CLIENT_HELLO, then asks the strap a read-only GET_CLOCK. If it answers, the " +
-                            "clock is set and history is requested. Once per link, and never again on a " +
-                            "strap that refuses. Takes effect on the next connect, not this one. " +
-                            "Leave it off unless you are testing #1635.",
+                        detail = uiString(R.string.i18n_g3_subscribes_the_puffin_notify_characteristics_on),
                         checked = unbondedOffload,
                         onCheckedChange = {
                             unbondedOffload = it
@@ -292,12 +286,7 @@ fun TestCentreScreen(vm: AppViewModel, onOpenGroundTruthCollector: () -> Unit = 
                     )
                     DeveloperToggleRow(
                         title = stringResource(R.string.raw_diag_clear_stale_bond),
-                        detail = "When a bonded fast-path connect keeps dropping before it reaches a " +
-                            "session, the phone is holding a pairing the strap no longer honours. NOOP " +
-                            "already shows the forget-and-re-pair guide at two failures; with this on it " +
-                            "does that step for you at five, once, and only until the strap bonds again. " +
-                            "It cannot make a strap that refuses pairing pair. Leave it off unless you " +
-                            "are testing #1635.",
+                        detail = uiString(R.string.i18n_g3_when_a_bonded_fast_path_connect),
                         checked = clearStaleBond,
                         onCheckedChange = {
                             clearStaleBond = it
@@ -306,7 +295,7 @@ fun TestCentreScreen(vm: AppViewModel, onOpenGroundTruthCollector: () -> Unit = 
                     )
                     DeveloperToggleRow(
                         title = stringResource(R.string.raw_diag_r22),
-                        detail = "Accepted writes have not been shown to enable a separate live stream. Not required for normal sync or raw capture.",
+                        detail = uiString(R.string.i18n_g3_accepted_writes_have_not_been_shown),
                         checked = deepData,
                         onCheckedChange = {
                             deepData = it
@@ -334,7 +323,7 @@ fun TestCentreScreen(vm: AppViewModel, onOpenGroundTruthCollector: () -> Unit = 
                     }
                     DeveloperToggleRow(
                         title = stringResource(R.string.raw_diag_ecg),
-                        detail = "MG-only protocol research. This is instrumentation, not a medical ECG feature.",
+                        detail = uiString(R.string.i18n_g3_mg_only_protocol_research_this_is),
                         checked = ecgRawData,
                         onCheckedChange = {
                             ecgRawData = it
@@ -366,9 +355,7 @@ fun TestCentreScreen(vm: AppViewModel, onOpenGroundTruthCollector: () -> Unit = 
                     // consent given for a session probe.
                     DeveloperToggleRow(
                         title = stringResource(R.string.raw_diag_ecg_probe),
-                        detail = "Sends the three MG ECG session toggles and listens for 30 s. Hold both " +
-                            "clasp electrodes with your other hand for the whole window, or the trace is " +
-                            "flat by design. Instrumentation, not a medical ECG feature.",
+                        detail = uiString(R.string.i18n_g3_sends_the_three_mg_ecg_session),
                         checked = ecgProbe,
                         onCheckedChange = {
                             ecgProbe = it
@@ -402,7 +389,7 @@ fun TestCentreScreen(vm: AppViewModel, onOpenGroundTruthCollector: () -> Unit = 
                     }
                     DeveloperToggleRow(
                         title = stringResource(R.string.raw_diag_passive),
-                        detail = "Records frames that already arrive during history sync. It does not start IMU or any other sensor and may create large files.",
+                        detail = uiString(R.string.i18n_g3_records_frames_that_already_arrive_during),
                         checked = passiveRawCapture,
                         onCheckedChange = {
                             passiveRawCapture = it
@@ -835,7 +822,7 @@ private fun DiagnosticToolsCard(vm: AppViewModel) {
     SettingsSectionTC(
         icon = Icons.Filled.Info,
         title = uiString(R.string.l10n_test_centre_screen_diagnostic_tools_04ba4d3f),
-        blurb = "Your strap log, a Charge recalibrate, and the device environment. Nothing leaves the phone unless you share it.",
+        blurb = uiString(R.string.i18n_g3_your_strap_log_a_charge_recalibrate),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             // Strap log, the same exportLogText share the Settings Diagnostics button uses.
@@ -894,9 +881,8 @@ private fun DiagnosticToolsCard(vm: AppViewModel) {
             // each connect. Off by default. Diagnostic-only — nothing gates behaviour on it.
             polarIdentity?.let { identity ->
                 ToggleRowTC(
-                    title = "Polar debug logging",
-                    description = "$identity.\nLogs this identification to the strap log on each connect, " +
-                        "so a Polar bug report shows the model NOOP resolved your strap to.",
+                    title = uiString(R.string.i18n_g3_polar_debug_logging),
+                    description = uiString(R.string.i18n_g3_1_s_nlogs_this_identification_to, identity),
                     checked = polarDebugLogging,
                     onCheckedChange = { polarDebugLogging = it; vm.setPolarDebugLogging(it) },
                 )
@@ -904,11 +890,8 @@ private fun DiagnosticToolsCard(vm: AppViewModel) {
             // #1284 residual 3: experimental Oura 0x49-onset keying, only when an Oura ring is paired.
             if (ouraPaired) {
                 ToggleRowTC(
-                    title = "Oura onset keying (experimental)",
-                    description = "Keys each Oura sleep night on its stable 0x49 onset and suppresses " +
-                        "duplicate re-serves at the source, instead of the shipped end-anchored persist " +
-                        "(#1284). Off by default — a hardware-validation toggle. Watch the strap log for " +
-                        "'onset-key(#1284)' lines.",
+                    title = uiString(R.string.i18n_g3_oura_onset_keying_experimental),
+                    description = uiString(R.string.i18n_g3_keys_each_oura_sleep_night_on),
                     checked = ouraOnsetKeying,
                     onCheckedChange = { ouraOnsetKeying = it; vm.setOuraOnsetKeying(it) },
                 )
@@ -923,24 +906,20 @@ private fun DiagnosticToolsCard(vm: AppViewModel) {
             }
             // #1121 Detailed capture: an adb-like rolling on-device log, no computer needed. Off by default.
             ToggleRowTC(
-                title = "Detailed capture to file",
-                description = "Continuously append the strap log to a rolling on-device file (≤8 MB, one " +
-                    "previous generation kept) so a long-running issue — battery drain, an overnight " +
-                    "offload — is captured for hours instead of the ~50 minutes the in-memory share holds. " +
-                    "Keeps going if the app is killed and resumes on next launch. The file stays on the " +
-                    "phone unless you share it below.",
+                title = uiString(R.string.i18n_g3_detailed_capture_to_file),
+                description = uiString(R.string.i18n_g3_continuously_append_the_strap_log_to),
                 checked = detailedCapture,
                 onCheckedChange = { detailedCapture = it; vm.setDetailedCapture(it) },
             )
             if (detailedCapture) {
                 Text(
-                    "Capturing… reproduce the issue, then share the log below.",
+                    uiString(R.string.i18n_g3_capturing_reproduce_the_issue_then_share),
                     style = NoopType.footnote,
                     color = Palette.accent,
                 )
             }
             NoopButton(
-                text = "Share captured log",
+                text = uiString(R.string.i18n_g3_share_captured_log),
                 leadingIcon = Icons.Filled.Upload,
                 kind = NoopButtonKind.Secondary,
                 fullWidth = true,
@@ -1006,7 +985,7 @@ private fun ExportCard(vm: AppViewModel, onReport: () -> Unit) {
     SettingsSectionTC(
         icon = Icons.Filled.Upload,
         title = uiString(R.string.l10n_test_centre_screen_export_f3e4fadb),
-        blurb = "Report a bug with your log, or have NOOP drop a daily copy into its export folder.",
+        blurb = uiString(R.string.i18n_g3_report_a_bug_with_your_log),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             NoopButton(
@@ -1042,7 +1021,7 @@ private fun ExportCard(vm: AppViewModel, onReport: () -> Unit) {
                     }
                     TimeChip(
                         minutes = minutes,
-                        accessibilityLabel = "Daily export time",
+                        accessibilityLabel = uiString(R.string.i18n_g3_daily_export_time),
                         onPicked = {
                             minutes = it
                             settings.timeMinutes = it
@@ -1155,24 +1134,18 @@ private fun ExperimentalAlgorithmsCard(vm: AppViewModel) {
     SettingsSectionTC(
         icon = Icons.Filled.Science,
         title = uiString(R.string.l10n_test_centre_screen_experimental_algorithms_e09581e2),
-        blurb = "Research-grade alternatives / precision tweaks. Opt-in, off by default, non-clinical.",
+        blurb = uiString(R.string.i18n_g3_research_grade_alternatives_precision_tweaks_opt),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             ToggleRowTC(
                 title = uiString(R.string.l10n_test_centre_screen_hr_from_ppg_sub_lag_interpolation_a3ed1536),
-                description = "When NOOP reconstructs heart rate from the WHOOP 5/MG v26 optical waveform (the " +
-                    "seconds the strap stored no HR), refine the autocorrelation peak with a parabolic sub-lag " +
-                    "fit so the estimate is not quantized to roughly 16 bpm steps near a high HR. It only fills " +
-                    "seconds the strap never reported; it never overrides a stored HR. 5/MG only, off by default.",
+                description = uiString(R.string.i18n_g3_when_noop_reconstructs_heart_rate_from),
                 checked = ppgHrSubLag,
                 onCheckedChange = { ppgHrSubLag = it; puffin.ppgHrSubLagInterp = it },
             )
             ToggleRowTC(
                 title = uiString(R.string.l10n_test_centre_screen_hrv_readiness_plews_altini_bce6578f),
-                description = "A read-only Plews/Altini smallest-worthwhile-change reading of your nightly HRV: " +
-                    "it shows whether your 7-night HRV baseline sits above, inside, or below your personal " +
-                    "normal band. It changes nothing else - the Charge ring is identical whether this is on or " +
-                    "off. This is rough / early testing, not yet validated against varying real data (n=1).",
+                description = uiString(R.string.i18n_g3_a_read_only_plews_altini_smallest),
                 checked = hrvReadiness,
                 onCheckedChange = { hrvReadiness = it; puffin.hrvReadiness = it },
             )
@@ -1204,15 +1177,15 @@ private fun HrvReadinessReadoutTC(days: List<DailyMetric>) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         if (result != null) {
             val (word, color) = when (result.tier) {
-                ReadinessTier.PRIMED -> "primed" to Palette.statusPositive
-                ReadinessTier.NORMAL -> "normal" to Palette.textPrimary
-                ReadinessTier.SUPPRESSED -> "suppressed" to Palette.statusWarning
+                ReadinessTier.PRIMED -> uiString(R.string.i18n_g3_primed) to Palette.statusPositive
+                ReadinessTier.NORMAL -> uiString(R.string.i18n_g3_normal) to Palette.textPrimary
+                ReadinessTier.SUPPRESSED -> uiString(R.string.i18n_g3_suppressed) to Palette.statusWarning
             }
             Text(uiString(R.string.l10n_test_centre_screen_hrv_readiness_experimental_word_a471930e, word), style = NoopType.subhead, color = color)
             val base = result.baseline7Ms.roundToInt()
             val lo = result.normalLowMs.roundToInt()
             val hi = result.normalHighMs.roundToInt()
-            val watch = if (result.overreachingWatch) ", overreaching watch" else ""
+            val watch = if (result.overreachingWatch) uiString(R.string.i18n_g3_overreaching_watch) else ""
             Text(
                 uiString(R.string.l10n_test_centre_screen_7_night_baseline_base_ms_normal_43d9cfa6, base, lo, hi, watch),
                 style = NoopType.footnote, color = Palette.textTertiary,
@@ -1281,7 +1254,7 @@ private fun ReportReviewDialog(
                     style = NoopType.subhead, color = Palette.textSecondary,
                 )
                 Text(
-                    previewText.ifBlank { "(nothing to share yet)" },
+                    previewText.ifBlank { uiString(R.string.i18n_g3_nothing_to_share_yet) },
                     style = NoopType.footnote,
                     color = Palette.textTertiary,
                     modifier = Modifier
@@ -1313,7 +1286,7 @@ private fun SettingsSectionTC(
     NoopCard(padding = 20.dp, tint = Palette.accent) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Overline("Test Centre")
+                Overline(uiString(R.string.i18n_g3_test_centre))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp),

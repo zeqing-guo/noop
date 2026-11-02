@@ -1,5 +1,6 @@
 package com.noop.ui
 
+import com.noop.R
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -63,9 +64,9 @@ object RecapShare {
                 putExtra(Intent.EXTRA_SUBJECT, "NOOP weekly recap")
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            context.startActivity(Intent.createChooser(send, "Share recap"))
+            context.startActivity(Intent.createChooser(send, uiString(R.string.i18n_g1_recap_share_chooser)))
         }.onFailure {
-            Toast.makeText(context, "Couldn't share the recap: ${it.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, uiString(R.string.i18n_g1_recap_share_failed, it.message.toString()), Toast.LENGTH_LONG).show()
         }
     }
 }

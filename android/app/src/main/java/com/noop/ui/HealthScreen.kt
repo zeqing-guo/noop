@@ -166,7 +166,7 @@ fun HealthScreen(
 
     LazyScreenScaffold(
         title = uiString(R.string.l10n_health_screen_health_monitor_c4abc3fc),
-        subtitle = "Live vitals, streamed from the strap.",
+        subtitle = uiString(R.string.i18n_g1_health_live_subtitle),
         topBackground = screenBackdropSlot(showDayCycleBackground, skyBehindCards),
         // Sky-behind-cards fills the viewport so the transparent cards reveal the sky the whole way
         // down (Today / Trends / Sleep / metric-detail parity - same two prefs, same two behaviours).
@@ -190,7 +190,7 @@ fun HealthScreen(
             item {
                 VitalsSection(
                     title = uiString(R.string.l10n_health_screen_vital_signs_e7d9e1b1),
-                    overline = "Latest readings",
+                    overline = uiString(R.string.i18n_g1_health_latest_readings),
                     trailing = null,
                     vitals = latestVitals(
                         days,
@@ -283,9 +283,9 @@ private fun SyncStatusSection(vm: AppViewModel, onSyncNow: () -> Unit) {
     val canSync = live.connected && live.bonded && live.historyReady && !live.backfilling
     Column(verticalArrangement = Arrangement.spacedBy(Metrics.gap)) {
         SectionHeader(
-            "Sync",
-            overline = "Strap history",
-            trailing = if (live.connected) (if (live.bonded) "Connected" else "Pairing…") else "Offline",
+            uiString(R.string.i18n_g1_health_sync),
+            overline = uiString(R.string.i18n_g1_health_strap_history),
+            trailing = if (live.connected) (if (live.bonded) uiString(R.string.i18n_g1_health_connected) else uiString(R.string.i18n_g1_health_pairing)) else uiString(R.string.i18n_g1_health_offline),
         )
 
         NoopCard(tint = Palette.chargeColor) {
@@ -315,7 +315,7 @@ private fun SyncStatusSection(vm: AppViewModel, onSyncNow: () -> Unit) {
                         // sync", not pulsing, directly above a DISABLED Sync now — on exactly the strap
                         // that cannot sync. Before the button was gated the two agreed (both wrong);
                         // gating one without the other is what made them contradict.
-                        title = if (live.historyReady) "Ready to sync" else "Pairing…",
+                        title = if (live.historyReady) uiString(R.string.i18n_g1_health_ready_to_sync) else uiString(R.string.i18n_g1_health_pairing),
                         tone = StrandTone.Accent,
                         showsDot = true,
                         pulsing = !live.historyReady,
@@ -328,19 +328,18 @@ private fun SyncStatusSection(vm: AppViewModel, onSyncNow: () -> Unit) {
                 // connected+bonded and not already syncing; the gated BLE entry point is a safe no-op
                 // otherwise. (Total pending records are unknowable from the protocol, so no progress %.)
                 NoopButton(
-                    text = if (live.backfilling) "Syncing…" else "Sync now",
+                    text = if (live.backfilling) uiString(R.string.i18n_g1_health_syncing) else uiString(R.string.i18n_g1_health_sync_now),
                     leadingIcon = Icons.Filled.Sync,
                     kind = NoopButtonKind.Secondary,
                     fullWidth = true,
                     enabled = canSync,
                     modifier = Modifier.semantics {
                         contentDescription = if (canSync) {
-                            "Sync now. Pulls your strap's stored history immediately, without waiting " +
-                                "for the next automatic sync."
+                            uiString(R.string.i18n_g1_health_sync_now_cd_ready)
                         } else if (live.backfilling) {
-                            "Sync now. A sync is already in progress."
+                            uiString(R.string.i18n_g1_health_sync_now_cd_busy)
                         } else {
-                            "Sync now. Connect your strap first."
+                            uiString(R.string.i18n_g1_health_sync_now_cd_connect)
                         }
                     },
                     onClick = onSyncNow,
@@ -359,17 +358,15 @@ private fun SyncStatusSection(vm: AppViewModel, onSyncNow: () -> Unit) {
 /** The helper line below the Sync-now button: explains the current state (syncing / offline / pairing /
  *  ready), copy-matched to HealthView.swift's SyncStatusSection.helperText. */
 private fun syncHelperText(live: LiveState): String = when {
-    live.backfilling -> "Pulling your strap's stored history. This drains oldest-first; a deep backlog " +
-        "now continues automatically across passes instead of waiting between syncs."
-    !live.connected -> "Connect your strap to sync its stored history. Until then, only imported data " +
-        "shows here."
+    live.backfilling -> uiString(R.string.i18n_g1_health_sync_help_backfilling)
+    !live.connected -> uiString(R.string.i18n_g1_health_sync_help_offline)
     // historyReady, not `bonded`. This branch already said the right thing and simply never fired on the
     // strap that needed it: `bonded` is set by the live-HR path, so a 5/MG that never completed a
     // handshake fell through to the "syncs right away" line, directly under a Sync-now button that had
     // just been disabled. Same condition as the button and the card title, so all three agree.
     !live.historyReady ->
-        "Finishing the pairing handshake. Sync now becomes available once the strap is paired."
-    else -> "Syncs your strap's stored history right away, instead of waiting for the next automatic sync."
+        uiString(R.string.i18n_g1_health_sync_help_pairing)
+    else -> uiString(R.string.i18n_g1_health_sync_help_ready)
 }
 
 // MARK: - Records & sources (Swift parity) — discoverable deep-links into the on-device records
@@ -386,19 +383,19 @@ private fun RecordsAndSourcesSection(
     onOpenFusedRecord: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(Metrics.gap)) {
-        SectionHeader("Records & sources", overline = "On this phone")
+        SectionHeader(uiString(R.string.i18n_g1_health_records_sources), overline = uiString(R.string.i18n_g1_health_on_this_phone))
         RecordRow(
             icon = Icons.AutoMirrored.Filled.MenuBook,
             tint = Palette.metricCyan,
             title = uiString(R.string.l10n_health_screen_lab_book_f966c140),
-            subtitle = "Your bloods, BP and body numbers. Kept private here.",
+            subtitle = uiString(R.string.i18n_g1_health_lab_book_subtitle),
             onClick = onOpenLabBook,
         )
         RecordRow(
             icon = Icons.AutoMirrored.Filled.CompareArrows,
             tint = Palette.accent,
             title = uiString(R.string.l10n_health_screen_your_data_fused_a740fd4a),
-            subtitle = "The best-sourced number per metric, across your bands.",
+            subtitle = uiString(R.string.i18n_g1_health_fused_subtitle),
             onClick = onOpenFusedRecord,
         )
     }
@@ -493,7 +490,7 @@ private fun SkinTempSuiteSection(
     onTurnOffCycle: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(Metrics.gap)) {
-        SectionHeader("Skin Temperature", overline = "From your nightly readings")
+        SectionHeader(uiString(R.string.i18n_g1_health_skin_temp), overline = uiString(R.string.i18n_g1_health_from_nightly))
 
         // Illness heads-up first when it has something to say (it's the most time-sensitive card).
         signals?.illness?.let { illness ->
@@ -551,10 +548,10 @@ private fun HealthContributorsSection(day: DailyMetric?) {
     Column(verticalArrangement = Arrangement.spacedBy(Metrics.gap)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(modifier = Modifier.weight(1f)) {
-                SectionHeader("Contributors", overline = "Recovery")
+                SectionHeader(uiString(R.string.i18n_g1_health_contributors), overline = uiString(R.string.i18n_g1_health_recovery_overline))
             }
             StatePill(
-                title = if (solid) "SOLID" else "CALIBRATING",
+                title = if (solid) uiString(R.string.i18n_g1_health_solid) else uiString(R.string.i18n_g1_health_calibrating),
                 tone = if (solid) StrandTone.Accent else StrandTone.Neutral,
             )
         }
@@ -709,7 +706,7 @@ private fun FitnessAgeSection(vm: AppViewModel, days: List<DailyMetric>, profile
     var showChecklist by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(Metrics.gap)) {
-        SectionHeader("Fitness Age", overline = "Weekly", trailing = "± 5 yr")
+        SectionHeader(uiString(R.string.i18n_g1_health_fitness_age), overline = uiString(R.string.i18n_g1_health_weekly), trailing = "± 5 yr")
         val value = fitnessAge
         if (value != null) {
             FitnessAgeHero(
@@ -761,8 +758,8 @@ private fun FitnessAgeSection(vm: AppViewModel, days: List<DailyMetric>, profile
                         refreshTick++
                         Toast.makeText(
                             context,
-                            if (wrote) "Fitness Age updated."
-                            else "Not enough wear yet — keep your strap on overnight.",
+                            if (wrote) uiString(R.string.i18n_g1_health_fa_updated)
+                            else uiString(R.string.i18n_g1_health_fa_not_enough),
                             Toast.LENGTH_SHORT,
                         ).show()
                     }
@@ -811,7 +808,7 @@ private fun VitalitySection(vm: AppViewModel, days: List<DailyMetric>, profile: 
     val v = vitality; val ba = bodyAge
     if (v != null && ba != null) {
         Column(verticalArrangement = Arrangement.spacedBy(Metrics.gap)) {
-            SectionHeader("Vitality", overline = "Weekly", trailing = "Body Age ${ba.roundToInt()}")
+            SectionHeader(uiString(R.string.i18n_g1_health_vitality), overline = uiString(R.string.i18n_g1_health_weekly), trailing = uiString(R.string.i18n_g1_health_body_age_value, ba.roundToInt()))
             VitalityHero(vitality = v, bodyAge = ba, chronoAge = profile.age, contributions = contributions)
         }
     }
@@ -832,7 +829,7 @@ private fun VitalityHero(
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Overline("Vitality")
+                    Overline(uiString(R.string.i18n_g1_health_vitality))
                     // The Vitality 0–100 rides a filling LiquidVessel on the charge world, the count-up
                     // number rolled up over it (white, tabular) — the Today HeroScoreVessel idiom. Same
                     // value + fraction (vitality / 100) as the bare headline this replaced.
@@ -845,7 +842,7 @@ private fun VitalityHero(
                     Text(uiString(R.string.l10n_health_screen_out_of_100_da0953a8), style = NoopType.footnote, color = Palette.textTertiary)
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Overline("Body Age")
+                    Overline(uiString(R.string.i18n_g1_health_body_age))
                     CountUpText(
                         value = bodyAge,
                         format = { it.roundToInt().toString() },
@@ -853,8 +850,9 @@ private fun VitalityHero(
                         color = Palette.textPrimary,
                     )
                     Text(
-                        if (delta == 0) "about your age"
-                        else "${kotlin.math.abs(delta)} ${yearWord(delta)} ${if (younger) "younger" else "older"}",
+                        if (delta == 0) uiString(R.string.i18n_g1_health_about_your_age_lc)
+                        else if (younger) uiString(R.string.i18n_g1_health_n_years_younger, kotlin.math.abs(delta), yearWord(delta))
+                        else uiString(R.string.i18n_g1_health_n_years_older, kotlin.math.abs(delta), yearWord(delta)),
                         style = NoopType.footnote,
                         color = if (delta == 0) Palette.textSecondary
                         else if (younger) Palette.statusPositive else Palette.statusWarning,
@@ -979,14 +977,14 @@ private fun FitnessAgeHero(
     // age at or under it there is no safe distance to state at all, so the card states the bound alone.
     val deltaWord = when {
         boundSymbol == "≤" && deltaYears > 0 ->
-            "At least $deltaYears ${yearWord(deltaYears)} younger than your age"
-        boundSymbol == "≤" -> "${FitnessAgeEngine.minAge.roundToInt()} or younger"
+            uiString(R.string.i18n_g1_health_fa_at_least_younger, deltaYears, yearWord(deltaYears))
+        boundSymbol == "≤" -> uiString(R.string.i18n_g1_health_fa_or_younger, FitnessAgeEngine.minAge.roundToInt())
         boundSymbol == "≥" && deltaYears < 0 ->
-            "At least ${kotlin.math.abs(deltaYears)} ${yearWord(deltaYears)} older than your age"
-        boundSymbol == "≥" -> "${FitnessAgeEngine.maxAge.roundToInt()} or older"
-        deltaYears == 0 -> "About your age"
-        younger -> "$deltaYears ${yearWord(deltaYears)} younger than your age"
-        else -> "${kotlin.math.abs(deltaYears)} ${yearWord(deltaYears)} older than your age"
+            uiString(R.string.i18n_g1_health_fa_at_least_older, kotlin.math.abs(deltaYears), yearWord(deltaYears))
+        boundSymbol == "≥" -> uiString(R.string.i18n_g1_health_fa_or_older, FitnessAgeEngine.maxAge.roundToInt())
+        deltaYears == 0 -> uiString(R.string.i18n_g1_health_about_your_age)
+        younger -> uiString(R.string.i18n_g1_health_fa_younger, deltaYears, yearWord(deltaYears))
+        else -> uiString(R.string.i18n_g1_health_fa_older, kotlin.math.abs(deltaYears), yearWord(deltaYears))
     }
     // Vessel fill: a bounded, honest reading of the SAME younger/older signal the card already states,
     // mapped across the ±5 yr band the section advertises — "about your age" is half-full, younger fills
@@ -1004,7 +1002,7 @@ private fun FitnessAgeHero(
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Overline("Fitness Age")
+                    Overline(uiString(R.string.i18n_g1_health_fitness_age))
                     // The hero age rides a filling LiquidVessel on the gold Charge world, the age number
                     // rolled up over it (white, tabular) — the Today HeroScoreVessel idiom. The shown NUMBER
                     // is the same value (fitnessAge, rounded) as the bare headline this replaced.
@@ -1101,12 +1099,12 @@ private fun fitnessReadyLead(rhrDays: Int, hasAge: Boolean, hasSex: Boolean): St
     val remaining = FitnessAgeEngine.nightsUntilReady(rhrDays)
     val needsBasics = !hasAge || !hasSex
     return when {
-        remaining == 0 && !needsBasics -> "A few more days and we can show your Fitness Age."
-        remaining == 0 && needsBasics  -> "Add your age and sex below and we can show your Fitness Age."
-        remaining == 1 && !needsBasics -> "1 more night of wear and we can show your Fitness Age."
-        remaining == 1 && needsBasics  -> "1 more night of wear, plus your age and sex below, and we can show your Fitness Age."
-        !needsBasics -> "$remaining more nights of wear and we can show your Fitness Age."
-        else         -> "$remaining more nights of wear, plus your age and sex below, and we can show your Fitness Age."
+        remaining == 0 && !needsBasics -> uiString(R.string.i18n_g1_health_fa_few_more_days)
+        remaining == 0 && needsBasics  -> uiString(R.string.i18n_g1_health_fa_add_basics)
+        remaining == 1 && !needsBasics -> uiString(R.string.i18n_g1_health_fa_one_night)
+        remaining == 1 && needsBasics  -> uiString(R.string.i18n_g1_health_fa_one_night_basics)
+        !needsBasics -> uiString(R.string.i18n_g1_health_fa_n_nights, remaining)
+        else         -> uiString(R.string.i18n_g1_health_fa_n_nights_basics, remaining)
     }
 }
 
@@ -1137,7 +1135,7 @@ private fun FitnessReadinessCard(
                 Column(verticalArrangement = Arrangement.spacedBy(Metrics.space4)) {
                     Row(verticalAlignment = Alignment.Top) {
                         Text(
-                            lead.ifBlank { "A few more days and we can show your Fitness Age." },
+                            lead.ifBlank { uiString(R.string.i18n_g1_health_fa_few_more_days) },
                             style = NoopType.headline,
                             color = Palette.textPrimary,
                             modifier = Modifier.weight(1f),
@@ -1253,7 +1251,7 @@ private fun ReadinessRow(item: FitnessReadinessItem, onOpenSettings: (() -> Unit
     }
 }
 
-private fun yearWord(years: Int): String = if (kotlin.math.abs(years) == 1) "year" else "years"
+private fun yearWord(years: Int): String = if (kotlin.math.abs(years) == 1) uiString(R.string.i18n_g1_health_year) else uiString(R.string.i18n_g1_health_years)
 
 @Composable
 fun VitalSignsScreen(vm: AppViewModel, onVitalClick: (String) -> Unit = {}) {
@@ -1279,19 +1277,19 @@ fun VitalSignsScreen(vm: AppViewModel, onVitalClick: (String) -> Unit = {}) {
 
     ScreenScaffold(
         title = uiString(R.string.l10n_health_screen_vital_signs_e7d9e1b1),
-        subtitle = "Historical vitals from your cached daily metrics.",
+        subtitle = uiString(R.string.i18n_g1_health_vitals_subtitle),
     ) {
         RecentDaySelectorBar(selectedOffset = selectedDayOffset, onSelect = { selectedDayOffset = it })
         if (selectedMetric == null || vitals.all { it.value == null }) {
             DataPendingNote(
                 title = missingVitalsTitle(selectedDayOffset),
-                body = "Try Yesterday or 2 days ago from the bar above if the strap or import did not produce a daily vitals snapshot yet.",
+                body = uiString(R.string.i18n_g1_health_vitals_try_other_day),
             )
         } else {
             VitalsSection(
                 title = uiString(R.string.l10n_health_screen_vital_signs_e7d9e1b1),
                 overline = selectedDayLabel(selectedDayOffset),
-                trailing = "as of ${selectedMetric.day}",
+                trailing = uiString(R.string.i18n_g1_health_as_of, selectedMetric.day),
                 vitals = vitals,
                 onVitalClick = onVitalClick,
                 footer = false,
@@ -1352,8 +1350,8 @@ private fun HeartRateSection(vm: AppViewModel, hrMax: Int) {
     Column(verticalArrangement = Arrangement.spacedBy(Metrics.gap)) {
         SectionHeader(
             title = uiString(R.string.l10n_health_screen_heart_rate_dde6e8f7),
-            overline = "Live",
-            trailing = if (derived) "from R-R" else null,
+            overline = uiString(R.string.i18n_g1_health_live),
+            trailing = if (derived) uiString(R.string.i18n_g1_health_from_rr) else null,
         )
 
         // The live HR hero is Apple-flat — a plain card tinted rose (heart-rate's metric accent) over a
@@ -1376,9 +1374,9 @@ private fun HeartRateSection(vm: AppViewModel, hrMax: Int) {
                         Text(uiString(R.string.l10n_health_screen_heart_rate_dde6e8f7), style = NoopType.headline, color = Palette.textPrimary)
                         Text(
                             text = when {
-                                derived -> "Estimated from R-R interval"
-                                hasLiveHr -> "Streaming live"
-                                else -> "Awaiting strap"
+                                derived -> uiString(R.string.i18n_g1_health_estimated_rr)
+                                hasLiveHr -> uiString(R.string.i18n_g1_health_streaming_live)
+                                else -> uiString(R.string.i18n_g1_health_awaiting_strap)
                             },
                             style = NoopType.footnote,
                             color = Palette.textSecondary,
@@ -1399,9 +1397,9 @@ private fun HeartRateSection(vm: AppViewModel, hrMax: Int) {
                         .height(Metrics.chartHeight)
                         .semantics {
                             contentDescription = if (hasLiveHr) {
-                                "Live heart rate over time, $displayHr beats per minute, zone $zone"
+                                uiString(R.string.i18n_g1_health_live_hr_cd, displayHr.toString(), zone)
                             } else {
-                                "Live heart rate over time, no data"
+                                uiString(R.string.i18n_g1_health_live_hr_cd_none)
                             }
                         },
                 ) {
@@ -1451,7 +1449,7 @@ private fun HeartRateSection(vm: AppViewModel, hrMax: Int) {
                     zone = if (hasLiveHr) "Z$zone" else "—",
                     percentMax = if (hasLiveHr) "${(fraction * 100).roundToInt()}%" else "—",
                     maxHr = "$hrMax",
-                    state = if (hasLiveHr) "STREAMING" else "IDLE",
+                    state = if (hasLiveHr) uiString(R.string.i18n_g1_health_streaming_badge) else uiString(R.string.i18n_g1_health_idle_badge),
                 )
             }
             }
@@ -1460,17 +1458,17 @@ private fun HeartRateSection(vm: AppViewModel, hrMax: Int) {
 }
 
 private fun zoneLabel(hasLiveHr: Boolean, zone: Int, fraction: Double): String {
-    if (!hasLiveHr) return "Idle"
-    return "Zone $zone · ${(fraction * 100).roundToInt()}%"
+    if (!hasLiveHr) return uiString(R.string.i18n_g1_health_idle)
+    return uiString(R.string.i18n_g1_health_zone_pct, zone, (fraction * 100).roundToInt())
 }
 
 @Composable
 private fun HeartRateFooter(zone: String, percentMax: String, maxHr: String, state: String) {
     Row(modifier = Modifier.fillMaxWidth().padding(top = Metrics.space4)) {
-        FooterStat("Zone", zone, Modifier.weight(1f))
-        FooterStat("% Max", percentMax, Modifier.weight(1f))
-        FooterStat("Max HR", maxHr, Modifier.weight(1f))
-        FooterStat("State", state, Modifier.weight(1f))
+        FooterStat(uiString(R.string.i18n_g1_health_footer_zone), zone, Modifier.weight(1f))
+        FooterStat(uiString(R.string.i18n_g1_health_footer_pct_max), percentMax, Modifier.weight(1f))
+        FooterStat(uiString(R.string.i18n_g1_health_footer_max_hr), maxHr, Modifier.weight(1f))
+        FooterStat(uiString(R.string.i18n_g1_health_footer_state), state, Modifier.weight(1f))
     }
 }
 
@@ -1972,12 +1970,12 @@ fun VitalDetailScreen(vm: AppViewModel, key: String) {
     val showDayCycleBackground = remember { NoopPrefs.showDayCycleBackground(context) }
     val skyBehindCards = remember { NoopPrefs.skyBehindCards(context) }
     ScreenScaffold(
-        title = detail?.title ?: if (isStepsDetail) uiString(R.string.l10n_health_screen_steps_cdde4f20) else "Vital Signs",
+        title = detail?.title ?: if (isStepsDetail) uiString(R.string.l10n_health_screen_steps_cdde4f20) else uiString(R.string.i18n_g1_health_vital_signs),
         subtitle = when {
             isStepsDetail -> uiString(R.string.steps_history)
-            key == "fitness_age" && loadedPoints == 0 -> "What your Fitness Age still needs."
-            loadedPoints == 1 -> "Your latest reading — trend to follow."
-            else -> "Historical trend from cached daily metrics."
+            key == "fitness_age" && loadedPoints == 0 -> uiString(R.string.i18n_g1_health_fa_still_needs)
+            loadedPoints == 1 -> uiString(R.string.i18n_g1_health_latest_reading_trend)
+            else -> uiString(R.string.i18n_g1_health_historical_trend)
         },
         topBackground = screenBackdropSlot(showDayCycleBackground, skyBehindCards),
         // Sky-behind-cards needs the full-viewport container too — the band container's status-bar
@@ -1987,7 +1985,7 @@ fun VitalDetailScreen(vm: AppViewModel, key: String) {
         if (isSeriesBacked && !seriesLoaded) {
             DataPendingNote(
                 title = uiString(if (isStepsDetail) R.string.steps_loading_title else R.string.l10n_health_screen_loading_33ce4174),
-                body = if (isStepsDetail) uiString(R.string.steps_loading) else "Fetching this metric's history.",
+                body = if (isStepsDetail) uiString(R.string.steps_loading) else uiString(R.string.i18n_g1_health_fetching_history),
             )
             return@ScreenScaffold
         }
@@ -2013,8 +2011,8 @@ fun VitalDetailScreen(vm: AppViewModel, key: String) {
                             refreshTick++
                             Toast.makeText(
                                 context,
-                                if (wrote) "Fitness Age updated."
-                                else "Not enough wear yet — keep your strap on overnight.",
+                                if (wrote) uiString(R.string.i18n_g1_health_fa_updated)
+                                else uiString(R.string.i18n_g1_health_fa_not_enough),
                                 Toast.LENGTH_SHORT,
                             ).show()
                         }
@@ -2031,7 +2029,7 @@ fun VitalDetailScreen(vm: AppViewModel, key: String) {
                 val one = detail.points.last()   // size 1: the single reading (last == the latest)
                 NoopCard {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Overline("Latest")
+                        Overline(uiString(R.string.i18n_g1_health_latest))
                         Text(
                             text = uiString(R.string.l10n_health_screen_detail_format_one_second_detail_unit_6fde90d3, detail.format(one.second), detail.unit).trim(),
                             style = NoopType.chartValueLarge,
@@ -2085,7 +2083,7 @@ fun VitalDetailScreen(vm: AppViewModel, key: String) {
         if (filteredPoints.isEmpty() || (!isStepsDetail && filteredPoints.size < 2)) {
             DataPendingNote(
                 title = uiString(R.string.l10n_health_screen_not_enough_history_in_this_range_2da72f80),
-                body = if (isStepsDetail) uiString(R.string.steps_empty_range) else "Try a longer interval like 3M, 6M, 1Y, or ALL to see this vital’s trend.",
+                body = if (isStepsDetail) uiString(R.string.steps_empty_range) else uiString(R.string.i18n_g1_health_try_longer),
             )
             return@ScreenScaffold
         }
@@ -2105,8 +2103,8 @@ fun VitalDetailScreen(vm: AppViewModel, key: String) {
 
         if (!isStepsDetail) SectionHeader(
             detail.title,
-            overline = "Vital Signs",
-            trailing = stepsSeries?.let { "${it.buckets.size} bars" } ?: "${filteredReadings.size} readings",
+            overline = uiString(R.string.i18n_g1_health_vital_signs),
+            trailing = stepsSeries?.let { uiString(R.string.i18n_g1_health_n_bars, it.buckets.size) } ?: uiString(R.string.i18n_g1_health_n_readings, filteredReadings.size),
         )
         NoopCard {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -2670,7 +2668,6 @@ internal suspend fun buildSeriesVitalDetail(vm: AppViewModel, key: String): Vita
 private fun HealthEmptyState() {
     DataPendingNote(
         title = uiString(R.string.l10n_health_screen_no_biometrics_yet_7c594a6c),
-        body = "No biometrics yet. Import your WHOOP export (and Apple Health if you " +
-            "have it) in Data Sources to fill this in.",
+        body = uiString(R.string.i18n_g1_health_no_biometrics_body),
     )
 }

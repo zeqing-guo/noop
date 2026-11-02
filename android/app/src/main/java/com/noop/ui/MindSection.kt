@@ -48,14 +48,16 @@ import kotlin.math.sqrt
 // mood is self-knowledge, not a score, so nothing here is tinted good/bad.
 
 /** One face on the check-in scale. `value` is the stored 1.0–5.0 contract value. */
-private data class MoodFace(val emoji: String, val value: Double, val word: String)
+private data class MoodFace(val emoji: String, val value: Double, val wordRes: Int) {
+    val word: String get() = uiString(wordRes)
+}
 
 private val MOOD_FACES = listOf(
-    MoodFace("😞", 1.0, "Awful"),   // 😞
-    MoodFace("😕", 2.0, "Low"),     // 😕
-    MoodFace("😐", 3.0, "Okay"),    // 😐
-    MoodFace("🙂", 4.0, "Good"),    // 🙂
-    MoodFace("😄", 5.0, "Great"),   // 😄
+    MoodFace("😞", 1.0, R.string.i18n_g1_mind_mood_awful),   // 😞
+    MoodFace("😕", 2.0, R.string.i18n_g1_mind_mood_low),     // 😕
+    MoodFace("😐", 3.0, R.string.i18n_g1_mind_mood_okay),    // 😐
+    MoodFace("🙂", 4.0, R.string.i18n_g1_mind_mood_good),    // 🙂
+    MoodFace("😄", 5.0, R.string.i18n_g1_mind_mood_great),   // 😄
 )
 
 /** Check-ins needed before the correlation lines unlock (mirrors the Swift gate). */
@@ -99,7 +101,7 @@ fun MindSection(vm: AppViewModel) {
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(Metrics.gap)) {
-        SectionHeader("Mind", overline = "Mood check-in")
+        SectionHeader(uiString(R.string.i18n_g1_mind_title), overline = uiString(R.string.i18n_g1_mind_overline))
 
         NoopCard {
             Column(verticalArrangement = Arrangement.spacedBy(Metrics.gap)) {
@@ -153,7 +155,7 @@ fun MindSection(vm: AppViewModel) {
                             Text(face.word, style = NoopType.headline, color = Palette.textPrimary)
                             Text(uiString(R.string.l10n_mind_section_logged_today_0071a46c), style = NoopType.caption, color = Palette.textTertiary)
                         }
-                        MoodChip("Edit") { editing = true }
+                        MoodChip(uiString(R.string.i18n_g1_mind_edit)) { editing = true }
                     }
                 }
 
@@ -198,7 +200,7 @@ fun MindSection(vm: AppViewModel) {
 @Composable
 private fun MoodFaceButton(face: MoodFace, selected: Boolean, onClick: () -> Unit) {
     val shape = RoundedCornerShape(50)
-    val desc = "${face.word}, mood ${face.value.toInt()} of 5"
+    val desc = uiString(R.string.i18n_g1_mind_face_desc, face.word, face.value.toInt())
     Box(
         modifier = Modifier
             .clip(shape)
@@ -237,8 +239,8 @@ private fun MoodChip(label: String, onClick: () -> Unit) {
  *  Neutral colours — r is information here, not a verdict. */
 @Composable
 private fun MindCorrelationRow(line: MindLine) {
-    val dir = if (line.r > 0) "positive" else if (line.r < 0) "negative" else "flat"
-    val sentence = "${mindStrengthWord(line.r)} $dir relationship (n = ${line.n})."
+    val dir = if (line.r > 0) uiString(R.string.i18n_g1_mind_dir_positive) else if (line.r < 0) uiString(R.string.i18n_g1_mind_dir_negative) else uiString(R.string.i18n_g1_mind_dir_flat)
+    val sentence = uiString(R.string.i18n_g1_mind_relationship_sentence, mindStrengthWord(line.r), dir, line.n)
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -286,20 +288,20 @@ private fun buildMindCorrelations(
         return MindLine(title, c.r, c.n)
     }
     return listOfNotNull(
-        line("Mood ↔ HRV", days.mapNotNull { d -> d.avgHrv?.let { d.day to it } }),
-        line("Mood ↔ Recovery", days.mapNotNull { d -> d.recovery?.let { d.day to it } }),
-        line("Mood ↔ Sleep duration", days.mapNotNull { d -> d.totalSleepMin?.let { d.day to it } }),
+        line(uiString(R.string.i18n_g1_mind_line_hrv), days.mapNotNull { d -> d.avgHrv?.let { d.day to it } }),
+        line(uiString(R.string.i18n_g1_mind_line_recovery), days.mapNotNull { d -> d.recovery?.let { d.day to it } }),
+        line(uiString(R.string.i18n_g1_mind_line_sleep), days.mapNotNull { d -> d.totalSleepMin?.let { d.day to it } }),
     )
 }
 
 private fun mindStrengthWord(r: Double): String {
     val m = abs(r)
     return when {
-        m < 0.1 -> "No"
-        m < 0.3 -> "A weak"
-        m < 0.5 -> "A moderate"
-        m < 0.7 -> "A strong"
-        else -> "A very strong"
+        m < 0.1 -> uiString(R.string.i18n_g1_mind_strength_none)
+        m < 0.3 -> uiString(R.string.i18n_g1_mind_strength_weak)
+        m < 0.5 -> uiString(R.string.i18n_g1_mind_strength_moderate)
+        m < 0.7 -> uiString(R.string.i18n_g1_mind_strength_strong)
+        else -> uiString(R.string.i18n_g1_mind_strength_very_strong)
     }
 }
 

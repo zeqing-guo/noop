@@ -1,5 +1,6 @@
 package com.noop.ui
 
+import com.noop.R
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -97,10 +98,10 @@ object LogExport {
                 putExtra(Intent.EXTRA_SUBJECT, suggestedName)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            context.startActivity(Intent.createChooser(send, "Share report bundle"))
+            context.startActivity(Intent.createChooser(send, uiString(R.string.i18n_g1_logexport_share_report_bundle)))
             file
         }.onFailure {
-            Toast.makeText(context, "Couldn't export the bundle: ${it.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, uiString(R.string.i18n_g1_logexport_export_bundle_failed, it.message.toString()), Toast.LENGTH_LONG).show()
         }.getOrNull()
 
     /**
@@ -236,7 +237,7 @@ object LogExport {
             ?: emptyList()
         var removed = 0
         for (f in files) if (runCatching { f.delete() }.getOrDefault(false)) removed++
-        val message = if (removed > 0) "Cleared $removed scheduled export file(s)." else "No scheduled exports to clear."
+        val message = if (removed > 0) uiString(R.string.i18n_g1_logexport_cleared_scheduled, removed) else uiString(R.string.i18n_g1_logexport_no_scheduled)
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         return removed
     }
@@ -318,7 +319,7 @@ object LogExport {
             if (out == null) {
                 Toast.makeText(
                     context,
-                    "No detailed capture yet — turn on \"Detailed capture to file\" in Test Centre first.",
+                    uiString(R.string.i18n_g1_logexport_no_detailed_capture),
                     Toast.LENGTH_LONG,
                 ).show()
                 return
@@ -329,9 +330,9 @@ object LogExport {
                 putExtra(Intent.EXTRA_SUBJECT, "NOOP detailed capture log")
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            context.startActivity(Intent.createChooser(send, "Share captured log"))
+            context.startActivity(Intent.createChooser(send, uiString(R.string.i18n_g1_logexport_share_captured_log)))
         }.onFailure {
-            Toast.makeText(context, "Couldn't share the capture: ${it.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, uiString(R.string.i18n_g1_logexport_share_capture_failed, it.message.toString()), Toast.LENGTH_LONG).show()
         }
     }
 
@@ -370,9 +371,9 @@ object LogExport {
                 putExtra(Intent.EXTRA_SUBJECT, "NOOP strap log")
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            context.startActivity(Intent.createChooser(send, "Share strap log"))
+            context.startActivity(Intent.createChooser(send, uiString(R.string.i18n_g1_logexport_share_strap_log)))
         }.onFailure {
-            Toast.makeText(context, "Couldn't share the log: ${it.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, uiString(R.string.i18n_g1_logexport_share_log_failed, it.message.toString()), Toast.LENGTH_LONG).show()
         }
     }
 
@@ -486,9 +487,9 @@ object LogExport {
                 putExtra(Intent.EXTRA_SUBJECT, "NOOP 5/MG protocol capture")
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            context.startActivity(Intent.createChooser(send, "Share 5/MG capture"))
+            context.startActivity(Intent.createChooser(send, uiString(R.string.i18n_g1_logexport_share_5mg_capture)))
         }.onFailure {
-            Toast.makeText(context, "Couldn't share the capture: ${it.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, uiString(R.string.i18n_g1_logexport_share_capture_failed, it.message.toString()), Toast.LENGTH_LONG).show()
         }
     }
 
@@ -519,7 +520,7 @@ object LogExport {
             val name = "noop-export-${timestamp()}.zip"
             exportBundle(context, entries, name)
         }.onFailure {
-            Toast.makeText(context, "Couldn't export the pair: ${it.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, uiString(R.string.i18n_g1_logexport_export_pair_failed, it.message.toString()), Toast.LENGTH_LONG).show()
         }
     }
 }

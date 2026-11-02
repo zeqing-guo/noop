@@ -42,10 +42,12 @@ class TodayLayoutPrefsTest {
         val firstCut = "synthesis,keyMetrics,workouts,heartRate,recoveryVitals,yourCards"
         assertEquals(
             listOf(
-                TodaySection.HERO, TodaySection.LIVE_SESSION,
-                TodaySection.SYNTHESIS, TodaySection.KEY_METRICS, TodaySection.WORKOUTS,
-                TodaySection.HEART_RATE, TodaySection.RECOVERY_VITALS, TodaySection.YOUR_CARDS,
-                TodaySection.MENSTRUAL_CYCLE, TodaySection.JOURNAL, TodaySection.ADDED_CARDS,
+                // Expected order under the redesign default (hero, heart rate, metrics, workouts, cards,
+                // journal, cycle, added cards, then the default-hidden live session / synthesis / vitals).
+                TodaySection.HERO, TodaySection.JOURNAL, TodaySection.MENSTRUAL_CYCLE,
+                TodaySection.ADDED_CARDS, TodaySection.LIVE_SESSION, TodaySection.SYNTHESIS,
+                TodaySection.KEY_METRICS, TodaySection.WORKOUTS, TodaySection.HEART_RATE,
+                TodaySection.RECOVERY_VITALS, TodaySection.YOUR_CARDS,
             ),
             TodayLayoutPrefs.decodeOrder(firstCut),
         )
@@ -60,13 +62,12 @@ class TodayLayoutPrefsTest {
         assertEquals(TodaySection.entries.size, decoded.size)
         assertEquals(
             listOf(
-                // hero(0), liveSession(1), workouts(4) all precede heartRate(5) in default order, so all
-                // insert before the saved heartRate, in default order among themselves:
-                TodaySection.HERO, TodaySection.LIVE_SESSION, TodaySection.WORKOUTS,
-                TodaySection.HEART_RATE, TodaySection.SYNTHESIS, TodaySection.KEY_METRICS,
-                TodaySection.RECOVERY_VITALS,
-                TodaySection.YOUR_CARDS, TodaySection.MENSTRUAL_CYCLE, TodaySection.JOURNAL,
-                TodaySection.ADDED_CARDS,
+                // Expected order under the redesign default (hero, heart rate, metrics, workouts, cards,
+                // journal, cycle, added cards, then the default-hidden live session / synthesis / vitals).
+                TodaySection.HERO, TodaySection.HEART_RATE, TodaySection.WORKOUTS,
+                TodaySection.YOUR_CARDS, TodaySection.JOURNAL, TodaySection.MENSTRUAL_CYCLE,
+                TodaySection.ADDED_CARDS, TodaySection.LIVE_SESSION, TodaySection.SYNTHESIS,
+                TodaySection.KEY_METRICS, TodaySection.RECOVERY_VITALS,
             ),
             decoded,
         )
@@ -79,12 +80,12 @@ class TodayLayoutPrefsTest {
         assertEquals(TodaySection.entries.size, decoded.size)
         assertEquals(
             listOf(
-                // Every missing section's default index precedes yourCards(7), so each inserts before it,
-                // accumulating in default order; the saved yourCards→heartRate order is preserved at the end.
-                TodaySection.HERO, TodaySection.LIVE_SESSION, TodaySection.SYNTHESIS,
-                TodaySection.KEY_METRICS, TodaySection.WORKOUTS, TodaySection.RECOVERY_VITALS,
-                TodaySection.YOUR_CARDS, TodaySection.HEART_RATE,
-                TodaySection.MENSTRUAL_CYCLE, TodaySection.JOURNAL, TodaySection.ADDED_CARDS,
+                // Expected order under the redesign default (hero, heart rate, metrics, workouts, cards,
+                // journal, cycle, added cards, then the default-hidden live session / synthesis / vitals).
+                TodaySection.HERO, TodaySection.KEY_METRICS, TodaySection.WORKOUTS,
+                TodaySection.YOUR_CARDS, TodaySection.HEART_RATE, TodaySection.JOURNAL,
+                TodaySection.MENSTRUAL_CYCLE, TodaySection.ADDED_CARDS, TodaySection.LIVE_SESSION,
+                TodaySection.SYNTHESIS, TodaySection.RECOVERY_VITALS,
             ),
             decoded,
         )
@@ -107,9 +108,11 @@ class TodayLayoutPrefsTest {
         val order = "heartRate,hero,yourCards,liveSession,synthesis,keyMetrics,workouts,recoveryVitals,journal"
         assertEquals(
             listOf(
-                TodaySection.HEART_RATE, TodaySection.YOUR_CARDS, TodaySection.LIVE_SESSION,
-                TodaySection.SYNTHESIS, TodaySection.KEY_METRICS, TodaySection.RECOVERY_VITALS,
-                TodaySection.MENSTRUAL_CYCLE, TodaySection.JOURNAL, TodaySection.ADDED_CARDS,
+                // Expected order under the redesign default (hero, heart rate, metrics, workouts, cards,
+                // journal, cycle, added cards, then the default-hidden live session / synthesis / vitals).
+                TodaySection.HEART_RATE, TodaySection.YOUR_CARDS, TodaySection.MENSTRUAL_CYCLE,
+                TodaySection.ADDED_CARDS, TodaySection.LIVE_SESSION, TodaySection.SYNTHESIS,
+                TodaySection.KEY_METRICS, TodaySection.RECOVERY_VITALS, TodaySection.JOURNAL,
             ),
             TodayLayoutPrefs.visibleOrder(order, "hero,workouts"),
         )

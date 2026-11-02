@@ -277,7 +277,7 @@ internal fun vitalsFor(
     fun rangeCaption(allValues: List<Double>, unit: String, format: (Double) -> String): String? {
         val min = allValues.minOrNull() ?: return null
         val max = allValues.maxOrNull() ?: return null
-        return "within ${format(min)} -- ${format(max)} $unit"
+        return uiString(R.string.i18n_g4_vitals_range_within, format(min), format(max), unit)
     }
     // Trailing values (oldest → newest) feeding each tile's sparkline trail. Built from the same
     // history already gathered for banding, including the displayed day's value. Presentation-only.
@@ -347,7 +347,7 @@ internal fun vitalsFor(
     return listOf(
         Vital(
             key = "resp", label = uiString(R.string.l10n_health_screen_resp_rate_1c48dbd8), unit = "rpm",
-            missingCaption = "No respiratory-rate value",
+            missingCaption = uiString(R.string.i18n_g4_vitals_no_resp),
             value = d?.respRateBpm, format = { String.format("%.1f", it) },
             deltaText = deltaText(d?.respRateBpm, previous { it.respRateBpm }),
             readingDay = todayKey,
@@ -395,7 +395,7 @@ internal fun vitalsFor(
             // full u16 span just keeps the tile cyan (never "off range"); `stateCaption` labels it
             // uncalibrated, so we never assert an in/out-of-range clinical judgment on raw sensor data.
             key = "spo2raw", label = uiString(R.string.l10n_health_screen_raw_spo_ccfe80c1), unit = "ADC",
-            missingCaption = "No raw SpO₂ decode for the night",
+            missingCaption = uiString(R.string.i18n_g4_vitals_no_raw_spo2),
             value = d?.let(spo2RawMean), format = { String.format("%.0f", it) },
             deltaText = deltaText(d?.let(spo2RawMean), previous(spo2RawMean), decimals = 0),
             readingDay = todayKey,
@@ -407,7 +407,7 @@ internal fun vitalsFor(
         ),
         Vital(
             key = "rhr", label = uiString(R.string.l10n_health_screen_resting_hr_26677094), unit = "bpm",
-            missingCaption = "No resting HR value",
+            missingCaption = uiString(R.string.i18n_g4_vitals_no_rhr),
             value = d?.restingHr?.toDouble(), format = { it.roundToInt().toString() },
             deltaText = deltaText(d?.restingHr?.toDouble(), previous { it.restingHr?.toDouble() }, decimals = 0),
             readingDay = todayKey,
@@ -427,7 +427,7 @@ internal fun vitalsFor(
             // that blanks the value, so on the reported night there is no row for it to attach to.
             missingCaption = if (hrvBlankedByOverCount(hrvOverCountByDay))
                 uiString(R.string.l10n_health_screen_over_reports_r_r_so_no_9d050d53)
-            else "No HRV value",
+            else uiString(R.string.i18n_g4_vitals_no_hrv),
             value = d?.avgHrv, format = { it.roundToInt().toString() },
             deltaText = deltaText(d?.avgHrv, previous { it.avgHrv }, decimals = 0),
             readingDay = todayKey,
@@ -440,7 +440,7 @@ internal fun vitalsFor(
             // artifact inflates R-R and contaminates RMSSD, so NOOP's HRV won't match WHOOP until the
             // de-dup fix lands. The flag is written only for NOOP's own measured capture, so an imported
             // night never sets it. Gated on the flag alone (no source check) — twin of the Swift caveat.
-            caveat = if ((d?.day?.let { hrvOverCountByDay[it] } ?: 0.0) >= 0.5) "unverified · over-reports R-R" else null,
+            caveat = if ((d?.day?.let { hrvOverCountByDay[it] } ?: 0.0) >= 0.5) uiString(R.string.i18n_g4_vitals_hrv_caveat) else null,
         ),
         Vital(
             key = "skin", label = skinTitle, unit = skinUnitLabel,
@@ -532,24 +532,24 @@ private fun latestVital(
 }
 
 internal fun selectedDayLabel(offset: Int): String = when (offset) {
-    0 -> "Today"
-    1 -> "Yesterday"
-    else -> "2 days ago"
+    0 -> uiString(R.string.i18n_g4_vitals_today)
+    1 -> uiString(R.string.i18n_g4_vitals_yesterday)
+    else -> uiString(R.string.i18n_g4_vitals_2_days_ago)
 }
 
 internal fun missingVitalsTitle(offset: Int): String = when (offset) {
-    0 -> "We didn't get today's data"
-    1 -> "We didn't get yesterday's data"
-    else -> "We didn't get data from 2 days ago"
+    0 -> uiString(R.string.i18n_g4_vitals_missing_today)
+    1 -> uiString(R.string.i18n_g4_vitals_missing_yesterday)
+    else -> uiString(R.string.i18n_g4_vitals_missing_2_days)
 }
 
 internal fun asOfLabel(day: String?): String? {
     if (day.isNullOrBlank()) return null
-    val date = runCatching { LocalDate.parse(day) }.getOrNull() ?: return "as of $day"
+    val date = runCatching { LocalDate.parse(day) }.getOrNull() ?: return uiString(R.string.i18n_g4_vitals_as_of, day)
     val today = LocalDate.now()
     return when (date) {
-        today -> "as of today"
-        today.minusDays(1) -> "as of yesterday"
-        else -> "as of ${date.format(DateTimeFormatter.ofPattern("d MMM", Locale.US))}"
+        today -> uiString(R.string.i18n_g4_vitals_as_of_today)
+        today.minusDays(1) -> uiString(R.string.i18n_g4_vitals_as_of_yesterday)
+        else -> uiString(R.string.i18n_g4_vitals_as_of, date.format(DateTimeFormatter.ofPattern("d MMM", Locale.US)))
     }
 }

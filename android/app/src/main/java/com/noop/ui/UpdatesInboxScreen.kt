@@ -103,7 +103,7 @@ fun UpdatesInboxScreen(
     ) {
         // Header — "INBOX" overline + "Updates" title + a live subtitle.
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Overline("Inbox", color = Palette.textTertiary)
+            Overline(uiString(R.string.i18n_g2_ui_inbox), color = Palette.textTertiary)
             Text(uiString(R.string.l10n_updates_inbox_screen_updates_c76d1807), style = NoopType.title1, color = Palette.textPrimary)
             Text(subtitle(store), style = NoopType.caption, color = Palette.textSecondary)
         }
@@ -179,9 +179,9 @@ fun UpdatesInboxScreen(
 }
 
 private fun subtitle(store: UpdateStore): String {
-    if (store.items.isEmpty()) return "What's new in the app and your data"
+    if (store.items.isEmpty()) return uiString(R.string.i18n_g2_ui_whats_new)
     val n = store.unreadCount
-    return if (n == 0) "All caught up" else "$n unread"
+    return if (n == 0) uiString(R.string.i18n_g2_ui_all_caught_up) else uiString(R.string.i18n_g2_ui_n_unread, n)
 }
 
 @Composable
@@ -309,9 +309,9 @@ private fun UpdateRow(
             )
             .semantics {
                 contentDescription = if (item.read) {
-                    "${item.title}. ${item.message}"
+                    uiString(R.string.i18n_g2_ui_item_a11y, item.title, item.message)
                 } else {
-                    "Unread. ${item.title}. ${item.message}"
+                    uiString(R.string.i18n_g2_ui_item_a11y_unread, item.title, item.message)
                 }
             },
     ) {

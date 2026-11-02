@@ -4198,7 +4198,11 @@ private fun YourCardsSection(
                     contentDescription = uiString(R.string.l10n_today_screen_customise_your_cards_2428d761),
                 )
             }
-            cards.forEach { card ->
+            // Redesign: cards the metric grid above already shows are not repeated here.
+            cards.filterNot {
+                it == DashboardCard.HRV || it == DashboardCard.RESTING_HR ||
+                    it == DashboardCard.RESPIRATORY || it == DashboardCard.STEPS
+            }.forEach { card ->
                 DashboardCardRow(
                     card = card,
                     value = dashboardCardValue(
@@ -4453,7 +4457,8 @@ private fun dashboardCardValue(
         com.noop.analytics.SkinTempDisplay.Kind.ABSOLUTE,
 ): String {
     fun withUnit(s: String): String =
-        if (s == NO_DATA) NO_DATA else if (card.unit.isEmpty()) s else "$s ${card.unit}"
+        if (s == NO_DATA) NO_DATA else if (card.unit.isEmpty()) s
+        else "$s ${if (card.unit == "yrs") uiString(R.string.redesign_unit_years) else card.unit}"
 
     // SpO₂ / Skin Temp / Sleep carry over from the last scored night; today's accruing totals do not.
     val vd = carriedDay ?: day
@@ -5949,7 +5954,7 @@ private fun MetricGrid(
     // #760/#792: the caption under an ESTIMATED Steps tile: the engine's STATUS line (manual k, or
     // k=… from N days + confidence tier) so a frozen-looking estimate self-explains. Built from the SAME
     // persisted calibration the estimate used; defaults to a bare "est." for callers that don't supply it.
-    stepsEstimateCaption: String = "est.",
+    stepsEstimateCaption: String = uiString(R.string.i18n_g3_est_dot),
     // #1491: the blank-tile line for a strap that ESTIMATES steps — null for a 5/MG (its strap reports a
     // real count) and for a user who has never selected a model, so neither is told to calibrate anything.
     stepsCalibrationPrompt: String? = null,
@@ -7317,7 +7322,7 @@ private fun TodayWorkoutsSection(workouts: List<WorkoutRow>, onSelect: (WorkoutR
                     }
                     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
-                            WorkoutEditing.displaySport(workout.sport),
+                            WorkoutEditing.localizedSport(workout.sport),
                             style = NoopType.body.copy(fontWeight = FontWeight.Medium),
                             color = Palette.textPrimary,
                             maxLines = 1,
@@ -7982,7 +7987,7 @@ private fun sleepValue(d: DailyMetric?): String {
  */
 private fun restCaption(d: DailyMetric?): String? = when {
     d?.totalSleepMin != null -> sleepValue(d)
-    d?.efficiency != null -> String.format(Locale.getDefault(), "%.0f%% eff", d.efficiency)
+    d?.efficiency != null -> uiString(R.string.i18n_g3_pct_eff, String.format(Locale.getDefault(), "%.0f", d.efficiency))
     else -> null
 }
 

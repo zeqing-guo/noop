@@ -75,13 +75,16 @@ import kotlin.math.roundToInt
 
 // MARK: - Window range (W / M / 3M / 6M / 1Y / ALL)
 
-private enum class ExploreRange(val days: Int?, val label: String, val windowName: String) {
-    Week(7, "W", "week"),
-    Month(30, "M", "month"),
-    Quarter(90, "3M", "quarter"),
-    Half(180, "6M", "6 months"),
-    Year(365, "1Y", "year"),
-    All(null, "ALL", "all time");
+private enum class ExploreRange(val days: Int?, private val labelRes: Int, private val windowNameRes: Int) {
+    Week(7, R.string.i18n_g1_range_w, R.string.i18n_g1_explore_window_week),
+    Month(30, R.string.i18n_g1_range_m, R.string.i18n_g1_explore_window_month),
+    Quarter(90, R.string.i18n_g1_range_3m, R.string.i18n_g1_explore_window_quarter),
+    Half(180, R.string.i18n_g1_range_6m, R.string.i18n_g1_explore_window_half),
+    Year(365, R.string.i18n_g1_range_1y, R.string.i18n_g1_explore_window_year),
+    All(null, R.string.i18n_g1_range_all, R.string.i18n_g1_explore_window_all);
+
+    val label: String get() = uiString(labelRes)
+    val windowName: String get() = uiString(windowNameRes)
 
     /** This range plus every larger range, ascending , the auto-widen search order. */
     val widening: List<ExploreRange>
@@ -297,7 +300,7 @@ fun TrendsExploreScreen(vm: AppViewModel) {
                     key = k,
                     title = k.replace('_', ' ').replaceFirstChar { c -> c.uppercase() },
                     unit = "",
-                    category = "Other",
+                    category = uiString(R.string.i18n_g1_explore_category_other),
                     accent = Palette.metricCyan,
                     higherIsBetter = null,
                     decimals = 1,
@@ -612,13 +615,13 @@ private fun HeroChartCard(
     fellBack: Boolean,
 ) {
     val heroValue = latest?.let { metric.format(it.value) } ?: ","
-    val asOf = latest?.let { "as of ${it.day}" } ?: "no readings yet"
+    val asOf = latest?.let { uiString(R.string.i18n_g1_explore_as_of, it.day) } ?: uiString(R.string.i18n_g1_explore_no_readings_yet)
     // The range bar above already prints the authoritative reading-count caption; the hero only
     // names its window so the count isn't doubled in one card height.
     val subtitle = if (fellBack) {
-        "Trailing ${effectiveRange.windowName}"
+        uiString(R.string.i18n_g1_explore_trailing_window, effectiveRange.windowName)
     } else {
-        "Trailing ${range.windowName}"
+        uiString(R.string.i18n_g1_explore_trailing_window, range.windowName)
     }
     // Wash the hero card in the metric's domain world (Charge green / Effort amber / Rest indigo).
     NoopCard(tint = domainTint(metric.category)) {
@@ -879,7 +882,7 @@ private fun rangeCaption(
 ): String {
     if (series.isEmpty()) return ","
     val n = windowed.size
-    val unit = if (n == 1) "reading" else "readings"
-    return if (fellBack) "$n $unit · sparse , widened to ${effectiveRange.windowName}"
-    else "$n $unit · ${range.windowName}"
+    val unit = if (n == 1) uiString(R.string.i18n_g1_reading_one) else uiString(R.string.i18n_g1_reading_many)
+    return if (fellBack) uiString(R.string.i18n_g1_explore_caption_widened, n, unit, effectiveRange.windowName)
+    else uiString(R.string.i18n_g1_explore_caption, n, unit, range.windowName)
 }

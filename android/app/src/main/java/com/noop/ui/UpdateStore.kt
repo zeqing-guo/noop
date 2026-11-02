@@ -1,6 +1,7 @@
 package com.noop.ui
 
 import android.content.Context
+import com.noop.R
 import android.content.SharedPreferences
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -277,8 +278,8 @@ class UpdateStore private constructor(private val prefs: SharedPreferences) {
         post(
             UpdateItem(
                 kind = UpdateKind.WHATS_NEW,
-                title = if (title.isEmpty()) "What's new in NOOP $version" else title,
-                message = "NOOP $version is here — tap to read what's new.",
+                title = if (title.isEmpty()) uiString(R.string.i18n_g3_whats_new_title, version) else title,
+                message = uiString(R.string.i18n_g3_whats_new_message, version),
                 // #984: this row promised "tap to read what's new" while carrying NO deep link, so the
                 // tap resolved to nothing and only marked it read. Every release since the inbox shipped
                 // has posted an entry that could not be opened.

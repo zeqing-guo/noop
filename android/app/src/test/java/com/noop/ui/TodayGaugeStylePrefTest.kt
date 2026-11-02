@@ -34,10 +34,11 @@ class TodayGaugeStylePrefTest {
     }
 
     @Test
-    fun `turning it off selects the vessels and survives a read`() {
+    fun `the redesign keeps rings even when the old toggle is off`() {
+        // NOOP Dark retires the liquid vessels: a stored "off" from an older build must not bring them back.
         val c = ctx()
         NoopPrefs.setTodayRingGauges(c, false)
-        assertFalse(NoopPrefs.todayRingGauges(c))
+        assertTrue(NoopPrefs.todayRingGauges(c))
         NoopPrefs.setTodayRingGauges(c, true)
         assertTrue(NoopPrefs.todayRingGauges(c))
     }

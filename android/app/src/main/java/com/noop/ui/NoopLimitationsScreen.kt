@@ -42,11 +42,11 @@ private enum class LimitState { FULL, PARTIAL, NONE }
 /** One row: a metric, and how it reads on a 4.0 vs a 5.0/MG. No note — the legend carries the meaning. */
 private data class LimitRow(val feature: String, val whoop4: LimitState, val whoop5: LimitState)
 
-private val LIMIT_ROWS: List<LimitRow> = listOf(
-    LimitRow("Live heart rate", LimitState.FULL, LimitState.FULL),
-    LimitRow("HRV (rMSSD)", LimitState.FULL, LimitState.FULL),
-    LimitRow("Sleep staging", LimitState.FULL, LimitState.FULL),
-    LimitRow("Recovery & strain", LimitState.FULL, LimitState.FULL),
+private val LIMIT_ROWS: List<LimitRow> get() = listOf(
+    LimitRow(uiString(R.string.i18n_g4_limits_live_hr), LimitState.FULL, LimitState.FULL),
+    LimitRow(uiString(R.string.i18n_g4_limits_hrv), LimitState.FULL, LimitState.FULL),
+    LimitRow(uiString(R.string.i18n_g4_limits_sleep_staging), LimitState.FULL, LimitState.FULL),
+    LimitRow(uiString(R.string.i18n_g4_limits_recovery_strain), LimitState.FULL, LimitState.FULL),
     // PARTIAL on BOTH generations: the displayed respiratory rate is always SleepStager.respRateFromRR
     // — an on-device RSA estimate off the R-R stream, which is what PARTIAL means — computed with NO
     // family branch (AnalyticsEngine respRateDaily). The 5.0/MG v18 wire carries no respiratory channel
@@ -54,21 +54,21 @@ private val LIMIT_ROWS: List<LimitRow> = listOf(
     // but it is a raw ADC stored unconverted (schema: "resp rate computed server-side") and never shown.
     // Neither is "read live off the strap" (FULL) — also why an over-counted-R-R 4.0 night (#1331) blanks
     // it. Twin of the Swift NoopLimitationsView row.
-    LimitRow("Respiratory rate", LimitState.PARTIAL, LimitState.PARTIAL),
-    LimitRow("Stress (on-device)", LimitState.FULL, LimitState.FULL),
-    LimitRow("Workout detection", LimitState.FULL, LimitState.FULL),
-    LimitRow("Skin temperature", LimitState.PARTIAL, LimitState.FULL),
-    LimitRow("Steps", LimitState.PARTIAL, LimitState.FULL),
-    LimitRow("Blood oxygen (SpO₂ %)", LimitState.NONE, LimitState.NONE),
-    LimitRow("ECG", LimitState.NONE, LimitState.PARTIAL),
-    LimitRow("Blood pressure", LimitState.NONE, LimitState.NONE),
+    LimitRow(uiString(R.string.i18n_g4_limits_resp_rate), LimitState.PARTIAL, LimitState.PARTIAL),
+    LimitRow(uiString(R.string.i18n_g4_limits_stress), LimitState.FULL, LimitState.FULL),
+    LimitRow(uiString(R.string.i18n_g4_limits_workout_detection), LimitState.FULL, LimitState.FULL),
+    LimitRow(uiString(R.string.i18n_g4_limits_skin_temp), LimitState.PARTIAL, LimitState.FULL),
+    LimitRow(uiString(R.string.i18n_g4_limits_steps), LimitState.PARTIAL, LimitState.FULL),
+    LimitRow(uiString(R.string.i18n_g4_limits_spo2), LimitState.NONE, LimitState.NONE),
+    LimitRow(uiString(R.string.i18n_g4_limits_ecg), LimitState.NONE, LimitState.PARTIAL),
+    LimitRow(uiString(R.string.i18n_g4_limits_blood_pressure), LimitState.NONE, LimitState.NONE),
 )
 
 @Composable
 fun NoopLimitationsScreen() {
     ScreenScaffold(
         title = stringResource(R.string.nav_noop_limitations),
-        subtitle = "What each strap can read",
+        subtitle = uiString(R.string.i18n_g4_limits_subtitle),
     ) {
         LimitTableCard()
         LegendCard()
@@ -79,10 +79,10 @@ fun NoopLimitationsScreen() {
 private fun LimitTableCard() {
     NoopCard(padding = 20.dp) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Overline("What NOOP reads")
+            Overline(uiString(R.string.i18n_g4_limits_what_noop_reads))
             // Column header.
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("Feature", style = NoopType.caption, color = Palette.textTertiary, modifier = Modifier.weight(1f))
+                Text(uiString(R.string.i18n_g4_limits_feature), style = NoopType.caption, color = Palette.textTertiary, modifier = Modifier.weight(1f))
                 Text("4.0", style = NoopType.caption, color = Palette.textTertiary, textAlign = TextAlign.Center, modifier = Modifier.width(48.dp))
                 Text("5.0/MG", style = NoopType.caption, color = Palette.textTertiary, textAlign = TextAlign.Center, modifier = Modifier.width(48.dp))
             }
@@ -90,7 +90,7 @@ private fun LimitTableCard() {
                 if (idx > 0) Hairline()
                 Row(
                     modifier = Modifier.fillMaxWidth().semantics {
-                        contentDescription = "${row.feature}: WHOOP 4.0 ${row.whoop4.spoken}, 5.0/MG ${row.whoop5.spoken}"
+                        contentDescription = uiString(R.string.i18n_g4_limits_row_a11y, row.feature, row.whoop4.spoken, row.whoop5.spoken)
                     },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -107,10 +107,10 @@ private fun LimitTableCard() {
 private fun LegendCard() {
     NoopCard(padding = 20.dp) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Overline("Legend")
-            LegendRow(LimitState.FULL, "Read live off the strap")
-            LegendRow(LimitState.PARTIAL, "On-device estimate, or experimental / firmware-gated")
-            LegendRow(LimitState.NONE, "Not from the strap. SpO₂ can be filled by importing a WHOOP or Health export.")
+            Overline(uiString(R.string.i18n_g4_limits_legend))
+            LegendRow(LimitState.FULL, uiString(R.string.i18n_g4_limits_legend_full))
+            LegendRow(LimitState.PARTIAL, uiString(R.string.i18n_g4_limits_legend_partial))
+            LegendRow(LimitState.NONE, uiString(R.string.i18n_g4_limits_legend_none))
         }
     }
 }
@@ -127,9 +127,9 @@ private fun LegendRow(state: LimitState, label: String) {
 private fun SupportCell(state: LimitState) {
     Box(modifier = Modifier.width(48.dp), contentAlignment = Alignment.Center) {
         when (state) {
-            LimitState.FULL -> SupportGlyph(Icons.Filled.Check, Palette.statusPositive, "yes")
-            LimitState.PARTIAL -> SupportGlyph(Icons.Filled.Remove, Palette.statusWarning, "partly")
-            LimitState.NONE -> SupportGlyph(Icons.Filled.Close, Palette.textTertiary, "no")
+            LimitState.FULL -> SupportGlyph(Icons.Filled.Check, Palette.statusPositive, uiString(R.string.i18n_g4_limits_yes))
+            LimitState.PARTIAL -> SupportGlyph(Icons.Filled.Remove, Palette.statusWarning, uiString(R.string.i18n_g4_limits_partly))
+            LimitState.NONE -> SupportGlyph(Icons.Filled.Close, Palette.textTertiary, uiString(R.string.i18n_g4_limits_no))
         }
     }
 }
@@ -147,7 +147,7 @@ private fun Hairline() {
 /** Spoken support label for the row's accessibility description. */
 private val LimitState.spoken: String
     get() = when (this) {
-        LimitState.FULL -> "yes"
-        LimitState.PARTIAL -> "partly"
-        LimitState.NONE -> "no"
+        LimitState.FULL -> uiString(R.string.i18n_g4_limits_yes)
+        LimitState.PARTIAL -> uiString(R.string.i18n_g4_limits_partly)
+        LimitState.NONE -> uiString(R.string.i18n_g4_limits_no)
     }

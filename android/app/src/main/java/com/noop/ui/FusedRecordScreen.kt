@@ -96,19 +96,19 @@ data class FusedRecord(
 @Composable
 fun FusedRecordScreen(
     record: FusedRecord,
-    dayLabel: String = "Today",
+    dayLabel: String = uiString(R.string.i18n_g2_fr_today),
     modifier: Modifier = Modifier,
 ) {
     // The metric currently open in the conflict-compare dialog (null = closed).
     var comparing by remember { mutableStateOf<FusedRow?>(null) }
 
     val isMultiSource = record.contributingSourceCount > 1
-    val deviceNoun = "this device"
+    val deviceNoun = uiString(R.string.i18n_g2_fr_this_device)
 
     val subtitle = if (isMultiSource) {
-        "$dayLabel · best signal per metric, from ${record.contributingSourceCount} sources. Everything stays on $deviceNoun."
+        uiString(R.string.i18n_g2_fr_subtitle_multi, dayLabel, record.contributingSourceCount, deviceNoun)
     } else {
-        "$dayLabel · your record, on $deviceNoun."
+        uiString(R.string.i18n_g2_fr_subtitle_single, dayLabel, deviceNoun)
     }
 
     ScreenScaffold(title = uiString(R.string.l10n_fused_record_screen_your_data_fused_a740fd4a), subtitle = subtitle, modifier = modifier) {
@@ -117,7 +117,7 @@ fun FusedRecordScreen(
         if (record.rows.isEmpty()) {
             DataPendingNote(
                 title = uiString(R.string.l10n_fused_record_screen_nothing_to_fuse_yet_30789c4e),
-                body = "Import a WHOOP export, Health Connect or a second band and your best-sourced record builds here, on this device.",
+                body = uiString(R.string.i18n_g2_fr_empty_body),
             )
         } else {
             NoopCard(padding = 0.dp) {
@@ -152,9 +152,9 @@ fun FusedRecordScreen(
 @Composable
 private fun DayBadgeRow(owner: FusionSource?) {
     val text = if (owner != null) {
-        "Today's scores owned by ${owner.displayName}"
+        uiString(R.string.i18n_g2_fr_scores_owned_by, owner.displayName)
     } else {
-        "Scores still calibrating, no single day-owner yet"
+        uiString(R.string.i18n_g2_fr_scores_calibrating)
     }
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -230,7 +230,7 @@ private fun FusedMetricRow(
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-                onClickLabel = "Compare sources",
+                onClickLabel = uiString(R.string.i18n_g2_fr_compare_sources),
             ) { onCompare() }
     } else {
         Modifier.fillMaxWidth()
@@ -266,7 +266,7 @@ private fun FusedMetricRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                SourceBadge("from ${point.winningSource.displayName}", tint = Palette.accent)
+                SourceBadge(uiString(R.string.i18n_g2_fr_from_source, point.winningSource.displayName), tint = Palette.accent)
                 point.contributors.firstOrNull()?.reason?.let { reason ->
                     Text(reason, style = NoopType.footnote, color = Palette.textTertiary)
                 }
@@ -296,7 +296,7 @@ private fun AgreementLine(point: FusedMetricPoint, onCompare: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                StatePill("Differs slightly", tone = StrandTone.Neutral, showsDot = false)
+                StatePill(uiString(R.string.i18n_g2_fr_differs_slightly), tone = StrandTone.Neutral, showsDot = false)
                 Text(
                     uiString(R.string.l10n_fused_record_screen_other_source_displayname_fusionformat_value_other_207f7548, other.source.displayName, FusionFormat.value(other.value, point.metric)),
                     style = NoopType.footnote,
@@ -313,7 +313,7 @@ private fun AgreementLine(point: FusedMetricPoint, onCompare: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            StatePill("Sources differ", tone = StrandTone.Warning)
+            StatePill(uiString(R.string.i18n_g2_fr_sources_differ), tone = StrandTone.Warning)
             Text(
                 conflictSummary(point),
                 style = NoopType.footnote,
@@ -333,8 +333,8 @@ private fun AgreementLine(point: FusedMetricPoint, onCompare: () -> Unit) {
 }
 
 private fun conflictSummary(point: FusedMetricPoint): String {
-    val other = point.contributors.drop(1).firstOrNull() ?: return "Tap to compare"
-    return "${other.source.displayName} says ${FusionFormat.value(other.value, point.metric)}. Tap to compare"
+    val other = point.contributors.drop(1).firstOrNull() ?: return uiString(R.string.i18n_g2_fr_tap_to_compare)
+    return uiString(R.string.i18n_g2_fr_source_says, other.source.displayName, FusionFormat.value(other.value, point.metric))
 }
 
 // MARK: - Conflict-compare dialog
@@ -355,7 +355,7 @@ private fun ConflictCompareDialog(row: FusedRow, onDismiss: () -> Unit) {
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(Metrics.gap),
             ) {
-                SectionHeader(title = row.label, overline = "Sources differ")
+                SectionHeader(title = row.label, overline = uiString(R.string.i18n_g2_fr_sources_differ))
                 Text(
                     uiString(R.string.l10n_fused_record_screen_your_bands_report_different_numbers_here_03d20d81),
                     style = NoopType.subhead,
@@ -440,7 +440,7 @@ private fun ContributorRow(
                     contrib.source.displayName,
                     tint = if (isWinner) Palette.accent else Palette.textTertiary,
                 )
-                if (isWinner) StatePill("Using", tone = StrandTone.Accent, showsDot = true)
+                if (isWinner) StatePill(uiString(R.string.i18n_g2_fr_using), tone = StrandTone.Accent, showsDot = true)
             }
             Text(contrib.reason, style = NoopType.footnote, color = Palette.textTertiary)
         }

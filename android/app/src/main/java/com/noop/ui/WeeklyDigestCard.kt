@@ -127,13 +127,12 @@ fun WeeklyDigestCard(vm: AppViewModel, modifier: Modifier = Modifier) {
 fun WeeklyDigestScreen(vm: AppViewModel) {
     val days by vm.recentDays.collectAsStateWithLifecycle()
     val factor = effortDisplayFactor(UnitPrefs.effortScale(LocalContext.current))
-    ScreenScaffold(title = uiString(R.string.l10n_weekly_digest_card_week_in_review_66d95a07), subtitle = "Your Monday-to-Sunday, read in one glance.") {
+    ScreenScaffold(title = uiString(R.string.l10n_weekly_digest_card_week_in_review_66d95a07), subtitle = uiString(R.string.i18n_g2_wd_subtitle)) {
         val digest = buildWeeklyDigest(days, effortDisplayFactor = factor)
         if (digest.isEmpty) {
             DataPendingNote(
                 title = uiString(R.string.l10n_weekly_digest_card_no_readings_this_week_yet_0745a2df),
-                body = "Wear your strap or import your WHOOP export in Data Sources. Once this week has a " +
-                    "day or two of data, your week-in-review appears here.",
+                body = uiString(R.string.i18n_g2_wd_empty_body),
             )
         } else {
             NoopCard { WeeklyDigestContent(digest = digest, compact = false) }
@@ -168,7 +167,7 @@ fun WeeklyDigestContent(digest: WeeklyDigest, compact: Boolean = false) {
             verticalAlignment = Alignment.Top,
         ) {
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Overline("Week in review")
+                Overline(uiString(R.string.i18n_g2_wd_week_in_review))
                 Text(weekRangeLabel(digest), style = NoopType.title2, color = Palette.textPrimary)
             }
             Text(
@@ -231,7 +230,7 @@ private fun FocalRow(line: String) {
             tint = Palette.accent,
             modifier = Modifier.size(16.dp),
         )
-        Text(line, style = NoopType.subhead, color = Palette.textPrimary)
+        Text(DisplayPhrases.t(line), style = NoopType.subhead, color = Palette.textPrimary)
     }
 }
 
@@ -292,7 +291,7 @@ private fun weekRangeLabel(digest: WeeklyDigest): String =
 private fun shortDate(ymd: String): String {
     val p = WeeklyDigestEngine.parseYMD(ymd) ?: return ymd
     val name = if (p[1] in 1..12) MONTHS[p[1] - 1] else p[1].toString()
-    return "$name ${p[2]}"
+    return uiString(R.string.i18n_g2_wd_short_date, name, p[2], p[1])
 }
 
 internal fun meanText(s: WeeklyMetricSummary, effortScale: EffortScale): String {
@@ -341,17 +340,17 @@ private fun WeeklyMetric.labelRes(): Int = when (this) {
 private fun rowAccessibility(s: WeeklyMetricSummary, effortScale: EffortScale): String {
     val mean = meanText(s, effortScale)
     if (s.weekOverWeek.current.n == 0 || s.weekOverWeek.previous.n == 0) {
-        return "${s.metric.label}: $mean this week, no comparison."
+        return uiString(R.string.i18n_g2_wd_a11y_no_comparison, uiString(s.metric.labelRes()), mean)
     }
-    val dir = if (s.wowDelta > 0) "up" else if (s.wowDelta < 0) "down" else "unchanged"
+    val dir = if (s.wowDelta > 0) uiString(R.string.i18n_g2_wd_dir_up) else if (s.wowDelta < 0) uiString(R.string.i18n_g2_wd_dir_down) else uiString(R.string.i18n_g2_wd_dir_unchanged)
     // A rough comparison drops the verdict framing too, so VoiceOver/TalkBack matches the neutral chip.
     val frame = when {
         s.isRoughComparison -> ""
-        s.wowGoodness == 1 -> ", a good sign"
-        s.wowGoodness == -1 -> ", worth a look"
+        s.wowGoodness == 1 -> uiString(R.string.i18n_g2_wd_good_sign)
+        s.wowGoodness == -1 -> uiString(R.string.i18n_g2_wd_worth_a_look)
         else -> ""
     }
-    return "${s.metric.label}: $mean this week, $dir ${deltaText(s)} week over week$frame."
+    return uiString(R.string.i18n_g2_wd_a11y_row, uiString(s.metric.labelRes()), mean, dir, deltaText(s), frame)
 }
 
 private fun fmt1(x: Double): String = ((x * 10).roundToInt() / 10.0).toString()

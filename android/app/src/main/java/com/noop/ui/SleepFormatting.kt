@@ -16,12 +16,12 @@ internal fun pctValue(v: Double?): String = v?.let { "${it.roundToInt()}%" } ?: 
 
 /** "+12% vs typical" / "−0.4 rpm vs typical" — the latest-vs-mean caption every tile carries. */
 internal fun vsTypical(latest: Double?, typical: Double?, suffix: String, decimals: Int = 0): String {
-    if (latest == null || typical == null || typical == 0.0) return "vs typical - "
+    if (latest == null || typical == null || typical == 0.0) return DisplayPhrases.t("vs typical - ")
     val diff = latest - typical
     val sign = if (diff >= 0) "+" else "−"
     val mag = abs(diff)
     val num = if (decimals == 0) "${mag.roundToInt()}" else String.format(java.util.Locale.US, "%.${decimals}f", mag)
-    return "$sign$num$suffix vs typical"
+    return DisplayPhrases.t("$sign$num$suffix vs typical")
 }
 
 /** #1946: a carried prior-day value is stamped "Carried · <date>" instead of "vs typical", so it is
@@ -44,8 +44,8 @@ internal fun tileCaption(
 }
 
 internal fun debtCaption(debt: Double?): String {
-    if (debt == null) return "vs need"
-    return if (debt < SleepDebt.ON_TARGET_BAND_MIN) "On target" else "Below need"
+    if (debt == null) return DisplayPhrases.t("vs need")
+    return DisplayPhrases.t(if (debt < SleepDebt.ON_TARGET_BAND_MIN) "On target" else "Below need")
 }
 
 internal fun debtColor(debt: Double?): Color = when {
@@ -62,18 +62,22 @@ internal fun debtColor(debt: Double?): Color = when {
  * "On target" inside the deadband so a few stray minutes don't show as debt.
  */
 internal fun debtHeadline(ledger: SleepDebtLedger): String =
-    if (ledger.magnitudeMin < SleepDebt.ON_TARGET_BAND_MIN) "On target"
+    if (ledger.magnitudeMin < SleepDebt.ON_TARGET_BAND_MIN) DisplayPhrases.t("On target")
     else "≈${durationText(ledger.magnitudeMin)}"
 
 /** Short tag beside the headline: the recurrence never creates a positive surplus. */
-internal fun debtTag(ledger: SleepDebtLedger): String = when {
+internal fun debtTag(ledger: SleepDebtLedger): String = DisplayPhrases.t(debtTagEn(ledger))
+
+private fun debtTagEn(ledger: SleepDebtLedger): String = when {
     ledger.magnitudeMin < SleepDebt.ON_TARGET_BAND_MIN -> "balanced"
     ledger.isDebt -> "sleep debt"
     else -> "balanced"
 }
 
 /** Plain-English read of the actionable addition to the next night's target. */
-internal fun debtRead(ledger: SleepDebtLedger): String {
+internal fun debtRead(ledger: SleepDebtLedger): String = DisplayPhrases.t(debtReadEn(ledger))
+
+private fun debtReadEn(ledger: SleepDebtLedger): String {
     val nights = ledger.nightCount
     val span = "the last $nights night${if (nights == 1) "" else "s"}"
     if (ledger.magnitudeMin < SleepDebt.ON_TARGET_BAND_MIN) {

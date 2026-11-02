@@ -1,5 +1,6 @@
 package com.noop.ui
 
+import com.noop.R
 import com.noop.analytics.WorkoutsTrace
 import com.noop.data.DismissedWorkout
 import com.noop.data.WorkoutRow
@@ -68,6 +69,80 @@ object WorkoutEditing {
         }
         return out.toString()
     }
+
+    /** Display-only sport name in the app language. [displaySport] stays the stored / matching form;
+     *  this maps the common WHOOP / Apple / manual sport names onto translated labels and passes any
+     *  other name through unchanged. */
+    fun localizedSport(sport: String): String {
+        val shown = displaySport(sport)
+        val res = sportLabels[shown.trim().lowercase()] ?: return shown
+        return uiString(res)
+    }
+
+    private val sportLabels: Map<String, Int> = mapOf(
+        "activity" to R.string.redesign_sport_activity,
+        "workout" to R.string.redesign_sport_workout,
+        "other" to R.string.redesign_sport_other,
+        "running" to R.string.redesign_sport_running,
+        "run" to R.string.redesign_sport_run,
+        "treadmill" to R.string.redesign_sport_treadmill,
+        "cycling" to R.string.redesign_sport_cycling,
+        "indoor cycling" to R.string.redesign_sport_indoor_cycling,
+        "spin" to R.string.redesign_sport_spin,
+        "spinning" to R.string.redesign_sport_spinning,
+        "walking" to R.string.redesign_sport_walking,
+        "walk" to R.string.redesign_sport_walk,
+        "hiking" to R.string.redesign_sport_hiking,
+        "swimming" to R.string.redesign_sport_swimming,
+        "swim" to R.string.redesign_sport_swim,
+        "strength" to R.string.redesign_sport_strength,
+        "strength training" to R.string.redesign_sport_strength_training,
+        "traditional strength training" to R.string.redesign_sport_traditional_strength_training,
+        "functional strength training" to R.string.redesign_sport_functional_strength_training,
+        "weightlifting" to R.string.redesign_sport_weightlifting,
+        "powerlifting" to R.string.redesign_sport_powerlifting,
+        "hiit" to R.string.redesign_sport_hiit,
+        "high intensity interval training" to R.string.redesign_sport_high_intensity_interval_training,
+        "functional fitness" to R.string.redesign_sport_functional_fitness,
+        "cross training" to R.string.redesign_sport_cross_training,
+        "crossfit" to R.string.redesign_sport_crossfit,
+        "yoga" to R.string.redesign_sport_yoga,
+        "pilates" to R.string.redesign_sport_pilates,
+        "elliptical" to R.string.redesign_sport_elliptical,
+        "rowing" to R.string.redesign_sport_rowing,
+        "stair climbing" to R.string.redesign_sport_stair_climbing,
+        "stairmaster" to R.string.redesign_sport_stairmaster,
+        "boxing" to R.string.redesign_sport_boxing,
+        "kickboxing" to R.string.redesign_sport_kickboxing,
+        "martial arts" to R.string.redesign_sport_martial_arts,
+        "tennis" to R.string.redesign_sport_tennis,
+        "badminton" to R.string.redesign_sport_badminton,
+        "table tennis" to R.string.redesign_sport_table_tennis,
+        "basketball" to R.string.redesign_sport_basketball,
+        "soccer" to R.string.redesign_sport_soccer,
+        "football" to R.string.redesign_sport_football,
+        "volleyball" to R.string.redesign_sport_volleyball,
+        "golf" to R.string.redesign_sport_golf,
+        "dance" to R.string.redesign_sport_dance,
+        "dancing" to R.string.redesign_sport_dancing,
+        "skiing" to R.string.redesign_sport_skiing,
+        "snowboarding" to R.string.redesign_sport_snowboarding,
+        "climbing" to R.string.redesign_sport_climbing,
+        "rock climbing" to R.string.redesign_sport_rock_climbing,
+        "bouldering" to R.string.redesign_sport_bouldering,
+        "stretching" to R.string.redesign_sport_stretching,
+        "mobility" to R.string.redesign_sport_mobility,
+        "meditation" to R.string.redesign_sport_meditation,
+        "breathwork" to R.string.redesign_sport_breathwork,
+        "core training" to R.string.redesign_sport_core_training,
+        "jump rope" to R.string.redesign_sport_jump_rope,
+        "skating" to R.string.redesign_sport_skating,
+        "surfing" to R.string.redesign_sport_surfing,
+        "paddleboarding" to R.string.redesign_sport_paddleboarding,
+        "kayaking" to R.string.redesign_sport_kayaking,
+        "sauna" to R.string.redesign_sport_sauna,
+        "cooldown" to R.string.redesign_sport_cooldown,
+    )
 
     // MARK: - Dismissed detected bouts (legacy rows + suggestion suppression)
 

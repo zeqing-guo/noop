@@ -172,7 +172,7 @@ fun DevicesScreen(
     val removedDevices = all.filter { it.status == DeviceStatus.archived.name }
     val currentActiveName =
         all.firstOrNull { it.status == DeviceStatus.active.name }?.let { displayName(it) }
-            ?: "Your current strap"
+            ?: uiString(R.string.i18n_g2_dv_current_strap)
 
     // PERF (#707): lazy scaffold — each device card is virtualized via `items(...)` (each was a direct
     // child of the eager `spacedBy(20.dp)` column, so the LazyColumn's matching spacing is identical) and
@@ -180,7 +180,7 @@ fun DevicesScreen(
     // Conditional rows use `if (cond) { item/items }` so a hidden section adds no row.
     LazyScreenScaffold(
         title = uiString(R.string.l10n_devices_screen_devices_df485c87),
-        subtitle = "Pair and manage the bands NOOP reads from.",
+        subtitle = uiString(R.string.i18n_g2_dv_subtitle),
         // LIQUID SKY BACKDROP (the pilot pattern — LiquidScreenSky.kt): the time-of-day liquid sky settles
         // into the flat canvas behind the top of the screen so the frosted device cards float over it. The
         // static sky (LiquidSkyStatic inside the helper) carries no per-frame cost on this scrolling list.
@@ -220,7 +220,7 @@ fun DevicesScreen(
             item {
             DataPendingNote(
                 title = uiString(R.string.l10n_devices_screen_getting_your_devices_ready_bd391949),
-                body = "NOOP is opening your on-device data. Your paired bands will appear here in a moment.",
+                body = uiString(R.string.i18n_g2_dv_loading_body),
             )
             }
             return@LazyScreenScaffold
@@ -295,10 +295,10 @@ fun DevicesScreen(
                 // Manual connect and disconnect for the WHOOP. A short toast confirms the tap, since the link
                 // state only changes a few seconds later.
                 onConnect = if (device.brand.equals("WHOOP", ignoreCase = true)) {
-                    { Toast.makeText(context, "Reconnecting…", Toast.LENGTH_SHORT).show(); viewModel.connect() }
+                    { Toast.makeText(context, uiString(R.string.i18n_g2_dv_toast_reconnecting), Toast.LENGTH_SHORT).show(); viewModel.connect() }
                 } else null,
                 onDisconnect = if (device.brand.equals("WHOOP", ignoreCase = true)) {
-                    { Toast.makeText(context, "Disconnecting", Toast.LENGTH_SHORT).show(); viewModel.disconnect() }
+                    { Toast.makeText(context, uiString(R.string.i18n_g2_dv_toast_disconnecting), Toast.LENGTH_SHORT).show(); viewModel.disconnect() }
                 } else null,
                 // Restart is offered only for a live-connected WHOOP that is NOT a 4.0: the strap-log
                 // analysis on #275 showed no safe frame reboots a 4.0 (empty bodies are ignored; any
@@ -361,7 +361,7 @@ fun DevicesScreen(
         strapCompare?.let { c -> item { CompareCard(c) } }
 
         if (removedDevices.isNotEmpty()) {
-            item { Overline("Removed", modifier = Modifier.padding(top = 4.dp)) }
+            item { Overline(uiString(R.string.i18n_g2_dv_removed), modifier = Modifier.padding(top = 4.dp)) }
             items(removedDevices) { device ->
                 DeviceCard(
                     device = device,
@@ -396,9 +396,8 @@ fun DevicesScreen(
     switchTarget?.let { device ->
         ConfirmDialog(
             title = uiString(R.string.l10n_devices_screen_make_this_your_active_strap_fea6bebd),
-            message = "Make ${displayName(device)} your active strap? From now on it provides your live data. " +
-                "$currentActiveName's history stays exactly as it is. Only new days come from ${displayName(device)}.",
-            confirmLabel = "Make active",
+            message = uiString(R.string.i18n_g2_dv_make_active_msg, displayName(device), currentActiveName),
+            confirmLabel = uiString(R.string.i18n_g2_dv_make_active),
             onConfirm = {
                 scope.launch { viewModel.setActiveDevice(device.id); reload() }
                 switchTarget = null
@@ -423,9 +422,8 @@ fun DevicesScreen(
     removeTarget?.let { device ->
         ConfirmDialog(
             title = uiString(R.string.l10n_devices_screen_remove_this_device_dd9dbda9),
-            message = "Remove ${displayName(device)}? NOOP will stop connecting to it. Its recorded data is " +
-                "kept and you can re-add it any time.",
-            confirmLabel = "Remove",
+            message = uiString(R.string.i18n_g2_dv_remove_msg, displayName(device)),
+            confirmLabel = uiString(R.string.i18n_g2_dv_remove),
             destructive = true,
             onConfirm = {
                 val wasActive = device.status == DeviceStatus.active.name
@@ -448,9 +446,8 @@ fun DevicesScreen(
     rebootTarget?.let { device ->
         ConfirmDialog(
             title = uiString(R.string.l10n_devices_screen_restart_this_strap_50fc481b),
-            message = "Restart ${displayName(device)}? It disconnects for about 30 seconds while it " +
-                "reboots, then reconnects on its own. Your recorded data is kept.",
-            confirmLabel = "Restart",
+            message = uiString(R.string.i18n_g2_dv_restart_msg, displayName(device)),
+            confirmLabel = uiString(R.string.i18n_g2_dv_restart),
             destructive = false,
             onConfirm = { viewModel.rebootStrap(); rebootTarget = null },
             onDismiss = { rebootTarget = null },
@@ -541,8 +538,8 @@ fun DevicesScreen(
     deleteDataTarget?.let { device ->
         ConfirmDialog(
             title = uiString(R.string.l10n_devices_screen_delete_all_of_this_device_s_754cde90),
-            message = "This permanently deletes all data recorded from ${displayName(device)}. This can't be undone.",
-            confirmLabel = "Delete data",
+            message = uiString(R.string.i18n_g2_dv_delete_msg, displayName(device)),
+            confirmLabel = uiString(R.string.i18n_g2_dv_delete_data),
             destructive = true,
             onConfirm = {
                 scope.launch { viewModel.deletePairedDeviceData(device.id); reload() }
@@ -642,34 +639,34 @@ private fun strapMetricValues(d: DailyMetric): Map<MetricArbitrationPolicy.Metri
 
 /** Short metric label. Non-@Composable (hardcoded, audit-blindspot) to match the rhythm-screen copy pattern. */
 private fun strapMetricLabel(m: MetricArbitrationPolicy.MetricKind): String = when (m) {
-    MetricArbitrationPolicy.MetricKind.RESTING_HR -> "Resting HR"
-    MetricArbitrationPolicy.MetricKind.HEART_RATE -> "Heart rate"
+    MetricArbitrationPolicy.MetricKind.RESTING_HR -> uiString(R.string.i18n_g2_dv_metric_resting_hr)
+    MetricArbitrationPolicy.MetricKind.HEART_RATE -> uiString(R.string.i18n_g2_dv_metric_heart_rate)
     MetricArbitrationPolicy.MetricKind.HRV -> "HRV"
     MetricArbitrationPolicy.MetricKind.SPO2 -> "SpO₂"
-    MetricArbitrationPolicy.MetricKind.SKIN_TEMP -> "Skin temp"
-    MetricArbitrationPolicy.MetricKind.STEPS -> "Steps"
-    MetricArbitrationPolicy.MetricKind.SLEEP -> "Sleep"
-    MetricArbitrationPolicy.MetricKind.CALORIES -> "Calories"
+    MetricArbitrationPolicy.MetricKind.SKIN_TEMP -> uiString(R.string.i18n_g2_dv_metric_skin_temp)
+    MetricArbitrationPolicy.MetricKind.STEPS -> uiString(R.string.i18n_g2_dv_metric_steps)
+    MetricArbitrationPolicy.MetricKind.SLEEP -> uiString(R.string.i18n_g2_dv_metric_sleep)
+    MetricArbitrationPolicy.MetricKind.CALORIES -> uiString(R.string.i18n_g2_dv_metric_calories)
     MetricArbitrationPolicy.MetricKind.OTHER -> ""
 }
 
 private fun strapAgreementLabel(a: AgreementState): Pair<String, StrandTone> = when (a) {
-    AgreementState.AGREE -> "match" to StrandTone.Positive
-    AgreementState.MINOR_DELTA -> "close" to StrandTone.Neutral
-    AgreementState.CONFLICT -> "differs" to StrandTone.Warning
-    AgreementState.SINGLE -> "one strap" to StrandTone.Neutral
+    AgreementState.AGREE -> uiString(R.string.i18n_g2_dv_agree_match) to StrandTone.Positive
+    AgreementState.MINOR_DELTA -> uiString(R.string.i18n_g2_dv_agree_close) to StrandTone.Neutral
+    AgreementState.CONFLICT -> uiString(R.string.i18n_g2_dv_agree_differs) to StrandTone.Warning
+    AgreementState.SINGLE -> uiString(R.string.i18n_g2_dv_agree_single) to StrandTone.Neutral
 }
 
 private fun strapValue(v: Double?): String = v?.let { "%.0f".format(it) } ?: "—"
 
 private fun strapCompareFootnote(): String =
-    "A read-only look at your last shared day — not a combined score. Different devices read a little differently, so a difference isn't necessarily wrong."
+    uiString(R.string.i18n_g2_dv_compare_footnote)
 
 @Composable
 private fun CompareCard(c: StrapCompareData) {
     NoopCard(padding = 18.dp, tint = Palette.accent) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Overline("How your straps compare")
+            Overline(uiString(R.string.i18n_g2_dv_compare_title))
             Row {
                 Text(c.aName, style = NoopType.caption, color = Palette.textSecondary, modifier = Modifier.weight(1f))
                 Text(c.bName, style = NoopType.caption, color = Palette.textSecondary)
@@ -791,7 +788,7 @@ private fun DeviceCard(
         .clickable(
             interactionSource = interaction,
             indication = null,
-            onClickLabel = "Device actions for ${displayName(device)}",
+            onClickLabel = uiString(R.string.i18n_g2_dv_device_actions, displayName(device)),
         ) { menuOpen = true }
 
     // The ACTIVE device is the hero: the liquid translucent-black frosted card (rgba(13,14,20,.80), radius
@@ -818,7 +815,7 @@ private fun DeviceCard(
                 }
                 // Locally-adopted Oura is Beta: a non-dot Beta chip sits beside the usual state pill.
                 if (device.sourceKind == SourceKind.oura.name) {
-                    StatePill("Beta", tone = StrandTone.Warning, showsDot = false)
+                    StatePill(uiString(R.string.i18n_g2_dv_beta), tone = StrandTone.Warning, showsDot = false)
                     Spacer(Modifier.width(6.dp))
                 }
                 StatePill(device, isActive, isLiveConnected, bondRefused, isReconnecting)
@@ -873,7 +870,7 @@ private fun DeviceCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     lastSeenLine(device, isLiveConnected, bondRefused) +
-                        (liveFirmware?.let { " · FW $it" } ?: "") +
+                        (liveFirmware?.let { " · " + uiString(R.string.i18n_g2_dv_firmware, it) } ?: "") +
                         voltsSuffix +
                         packSuffix +
                         (historyLayoutLine(liveHistoryLayout)?.let { " · $it" } ?: ""),
@@ -1182,7 +1179,7 @@ private fun ConfirmDialog(
     title: String,
     message: String,
     confirmLabel: String,
-    cancelLabel: String = "Cancel",
+    cancelLabel: String = uiString(R.string.i18n_g2_dv_cancel),
     destructive: Boolean = false,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
@@ -1760,22 +1757,19 @@ private fun deviceProfile(device: PairedDeviceRow): DeviceCapabilityProfile {
     // live-workout path. Effort-scored only when the machine actually reports heart rate.
     if (device.sourceKind == SourceKind.ftms.name) {
         return DeviceCapabilityProfile(
-            displayModel = "Gym equipment (FTMS)",
-            captures = "Speed · Cadence · Power · Distance · Energy · Heart rate (if the machine sends it)",
-            powers = "Records a live machine workout, Effort-scored from HR when the machine reports it",
-            footnote = "Live machine data over Bluetooth FTMS. No sleep, recovery, skin temp or SpO₂. " +
-                "Effort needs the machine's heart rate; without it the session logs the machine metrics only.",
+            displayModel = uiString(R.string.i18n_g2_dv_ftms_model),
+            captures = uiString(R.string.i18n_g2_dv_ftms_captures),
+            powers = uiString(R.string.i18n_g2_dv_ftms_powers),
+            footnote = uiString(R.string.i18n_g2_dv_ftms_footnote),
         )
     }
     // EXPERIMENTAL Huami device (Amazfit / Zepp / Mi Band): best-effort live HR only, honest about it.
     if (device.sourceKind == SourceKind.huami.name) {
         return DeviceCapabilityProfile(
-            displayModel = "${device.brand} (experimental)",
-            captures = "Heart rate (live, best-effort)",
-            powers = "Powers the live console + Effort. No Charge, Rest or Sleep",
-            footnote = "Experimental: live heart rate where the band exposes it. Some bands need a pairing " +
-                "we can't do yet. NOOP will say so honestly and never show a made-up number. No sleep, " +
-                "recovery, skin temp, SpO₂ or steps.",
+            displayModel = uiString(R.string.i18n_g2_dv_huami_model, device.brand),
+            captures = uiString(R.string.i18n_g2_dv_huami_captures),
+            powers = uiString(R.string.i18n_g2_dv_powers_live_effort),
+            footnote = uiString(R.string.i18n_g2_dv_huami_footnote),
         )
     }
     // EXPERIMENTAL locally-adopted Oura ring (gen 3/4/5). The gen is carried on `model` ("Oura Ring
@@ -1789,61 +1783,55 @@ private fun deviceProfile(device: PairedDeviceRow): DeviceCapabilityProfile {
         // gen3/4 are verified-shape; gen5 ("newer") carries the least-proven caveat.
         val newer = gen == com.noop.oura.OuraRingGen.GEN5
         val captures = if (newer)
-            "Heart rate* · HRV* · Sleep* · Resting HR* · Skin temp* · Battery*"
+            uiString(R.string.i18n_g2_dv_oura_new_captures)
         else
-            "Heart rate · HRV* · Sleep · Resting HR · Skin temp* · Battery"
+            uiString(R.string.i18n_g2_dv_oura_captures)
         val powers = if (newer)
-            "Powers Effort now; Charge and Rest once enough nights and decode are confirmed"
+            uiString(R.string.i18n_g2_dv_oura_new_powers)
         else
-            "Powers Charge, Effort, Rest and Sleep"
+            uiString(R.string.i18n_g2_dv_oura_powers)
         return DeviceCapabilityProfile(
-            displayModel = "${gen.displayName} (Beta)",
+            displayModel = uiString(R.string.i18n_g2_dv_oura_model, gen.displayName),
             captures = captures,
             powers = powers,
-            footnote = "Beta. * is an on-device estimate. Skin temp is a trend versus your own baseline, " +
-                "and HRV needs you to be still. No Oura Readiness or SpO₂ " +
-                "percentage comes off the ring (import an Oura file for those).",
+            footnote = uiString(R.string.i18n_g2_dv_oura_footnote),
         )
     }
     // Generic heart-rate strap: live HR + R-R only; drives the live console + Effort, nothing nightly.
     if (!SourceCoordinator.isWhoop(device)) {
         return DeviceCapabilityProfile(
-            displayModel = "Heart-rate strap",
-            captures = "Heart rate · HRV (live)* · Strain",
-            powers = "Powers the live console + Effort. No Charge, Rest or Sleep",
-            footnote = "Live HR + R-R only · no sleep, recovery, skin temp, SpO₂, steps or battery " +
-                "(those are WHOOP-only).",
+            displayModel = uiString(R.string.i18n_g2_dv_hr_strap_model),
+            captures = uiString(R.string.i18n_g2_dv_hr_strap_captures),
+            powers = uiString(R.string.i18n_g2_dv_powers_live_effort),
+            footnote = uiString(R.string.i18n_g2_dv_hr_strap_footnote),
         )
     }
-    val whoopPowers = "Powers Charge, Effort, Rest, Sleep + Health Monitor"
+    val whoopPowers = uiString(R.string.i18n_g2_dv_whoop_powers)
     val model = device.model.lowercase()
     // WHOOP 5.0 / MG — adds a (raw) step count the 4.0 can't read over BLE.
     if (model.contains("5") || model.contains("mg")) {
         return DeviceCapabilityProfile(
             displayModel = "WHOOP 5.0 / MG",
-            captures = "Heart rate · HRV · Skin temp* · Resp rate* · Steps* · Sleep · Strain · Battery",
+            captures = uiString(R.string.i18n_g2_dv_whoop5_captures),
             powers = whoopPowers,
-            footnote = "* on-device estimate: skin temp is a nightly ±°C deviation, steps are a raw " +
-                "motion count (#78). No SpO₂ % off the strap; import a WHOOP CSV for a real %.",
+            footnote = uiString(R.string.i18n_g2_dv_whoop5_footnote),
         )
     }
     // WHOOP 4.0 — NOOP's primary band; no steps over BLE.
     if (model.contains("4")) {
         return DeviceCapabilityProfile(
             displayModel = "WHOOP 4.0",
-            captures = "Heart rate · HRV · Skin temp* · Resp rate* · Sleep · Strain · Battery",
+            captures = uiString(R.string.i18n_g2_dv_whoop4_captures),
             powers = whoopPowers,
-            footnote = "* on-device estimate: skin temp is a nightly ±°C deviation (firmware-dependent); " +
-                "no steps over BLE on a 4.0. No SpO₂ % off the strap; import a WHOOP CSV for a real %.",
+            footnote = uiString(R.string.i18n_g2_dv_whoop4_footnote),
         )
     }
     // Legacy / unknown WHOOP (the seeded device, model just "WHOOP") — show only the common-to-all set.
     return DeviceCapabilityProfile(
         displayModel = "WHOOP",
-        captures = "Heart rate · HRV · Skin temp* · Resp rate* · Sleep · Strain · Battery",
+        captures = uiString(R.string.i18n_g2_dv_whoop4_captures),
         powers = whoopPowers,
-        footnote = "Exact model unknown. Shows what every WHOOP can do. * on-device estimate · " +
-            "no SpO₂ % off the strap (import a WHOOP CSV for that).",
+        footnote = uiString(R.string.i18n_g2_dv_whoop_unknown_footnote),
     )
 }
 
@@ -1880,12 +1868,12 @@ private fun OuraLocalStateNote() {
 }
 
 private fun lastSeenLine(device: PairedDeviceRow, isLiveConnected: Boolean, bondRefused: Boolean = false): String = when {
-    device.status == DeviceStatus.archived.name -> "Removed · data kept"
+    device.status == DeviceStatus.archived.name -> uiString(R.string.i18n_g2_dv_status_removed)
     // No "tap ⋯" pointer here (#221 review) — the full how-to-fix guidance is already inline on the card
     // just below, so pointing at the menu would send the user looking for help that's already on screen.
-    bondRefused -> "Connected, but not paired"
-    isLiveConnected -> "Connected now"
-    else -> "Last seen ${relativeAgo(device.lastSeenAt)}"
+    bondRefused -> uiString(R.string.i18n_g2_dv_status_not_paired)
+    isLiveConnected -> uiString(R.string.i18n_g2_dv_status_connected_now)
+    else -> uiString(R.string.i18n_g2_dv_last_seen, relativeAgo(device.lastSeenAt))
 }
 
 internal fun historyLayoutLine(version: Int?): String? =

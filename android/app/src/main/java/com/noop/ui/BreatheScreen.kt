@@ -466,7 +466,7 @@ fun BreatheScreen(viewModel: AppViewModel) {
     val skyBehindCards = remember { NoopPrefs.skyBehindCards(skyCtx) }
     ScreenScaffold(
         title = uiString(R.string.l10n_breathe_screen_breathe_282be568),
-        subtitle = "Haptic-paced breathing · find your pace · calm down",
+        subtitle = uiString(R.string.i18n_g2_br_subtitle),
         // LIQUID SKY BACKDROP (the pilot pattern — LiquidScreenSky.kt): the time-of-day liquid sky settles
         // into the theme canvas behind the header + top card and bleeds full-width up behind the status bar
         // via the scaffold's topBackground plumbing. The Android equivalent of the iOS
@@ -518,15 +518,15 @@ fun BreatheScreen(viewModel: AppViewModel) {
         // Status row.
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             StatePill(
-                if (running) "Session live" else "Ready",
+                if (running) uiString(R.string.i18n_g2_br_session_live) else uiString(R.string.i18n_g2_br_ready),
                 tone = if (running) StrandTone.Accent else StrandTone.Neutral,
                 pulsing = running,
             )
             Spacer(Modifier.width(8.dp))
             if (live.bonded) {
-                StatePill("Haptics on", tone = StrandTone.Positive)
+                StatePill(uiString(R.string.i18n_g2_br_haptics_on), tone = StrandTone.Positive)
             } else {
-                StatePill("Visual only", tone = StrandTone.Warning)
+                StatePill(uiString(R.string.i18n_g2_br_visual_only), tone = StrandTone.Warning)
             }
             Spacer(Modifier.weight(1f))
             val target = sessionLength.targetSeconds
@@ -688,7 +688,7 @@ fun BreatheScreen(viewModel: AppViewModel) {
                     contentDescription = null,
                     modifier = Modifier.padding(end = 6.dp),
                 )
-                Text(if (running) "Stop session" else "Start session", style = NoopType.headline)
+                Text(if (running) uiString(R.string.i18n_g2_br_stop_session) else uiString(R.string.i18n_g2_br_start_session), style = NoopType.headline)
             }
 
             OutlinedButton(
@@ -705,9 +705,9 @@ fun BreatheScreen(viewModel: AppViewModel) {
         // Hidden while running and when there is nothing honest to show.
         val outcomeLine = when {
             running -> null
-            endedOutcome == "—" -> "RMSSD - · not enough R-R data"
+            endedOutcome == "—" -> uiString(R.string.i18n_g2_br_outcome_no_rr)
             endedOutcome != null -> "RMSSD $endedOutcome"
-            lastStoredOutcome.isNotEmpty() -> "Last session: $lastStoredOutcome"
+            lastStoredOutcome.isNotEmpty() -> uiString(R.string.i18n_g2_br_last_session, lastStoredOutcome)
             else -> null
         }
         if (outcomeLine != null) {
@@ -748,7 +748,7 @@ fun BreatheScreen(viewModel: AppViewModel) {
                 value = bpm?.toString() ?: "—",
                 unit = "bpm",
                 accent = Palette.metricRose,
-                caption = if (live.worn) "Live" else "Strap not worn",
+                caption = if (live.worn) uiString(R.string.i18n_g2_br_live) else uiString(R.string.i18n_g2_br_strap_not_worn),
             )
             ReadoutTile(
                 modifier = Modifier.weight(1f),
@@ -756,7 +756,7 @@ fun BreatheScreen(viewModel: AppViewModel) {
                 value = rmssd?.let { String.format(Locale.US, "%.0f", it) } ?: "—",
                 unit = "ms",
                 accent = Palette.metricPurple,
-                caption = if (rrBuffer.value.isEmpty()) "Waiting for R-R" else "Last ${rrBuffer.value.size} beats",
+                caption = if (rrBuffer.value.isEmpty()) uiString(R.string.i18n_g2_br_waiting_rr) else uiString(R.string.i18n_g2_br_last_beats, rrBuffer.value.size),
             )
             ReadoutTile(
                 modifier = Modifier.weight(1f),
@@ -853,7 +853,7 @@ private fun CoherenceCard(rmssd: Double?) {
     NoopCard {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Overline("Coherence estimate")
+                Overline(uiString(R.string.i18n_g2_br_coherence_estimate))
                 Spacer(Modifier.weight(1f))
                 StatePill(label, tone = tone)
             }
@@ -875,11 +875,11 @@ private fun CoherenceCard(rmssd: Double?) {
 }
 
 private fun coherenceState(rmssd: Double?): Pair<String, StrandTone> = when {
-    rmssd == null -> "No data" to StrandTone.Neutral
-    rmssd < 20 -> "Building" to StrandTone.Warning
-    rmssd < 45 -> "Settling" to StrandTone.Neutral
-    rmssd < 80 -> "Coherent" to StrandTone.Positive
-    else -> "Deep calm" to StrandTone.Positive
+    rmssd == null -> uiString(R.string.i18n_g2_br_coh_no_data) to StrandTone.Neutral
+    rmssd < 20 -> uiString(R.string.i18n_g2_br_coh_building) to StrandTone.Warning
+    rmssd < 45 -> uiString(R.string.i18n_g2_br_coh_settling) to StrandTone.Neutral
+    rmssd < 80 -> uiString(R.string.i18n_g2_br_coh_coherent) to StrandTone.Positive
+    else -> uiString(R.string.i18n_g2_br_coh_deep_calm) to StrandTone.Positive
 }
 
 // MARK: - Session outcome
@@ -1028,9 +1028,9 @@ private fun StressCheckInCard(onBreatheNow: () -> Unit) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Air, contentDescription = null, tint = Palette.restBright,
                     modifier = Modifier.size(16.dp).padding(end = 8.dp))
-                Overline("Stress check-in")
+                Overline(uiString(R.string.i18n_g2_br_stress_checkin))
                 Spacer(Modifier.weight(1f))
-                StatePill("Passive", tone = StrandTone.Neutral)
+                StatePill(uiString(R.string.i18n_g2_br_passive), tone = StrandTone.Neutral)
             }
             Text(
                 uiString(R.string.l10n_breathe_screen_your_hrv_dipped_while_you_were_231d3c7a),
@@ -1067,8 +1067,7 @@ private fun honestNudgeLine(n: StressNudgeCenter.Nudge): String? {
     val fast = n.fastRMSSD ?: return null
     val base = n.baselineRMSSD ?: return null
     if (base <= 0.0) return null
-    return String.format(Locale.US,
-        "RMSSD %.0f ms now vs your ~%.0f ms baseline (estimate from PPG-derived R-R).", fast, base)
+    return uiString(R.string.i18n_g2_br_nudge_line, fast, base)
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -1103,7 +1102,7 @@ private fun ResonanceMode(
         val paces = if (quick) ResonanceEngine.QUICK_SWEEP_PACES else ResonanceEngine.FULL_SWEEP_PACES
         val samples = ArrayList<ResonanceEngine.PaceSample>()
         for ((index, bpm) in paces.withIndex()) {
-            sweepLabel = String.format(Locale.US, "Testing %.1f br/min…", bpm)
+            sweepLabel = uiString(R.string.i18n_g2_br_testing_pace, bpm)
             val startTs = (System.currentTimeMillis() / 1000).toInt()
             val bucket = ArrayList<ResonanceEngine.RrBeat>()
             // Collect this pace's R-R while we pace it; fire the cue list (1 inhale / 2 exhale) on tempo.
@@ -1141,9 +1140,9 @@ private fun ResonanceMode(
         NoopCard(tint = Palette.restColor) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Overline("Find your resonance pace")
+                    Overline(uiString(R.string.i18n_g2_br_find_resonance))
                     Spacer(Modifier.weight(1f))
-                    StatePill(if (live.bonded) "Haptics on" else "Visual only",
+                    StatePill(if (live.bonded) uiString(R.string.i18n_g2_br_haptics_on) else uiString(R.string.i18n_g2_br_visual_only),
                         tone = if (live.bonded) StrandTone.Positive else StrandTone.Warning)
                 }
                 Text(
@@ -1162,9 +1161,9 @@ private fun ResonanceMode(
             NoopCard(tint = Palette.restColor) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(sweepLabel ?: "Sweeping…", style = NoopType.headline, color = Palette.textPrimary)
+                        Text(sweepLabel ?: uiString(R.string.i18n_g2_br_sweeping), style = NoopType.headline, color = Palette.textPrimary)
                         Spacer(Modifier.weight(1f))
-                        StatePill("Live", tone = StrandTone.Accent, pulsing = true)
+                        StatePill(uiString(R.string.i18n_g2_br_live), tone = StrandTone.Accent, pulsing = true)
                     }
                     ProgressBar(sweepProgress.toFloat())
                     OutlinedButton(
@@ -1222,9 +1221,9 @@ private fun ResonanceResultCard(result: ResonanceEngine.SweepResult, context: an
     NoopCard(tint = Palette.restColor) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Overline(if (result.didLock) "Your resonance pace" else "Couldn't lock today")
+                Overline(if (result.didLock) uiString(R.string.i18n_g2_br_your_resonance) else uiString(R.string.i18n_g2_br_couldnt_lock))
                 Spacer(Modifier.weight(1f))
-                StatePill(if (result.didLock) "Locked" else "Fallback",
+                StatePill(if (result.didLock) uiString(R.string.i18n_g2_br_locked) else uiString(R.string.i18n_g2_br_fallback),
                     tone = if (result.didLock) StrandTone.Positive else StrandTone.Neutral)
             }
             Row(verticalAlignment = Alignment.Bottom) {
@@ -1255,9 +1254,9 @@ private fun LockedPaceCard(bpm: Double, context: android.content.Context) {
     NoopCard(tint = Palette.restColor) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Overline("Your locked pace")
+                Overline(uiString(R.string.i18n_g2_br_your_locked_pace))
                 Spacer(Modifier.weight(1f))
-                StatePill("Locked", tone = StrandTone.Positive)
+                StatePill(uiString(R.string.i18n_g2_br_locked), tone = StrandTone.Positive)
             }
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(String.format(Locale.US, "%.1f", bpm), style = NoopType.number(34f), color = Palette.restBright)
@@ -1279,7 +1278,7 @@ private fun LockedPaceCard(bpm: Double, context: android.content.Context) {
 private fun RsaCurve(scores: List<ResonanceEngine.PaceScore>) {
     val maxRsa = scores.mapNotNull { it.rsaAmplitude }.maxOrNull() ?: 1.0
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Overline("RSA response by pace")
+        Overline(uiString(R.string.i18n_g2_br_rsa_by_pace))
         scores.forEach { s ->
             Row(verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1362,9 +1361,9 @@ private fun CalmMode(viewModel: AppViewModel, live: com.noop.ble.LiveState, bpm:
         NoopCard(tint = Palette.restColor) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Overline("Calm me")
+                    Overline(uiString(R.string.i18n_g2_br_calm_me))
                     Spacer(Modifier.weight(1f))
-                    StatePill(if (canRun) "Ready" else "Strap needed",
+                    StatePill(if (canRun) uiString(R.string.i18n_g2_br_ready) else uiString(R.string.i18n_g2_br_strap_needed),
                         tone = if (canRun) StrandTone.Neutral else StrandTone.Warning)
                 }
                 Text(
@@ -1382,9 +1381,9 @@ private fun CalmMode(viewModel: AppViewModel, live: com.noop.ble.LiveState, bpm:
             NoopCard(tint = Palette.restColor) {
                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Overline("Settling")
+                        Overline(uiString(R.string.i18n_g2_br_settling))
                         Spacer(Modifier.weight(1f))
-                        StatePill("Live", tone = StrandTone.Accent, pulsing = true)
+                        StatePill(uiString(R.string.i18n_g2_br_live), tone = StrandTone.Accent, pulsing = true)
                     }
                     Row(verticalAlignment = Alignment.Bottom,
                         horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -1392,7 +1391,7 @@ private fun CalmMode(viewModel: AppViewModel, live: com.noop.ble.LiveState, bpm:
                         Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null,
                             tint = Palette.textTertiary, modifier = Modifier.padding(bottom = 8.dp))
                         Column {
-                            Text("target", style = NoopType.footnote, color = Palette.textTertiary)
+                            Text(uiString(R.string.i18n_g2_br_target), style = NoopType.footnote, color = Palette.textTertiary)
                             Text(targetBpm?.let { String.format(Locale.US, "%.0f", it) } ?: "—",
                                 style = NoopType.number(22f), color = Palette.restBright)
                         }
@@ -1475,13 +1474,13 @@ private fun calmOutcomeLine(
     val mmss = String.format(Locale.US, "%d:%02d", elapsed / 60, elapsed % 60)
     return when (reason) {
         com.noop.analytics.HrDownPacer.StopReason.SETTLED ->
-            if (startHr != null && endHr != null) "HR settled $startHr → $endHr over $mmss."
-            else "HR settled over $mmss."
+            if (startHr != null && endHr != null) uiString(R.string.i18n_g2_br_hr_settled_range, startHr, endHr, mmss)
+            else uiString(R.string.i18n_g2_br_hr_settled, mmss)
         else ->
-            if (startHr != null && endHr != null && endHr < startHr) "HR eased $startHr → $endHr over $mmss."
+            if (startHr != null && endHr != null && endHr < startHr) uiString(R.string.i18n_g2_br_hr_eased, startHr, endHr, mmss)
             else if (startHr != null && endHr != null)
-                "HR held steady ($startHr → $endHr). Try a paced breath instead."
-            else "Session ended. Try a paced breath instead."
+                uiString(R.string.i18n_g2_br_hr_held, startHr, endHr)
+            else uiString(R.string.i18n_g2_br_session_ended)
     }
 }
 

@@ -245,7 +245,7 @@ fun SyncingHistoryNote(chunks: Int, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        StatePill("Syncing strap history…", tone = StrandTone.Accent, pulsing = true)
+        StatePill(uiString(R.string.i18n_g4_components_syncing_strap_history), tone = StrandTone.Accent, pulsing = true)
         if (chunks > 0) {
             Text(
                 uiString(R.string.l10n_components_chunks_chunks_pulled_cec186cf, chunks),
@@ -1193,7 +1193,7 @@ fun StrainGauge(
         tipColor = Palette.effortTint(fraction),
         numberText = valueText
             ?: if (clamped % 1.0 == 0.0) clamped.toInt().toString() else String.format(java.util.Locale.US, "%.1f", clamped),
-        captionText = "of ${outOf.toInt()}",
+        captionText = uiString(R.string.i18n_g4_components_gauge_of_max, outOf.toInt()),
         diameter = diameter,
         lineWidth = lineWidth,
         showsLabel = showsLabel,

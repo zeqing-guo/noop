@@ -116,10 +116,10 @@ internal const val JOURNAL_BACKFILL_DAYS = 6
 /** Short chip label for a journal day-picker [offset] (daysBack; -1 = Tomorrow). Hardcoded English to
  *  match the sibling Yesterday/Today/Tomorrow chips. */
 internal fun journalDayChipLabel(offset: Long): String = when (offset) {
-    -1L -> "Tomorrow"
-    0L -> "Today"
-    1L -> "Yesterday"
-    else -> "$offset days ago"
+    -1L -> uiString(R.string.i18n_g2_jl_tomorrow)
+    0L -> uiString(R.string.i18n_g2_jl_today)
+    1L -> uiString(R.string.i18n_g2_jl_yesterday)
+    else -> uiString(R.string.i18n_g2_jl_days_ago, offset)
 }
 
 // MARK: - Custom-question persistence
@@ -187,7 +187,7 @@ fun JournalLogCard(
         // Header: title/overline on the left, the Tomorrow/Today/Yesterday toggle (or Edit/Done) on the right.
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
-                Overline("Log")
+                Overline(uiString(R.string.i18n_g2_log))
                 Text(
                     uiString(R.string.l10n_journal_log_journal_57d7f743),
                     style = NoopType.title2,
@@ -198,9 +198,9 @@ fun JournalLogCard(
                 )
             }
             if (editing) {
-                JournalChip("Done", selected = true) { editing = false }
+                JournalChip(uiString(R.string.i18n_g2_jl_done), selected = true) { editing = false }
             } else {
-                JournalChip("Edit", selected = false) { editing = true }
+                JournalChip(uiString(R.string.i18n_g2_jl_edit), selected = false) { editing = true }
             }
         }
         // Day picker (#656): a bounded, scrollable range — Tomorrow back through the last 7 days — so any
@@ -230,17 +230,11 @@ fun JournalLogCard(
                 Text(
                     when {
                         editing ->
-                            "Rename, regroup, or remove an item to tidy your list. Renaming keeps the " +
-                                "original question behind the scenes, so a WHOOP import still lines up. " +
-                                "Custom items are deleted; built-in ones are hidden and can be restored below."
+                            uiString(R.string.i18n_g2_jl_hint_editing)
                         dayOffset == -1L ->
-                            "Logging ahead for tomorrow: today's activities inform tomorrow's " +
-                                "recovery, just as yesterday's are reflected in today's. Tomorrow's " +
-                                "answers line up with tomorrow's morning."
+                            uiString(R.string.i18n_g2_jl_hint_tomorrow)
                         else ->
-                            "Answers are about the night and day leading into this morning, the " +
-                                "same attribution a WHOOP export uses, so logged and imported days " +
-                                "line up."
+                            uiString(R.string.i18n_g2_jl_hint_default)
                     },
                     style = NoopType.footnote,
                     color = Palette.textTertiary,
@@ -324,7 +318,7 @@ private fun JournalGroupBlock(
                         modifier = Modifier.weight(1f),
                     )
                     when {
-                        item.hidden -> JournalChip("Restore", selected = false) { onRestoreQuestion(item.canonical) }
+                        item.hidden -> JournalChip(uiString(R.string.i18n_g2_jl_restore), selected = false) { onRestoreQuestion(item.canonical) }
                         editing -> JournalItemEditControls(
                             item = item,
                             onStartRename = { onStartRename(item) },
@@ -339,11 +333,11 @@ private fun JournalGroupBlock(
                             onClear = { onClear(item.canonical) },
                         )
                         else -> {
-                            JournalChip("Yes", selected = answers[item.canonical] == true) {
+                            JournalChip(uiString(R.string.i18n_g2_jl_yes), selected = answers[item.canonical] == true) {
                                 if (answers[item.canonical] == true) onClear(item.canonical) else onAnswer(item.canonical, true)
                             }
                             Spacer(Modifier.width(6.dp))
-                            JournalChip("No", selected = answers[item.canonical] == false) {
+                            JournalChip(uiString(R.string.i18n_g2_jl_no), selected = answers[item.canonical] == false) {
                                 if (answers[item.canonical] == false) onClear(item.canonical) else onAnswer(item.canonical, false)
                             }
                         }
@@ -420,7 +414,7 @@ private fun JournalItemEditControls(
                     onClick = { menuOpen = false; groupMenuOpen = true },
                 )
                 androidx.compose.material3.DropdownMenuItem(
-                    text = { Text(if (item.kind.isNumeric) "Change to Yes/No" else "Change to Number") },
+                    text = { Text(if (item.kind.isNumeric) uiString(R.string.i18n_g2_jl_change_to_yes_no) else uiString(R.string.i18n_g2_jl_change_to_number)) },
                     onClick = {
                         menuOpen = false
                         onSetKind(if (item.kind.isNumeric) JournalKind.Bool else JournalKind.Numeric(null))
@@ -492,9 +486,9 @@ private fun JournalAddRow(onAddCustom: (String, JournalKind, JournalGroup) -> Un
                 modifier = Modifier.weight(1f),
             )
             Spacer(Modifier.width(8.dp))
-            JournalChip(if (numeric) "Number" else "Yes/No", selected = numeric) { numeric = !numeric }
+            JournalChip(if (numeric) uiString(R.string.i18n_g2_jl_number) else uiString(R.string.i18n_g2_jl_yes_no), selected = numeric) { numeric = !numeric }
             Spacer(Modifier.width(8.dp))
-            JournalChip("Add", selected = draft.isNotBlank()) {
+            JournalChip(uiString(R.string.i18n_g2_jl_add), selected = draft.isNotBlank()) {
                 val t = draft.trim()
                 if (t.isNotEmpty()) {
                     onAddCustom(t, if (numeric) JournalKind.Numeric(null) else JournalKind.Bool, group)
@@ -552,7 +546,7 @@ private fun JournalChip(label: String, selected: Boolean, onClick: () -> Unit) {
 private fun JournalRemoveButton(isCustom: Boolean, onClick: () -> Unit) {
     val shape = RoundedCornerShape(50)
     Text(
-        if (isCustom) "Delete" else "Hide",
+        if (isCustom) uiString(R.string.i18n_g2_jl_delete) else uiString(R.string.i18n_g2_jl_hide),
         style = NoopType.caption,
         color = Palette.statusCritical,
         modifier = Modifier

@@ -517,7 +517,7 @@ class CoachViewModel(app: Application) : AndroidViewModel(app) {
                     // No text received at all — remove the empty placeholder.
                     _messages.value = _messages.value.filterNot { it.id == placeholderId }
                 }
-                _error.value = e.message ?: "Something went wrong. Please try again."
+                _error.value = e.message ?: uiString(R.string.i18n_g1_coach_error_generic)
                 // Typed, never text-matched: the message is localized and the type is not.
                 _keyRejected.value = e is AiKeyRejectedException
             } finally {
@@ -697,7 +697,7 @@ class CoachViewModel(app: Application) : AndroidViewModel(app) {
                 conversationDay = LocalDate.now().toEpochDay()
                 persistMessages()
             } else {
-                _briefStatus.value = "Couldn't generate a brief right now — check your key and data access."
+                _briefStatus.value = uiString(R.string.i18n_g1_coach_brief_failed)
             }
             _briefGenerating.value = false
         }

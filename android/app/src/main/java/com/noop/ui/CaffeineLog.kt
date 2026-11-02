@@ -157,7 +157,7 @@ fun CaffeineLogCard() {
     Column(verticalArrangement = Arrangement.spacedBy(Metrics.gap)) {
         Row(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.weight(1f)) {
-                Overline("Log")
+                Overline(uiString(R.string.i18n_g2_log))
                 Text(uiString(R.string.l10n_caffeine_log_caffeine_22859fa3), style = NoopType.title2, color = Palette.textPrimary)
             }
         }
@@ -207,7 +207,7 @@ fun CaffeineLogCard() {
                         Spacer(Modifier.weight(1f))
                         TimeChip(
                             minutes = bedtimeMinutes,
-                            accessibilityLabel = "Bedtime for the caffeine cutoff",
+                            accessibilityLabel = uiString(R.string.i18n_g2_cf_bedtime_a11y),
                             onPicked = {
                                 bedtimeMinutes = it
                                 NoopPrefs.setCaffeineBedtimeMinutes(context, it)
@@ -247,11 +247,11 @@ fun CaffeineLogCard() {
                     Text(uiString(R.string.l10n_caffeine_log_had_it_8576ac66), style = NoopType.footnote, color = Palette.textSecondary)
                     Spacer(Modifier.weight(1f))
                     for (h in intArrayOf(0, 1, 2, 3)) {
-                        CaffeineChip(if (h == 0) "Now" else "${h}h ago") {
+                        CaffeineChip(if (h == 0) uiString(R.string.i18n_g2_cf_now) else uiString(R.string.i18n_g2_cf_hours_ago, h)) {
                             val at = (System.currentTimeMillis() / 1000L) - h * 3600L
                             intakes = addCaffeineIntake(context, at, mgDraft)
                             mgDraft = ""
-                            Toast.makeText(context, "Caffeine logged.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, uiString(R.string.i18n_g2_cf_logged), Toast.LENGTH_SHORT).show()
                         }
                         Spacer(Modifier.width(6.dp))
                     }
@@ -293,8 +293,8 @@ private fun CaffeineActiveHint(estimate: CaffeineActiveEstimate, hasAnyLog: Bool
     if (estimate.hasActive) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                estimate.totalRemainingMg?.let { "About ${it.roundToInt()} mg may still be active" }
-                    ?: "Caffeine may still be active",
+                estimate.totalRemainingMg?.let { uiString(R.string.i18n_g2_cf_about_mg_active, it.roundToInt()) }
+                    ?: uiString(R.string.i18n_g2_cf_may_be_active),
                 style = NoopType.headline,
                 color = Palette.textPrimary,
             )
@@ -302,8 +302,8 @@ private fun CaffeineActiveHint(estimate: CaffeineActiveEstimate, hasAnyLog: Bool
         }
     } else {
         Text(
-            if (!hasAnyLog) "No caffeine logged. Log an intake to see an estimate."
-            else "Estimated mostly cleared. Nothing logged is likely still active.",
+            if (!hasAnyLog) uiString(R.string.i18n_g2_cf_none_logged)
+            else uiString(R.string.i18n_g2_cf_cleared),
             style = NoopType.footnote,
             color = Palette.textTertiary,
         )
@@ -312,16 +312,16 @@ private fun CaffeineActiveHint(estimate: CaffeineActiveEstimate, hasAnyLog: Bool
 
 private fun caffeineActiveDetail(estimate: CaffeineActiveEstimate): String {
     val parts = ArrayList<String>()
-    estimate.hoursSinceMostRecentActive?.let { parts.add("most recent intake about ${caffeineHoursLabel(it)} ago") }
-    if (estimate.activeIntakeCount > 1) parts.add("${estimate.activeIntakeCount} intakes still in the estimate")
-    val lead = if (parts.isEmpty()) "" else parts.joinToString(" · ") + ". "
-    return lead + "Rough guide only, based on what you logged."
+    estimate.hoursSinceMostRecentActive?.let { parts.add(uiString(R.string.i18n_g2_cf_recent_intake, caffeineHoursLabel(it))) }
+    if (estimate.activeIntakeCount > 1) parts.add(uiString(R.string.i18n_g2_cf_intakes_in_estimate, estimate.activeIntakeCount))
+    val rough = uiString(R.string.i18n_g2_cf_rough_guide)
+    return if (parts.isEmpty()) rough else uiString(R.string.i18n_g2_cf_detail_joined, parts.joinToString(" · "), rough)
 }
 
 private fun caffeineHoursLabel(hrs: Double): String {
-    if (hrs < 1) return "under an hour"
+    if (hrs < 1) return uiString(R.string.i18n_g2_cf_under_hour)
     val r = hrs.roundToInt()
-    return if (r == 1) "1 hour" else "$r hours"
+    return if (r == 1) uiString(R.string.i18n_g2_cf_one_hour) else uiString(R.string.i18n_g2_cf_n_hours, r)
 }
 
 private fun caffeineIntakeLabel(intake: CaffeineIntake, context: Context): String {
@@ -329,7 +329,7 @@ private fun caffeineIntakeLabel(intake: CaffeineIntake, context: Context): Strin
     val time = java.text.SimpleDateFormat(
         ClockFormat.hourMinutePattern(ClockPrefs.uses24Hour(context)), java.util.Locale.getDefault(),
     ).format(java.util.Date(intake.atEpochSec * 1000L))
-    return if (intake.mg != null) "$time · ${intake.mg.roundToInt()} mg" else "$time · amount not logged"
+    return if (intake.mg != null) "$time · ${intake.mg.roundToInt()} mg" else uiString(R.string.i18n_g2_cf_amount_not_logged, time)
 }
 
 /** A minutes-since-midnight value as a wall-clock label (e.g. "2:30 PM" / "14:30"), respecting the

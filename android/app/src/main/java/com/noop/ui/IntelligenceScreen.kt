@@ -103,7 +103,7 @@ fun IntelligenceScreen(vm: AppViewModel) {
 
     LazyScreenScaffold(
         title = uiString(R.string.l10n_intelligence_screen_intelligence_c698f940),
-        subtitle = "Charge, effort and rest - scored with the model, explained in plain terms.",
+        subtitle = uiString(R.string.i18n_g3_charge_effort_and_rest_scored_with),
     ) {
         item { forecast?.let { ForecastCard(it) } }
         item { ExplainerCard(effortScale) }
@@ -125,7 +125,7 @@ fun IntelligenceScreen(vm: AppViewModel) {
                     horizontalArrangement = Arrangement.spacedBy(Metrics.gap),
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Overline("Recent")
+                        Overline(uiString(R.string.i18n_g3_recent))
                         Text(uiString(R.string.l10n_intelligence_screen_by_day_2e5d14ca), style = NoopType.title2, color = Palette.textPrimary)
                     }
                     SegmentedPillControl(
@@ -179,7 +179,7 @@ private fun ForecastCard(f: RecoveryForecast) {
     val charge = f.charge.roundToInt()
     val band = f.band.roundToInt()
     Column(verticalArrangement = Arrangement.spacedBy(Metrics.gap)) {
-        SectionHeader("Tomorrow's Charge", overline = "Evening forecast", trailing = "Estimate")
+        SectionHeader(uiString(R.string.i18n_g3_tomorrow_s_charge), overline = uiString(R.string.i18n_g3_evening_forecast), trailing = uiString(R.string.i18n_g3_estimate))
         NoopCard(padding = 20.dp) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -296,12 +296,12 @@ private fun EmptyNote() {
 private fun ModelBreakdownCard(effortScale: EffortScale) {
     NoopCard(padding = 20.dp, tint = Palette.chargeColor) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Overline("Charge model")
-            WeightRow("Heart-rate variability", "~55%", 0.55f, Palette.metricPurple)
-            WeightRow("Resting heart rate", "~20%", 0.20f, Palette.metricRose)
-            WeightRow("Rest quality", "~15%", 0.15f, Palette.metricCyan)
-            WeightRow("Respiration", "~5%", 0.05f, Palette.accent)
-            WeightRow("Skin-temperature deviation", "~5%", 0.05f, Palette.metricAmber)
+            Overline(uiString(R.string.i18n_g3_charge_model))
+            WeightRow(uiString(R.string.i18n_g3_heart_rate_variability), "~55%", 0.55f, Palette.metricPurple)
+            WeightRow(uiString(R.string.i18n_g3_resting_heart_rate), "~20%", 0.20f, Palette.metricRose)
+            WeightRow(uiString(R.string.i18n_g3_rest_quality), "~15%", 0.15f, Palette.metricCyan)
+            WeightRow(uiString(R.string.i18n_g3_respiration), "~5%", 0.05f, Palette.accent)
+            WeightRow(uiString(R.string.i18n_g3_skin_temperature_deviation), "~5%", 0.05f, Palette.metricAmber)
 
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
@@ -388,19 +388,19 @@ private fun DayCard(d: DailyMetric, effortScale: EffortScale) {
 
             Row(modifier = Modifier.fillMaxWidth()) {
                 DayStat(
-                    "Charge",
+                    uiString(R.string.i18n_g3_charge),
                     d.recovery?.let { "${it.roundToInt()}%" } ?: "—",
                     d.recovery?.let { Palette.recoveryColor(it) } ?: Palette.textSecondary,
                     Modifier.weight(1f),
                 )
                 DayStat(
-                    "Effort",
+                    uiString(R.string.i18n_g3_effort),
                     d.strain?.let { UnitFormatter.effortDisplay(it, effortScale) } ?: "—",
                     d.strain?.let { Palette.strainColor(it) } ?: Palette.textSecondary,
                     Modifier.weight(1f),
                 )
                 DayStat(
-                    "Rest",
+                    uiString(R.string.i18n_g3_rest),
                     sleepValue(d.totalSleepMin),
                     Palette.restColor,
                     Modifier.weight(1f),
@@ -412,7 +412,7 @@ private fun DayCard(d: DailyMetric, effortScale: EffortScale) {
                     Modifier.weight(1f),
                 )
                 DayStat(
-                    "RHR",
+                    uiString(R.string.i18n_g3_rhr),
                     d.restingHr?.toString() ?: "—",
                     Palette.metricRose,
                     Modifier.weight(1f),
@@ -478,10 +478,27 @@ internal fun daySourceBadge(deviceId: String): Pair<String, Color> = when {
 }
 
 /** Recent-window options for the By Day list. `days == null` means show everything. */
-private enum class IntelRange(val days: Int?, val label: String) {
-    Week(7, "W"), Month(30, "M"), Quarter(90, "3M"),
-    Half(180, "6M"), Year(365, "1Y"), All(null, "ALL"),
+private enum class IntelRange(val days: Int?, private val labelRes: Int) {
+    Week(7, R.string.i18n_g3_range_w), Month(30, R.string.i18n_g3_range_m), Quarter(90, R.string.i18n_g3_range_3m),
+    Half(180, R.string.i18n_g3_range_6m), Year(365, R.string.i18n_g3_range_1y), All(null, R.string.i18n_g3_range_all_caps);
+
+    val label: String get() = uiString(labelRes)
 }
+
+/** Localized short weekday names, Sunday first (Calendar.DAY_OF_WEEK - 1). */
+private fun weekdayShortNames(): Array<String> = arrayOf(
+    uiString(R.string.i18n_g3_dow_sun), uiString(R.string.i18n_g3_dow_mon), uiString(R.string.i18n_g3_dow_tue),
+    uiString(R.string.i18n_g3_dow_wed), uiString(R.string.i18n_g3_dow_thu), uiString(R.string.i18n_g3_dow_fri),
+    uiString(R.string.i18n_g3_dow_sat),
+)
+
+/** Localized short month names, January first. */
+private fun monthShortNames(): Array<String> = arrayOf(
+    uiString(R.string.i18n_g3_month_jan), uiString(R.string.i18n_g3_month_feb), uiString(R.string.i18n_g3_month_mar),
+    uiString(R.string.i18n_g3_month_apr), uiString(R.string.i18n_g3_month_may), uiString(R.string.i18n_g3_month_jun),
+    uiString(R.string.i18n_g3_month_jul), uiString(R.string.i18n_g3_month_aug), uiString(R.string.i18n_g3_month_sep),
+    uiString(R.string.i18n_g3_month_oct), uiString(R.string.i18n_g3_month_nov), uiString(R.string.i18n_g3_month_dec),
+)
 
 /** "YYYY-MM-DD" → "Mon 5 Jun"; falls back to the raw key if it doesn't parse. */
 private fun prettyDay(day: String): String {
@@ -491,14 +508,11 @@ private fun prettyDay(day: String): String {
         val mo = parts[1].toInt()
         val da = parts[2].toInt()
         val cal = Calendar.getInstance().apply { set(y, mo - 1, da) }
-        val dow = arrayOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")[
+        val dow = weekdayShortNames()[
             cal.get(Calendar.DAY_OF_WEEK) - 1,
         ]
-        val month = arrayOf(
-            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-        )[mo - 1]
-        "$dow $da $month"
+        val month = monthShortNames()[mo - 1]
+        uiString(R.string.i18n_g3_pretty_day, dow, da, month)
     } catch (_: Exception) {
         day
     }

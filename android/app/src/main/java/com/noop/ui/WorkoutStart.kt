@@ -107,13 +107,13 @@ fun StartWorkoutSheet(vm: AppViewModel, onDismiss: () -> Unit) {
                         .verticalScroll(sportScroll),
                 ) {
                     if (recents.isNotEmpty()) {
-                        Overline("Recent", modifier = Modifier.padding(top = 6.dp))
+                        Overline(uiString(R.string.i18n_g2_ws_recent), modifier = Modifier.padding(top = 6.dp))
                         recents.forEach { sp ->
                             StartSportRow(sp, isSelected = sp == selected) {
                                 selected = sp; gpsOn = sp.isDistanceSport
                             }
                         }
-                        Overline("All activities", modifier = Modifier.padding(top = 6.dp))
+                        Overline(uiString(R.string.i18n_g2_ws_all_activities), modifier = Modifier.padding(top = 6.dp))
                     }
                     filtered.forEach { sp ->
                         StartSportRow(sp, isSelected = sp == selected) {
