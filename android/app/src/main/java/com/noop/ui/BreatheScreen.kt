@@ -6,7 +6,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -631,21 +630,16 @@ fun BreatheScreen(viewModel: AppViewModel) {
                     BreathProtocolCatalog.pickerProtocols.forEach { add(PaceSelection.Catalog(it.id)) }
                     if (lockedBpm != null) add(PaceSelection.Resonance)
                 }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                ) {
-                    SegmentedPillControl(
-                        items = availablePaces,
-                        selection = pace,
-                        label = { paceSelectionLabel(it) },
-                        onSelect = { newPace ->
-                            if (running) stopSession()
-                            pace = newPace
-                        },
-                    )
-                }
+                // The control scrolls sideways on its own; wrapping it in a second horizontal scroller crashes.
+                SegmentedPillControl(
+                    items = availablePaces,
+                    selection = pace,
+                    label = { paceSelectionLabel(it) },
+                    onSelect = { newPace ->
+                        if (running) stopSession()
+                        pace = newPace
+                    },
+                )
 
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(

@@ -80,6 +80,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.Role
@@ -686,7 +687,9 @@ fun <T> SegmentedPillControl(
             .selectableGroup()
             .then(if (accessibilityLabel != null) Modifier.semantics { contentDescription = accessibilityLabel } else Modifier)
             // Redesign: a natural-width row scrolls sideways instead of wrapping a label onto two lines.
-            .then(if (!usesEqualWidth) Modifier.horizontalScroll(rangeScrollState) else Modifier)
+            // Capped at the screen width first: a caller that already sits in a horizontal scroller passes an
+            // unbounded max width, and a scroll container measured under infinity throws.
+            .then(if (!usesEqualWidth) Modifier.widthIn(max = LocalConfiguration.current.screenWidthDp.dp).horizontalScroll(rangeScrollState) else Modifier)
             .then(if (usesEqualWidth) Modifier.fillMaxWidth() else Modifier)
             .height(40.dp)
             .clip(outerShape)
