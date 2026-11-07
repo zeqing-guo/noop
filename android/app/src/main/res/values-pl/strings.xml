@@ -1034,6 +1034,8 @@
     <string name="l10n_workouts_screen_re_label_as_33fec7b2">Zmień etykietę na…</string>
     <string name="l10n_workouts_screen_search_sport_004b7928">Wyszukaj sport</string>
     <string name="l10n_workouts_screen_share_of_imported_zone_time_duration_b0985680">Udział czasu zaimportowanej strefy, ważony czasem trwania w sesjach (przybliżony).</string>
+    <string name="l10n_workouts_screen_zones_import_plus_strap_hr">Import + tętno z paska</string>
+    <string name="l10n_workouts_screen_share_of_zone_time_imported_or_strap_hr">Udział czasu w strefach, ważony czasem trwania sesji (przybliżony). Tam, gdzie jest, używany jest zaimportowany podział WHOOP; pozostałe sesje są liczone z tętna z paska.</string>
     <string name="l10n_workouts_screen_show_more_more_remaining_remaining_d1662e67">Pokaż więcej %1$s (pozostało %2$s)</string>
     <string name="l10n_workouts_screen_show_more_more_sessions_25bce755">Pokaż %1$s więcej sesji</string>
     <string name="l10n_workouts_screen_started_faa9e7e7">Rozpoczęło się</string>

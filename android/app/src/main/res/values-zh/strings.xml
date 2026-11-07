@@ -1025,6 +1025,8 @@
     <string name="l10n_workouts_screen_re_label_as_33fec7b2">重新标记为…</string>
     <string name="l10n_workouts_screen_search_sport_004b7928">搜索运动项目</string>
     <string name="l10n_workouts_screen_share_of_imported_zone_time_duration_b0985680">导入的心率区间时间占比（按照多次运动时长加权计算得出，仅为近似值）。</string>
+    <string name="l10n_workouts_screen_zones_import_plus_strap_hr">导入 + 手环心率</string>
+    <string name="l10n_workouts_screen_share_of_zone_time_imported_or_strap_hr">各心率区间的时间占比，按每次运动时长加权（近似值）。有 WHOOP 导入区间的运动用导入数据，其余运动按手环心率计算。</string>
     <string name="l10n_workouts_screen_show_more_more_remaining_remaining_d1662e67">展开更多 %1$s 条记录 (还剩 %2$s 条)</string>
     <string name="l10n_workouts_screen_show_more_more_sessions_25bce755">展开更多 %1$s 次运动记录</string>
     <string name="l10n_workouts_screen_started_faa9e7e7">开始时间</string>

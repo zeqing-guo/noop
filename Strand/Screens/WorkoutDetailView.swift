@@ -124,12 +124,9 @@ struct WorkoutDetailView: View {
         // never overwrite a real imported split with an on-device approximation.
         var minutes: [Double]?
         var fromImport = false
-        if let pct = WorkoutZones.percents(row.zonesJSON) {
-            let durMin = (row.durationS ?? Double(row.endTs - row.startTs)) / 60.0
-            if durMin > 0 {
-                minutes = pct.map { durMin * $0 / 100.0 }
-                fromImport = true
-            }
+        if let imported = WorkoutZones.importedMinutes(row) {
+            minutes = imported
+            fromImport = true
         }
         if minutes == nil {
             minutes = await repo.workoutZoneMinutes(from: row.startTs, to: row.endTs, zoneSet: profile.hrZoneSet,

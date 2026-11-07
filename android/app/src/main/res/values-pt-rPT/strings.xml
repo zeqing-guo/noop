@@ -1048,6 +1048,8 @@
     <string name="l10n_workouts_screen_re_label_as_33fec7b2">Rotular novamente como…</string>
     <string name="l10n_workouts_screen_search_sport_004b7928">Pesquisar desporto</string>
     <string name="l10n_workouts_screen_share_of_imported_zone_time_duration_b0985680">Partilha de fuso horário importado, ponderado pela duração entre sessões (aproximado).</string>
+    <string name="l10n_workouts_screen_zones_import_plus_strap_hr">Importação + FC da bracelete</string>
+    <string name="l10n_workouts_screen_share_of_zone_time_imported_or_strap_hr">Proporção do tempo em zonas, ponderada pela duração entre sessões (aproximado). Usa-se a divisão importada da WHOOP quando existe; as restantes sessões são calculadas a partir da FC da bracelete.</string>
     <string name="l10n_workouts_screen_show_more_more_remaining_remaining_d1662e67">Mostrar %1$s mais (%2$s restantes)</string>
     <string name="l10n_workouts_screen_show_more_more_sessions_25bce755">Mostrar mais sessões %1$s</string>
     <string name="l10n_workouts_screen_started_faa9e7e7">Iniciado</string>

@@ -883,6 +883,8 @@
     <string name="l10n_workouts_screen_re_label_as_33fec7b2">Rebelde como...</string>
     <string name="l10n_workouts_screen_search_sport_004b7928">Buscar deporte</string>
     <string name="l10n_workouts_screen_share_of_imported_zone_time_duration_b0985680">Proporción del tiempo en zonas importado, ponderado por duración entre sesiones (aproximado).</string>
+    <string name="l10n_workouts_screen_zones_import_plus_strap_hr">Importación + FC de la pulsera</string>
+    <string name="l10n_workouts_screen_share_of_zone_time_imported_or_strap_hr">Proporción del tiempo en zonas, ponderada por duración entre sesiones (aproximado). Se usa el reparto importado de WHOOP cuando existe; las demás sesiones se calculan con la FC de la pulsera.</string>
     <string name="l10n_workouts_screen_show_more_more_remaining_remaining_d1662e67">Mostrar %1$s más (%2$s restante)</string>
     <string name="l10n_workouts_screen_show_more_more_sessions_25bce755">Mostrar %1$s más sesiones</string>
     <string name="l10n_workouts_screen_started_faa9e7e7">Comienzo</string>

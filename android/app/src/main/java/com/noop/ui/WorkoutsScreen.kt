@@ -237,6 +237,23 @@ fun WorkoutsScreen(vm: AppViewModel) {
         recoveryTrend = built
     }
 
+    // HR-zone minutes binned from strap HR for the shown sessions that carry no imported split, so the
+    // zones card and the per-sport mini-bars count strap-recorded, detected, manual and Health Connect
+    // sessions too — the same per-row rule as the session detail (imported wins, else strap HR). The
+    // window is resolved by the SAME functions the list uses below, so the derived set is the shown set.
+    var strapZoneMinutes by remember { mutableStateOf<Map<String, List<Double>>>(emptyMap()) }
+    val zoneWindowRows = filter.apply(sessions(allRows, effectiveRange(allRows, range, filter)))
+    val strapZoneRows = zoneWindowRows.filter { importedZoneMinutes(it) == null }
+    val strapZoneInputKey = strapZoneRows.joinToString(",") { workoutZoneKey(it) }
+    LaunchedEffect(strapZoneInputKey, vm.activeStrapId, lastHistorySyncAt) {
+        val built = HashMap<String, List<Double>>()
+        for (row in strapZoneRows) {
+            val minutes = vm.workoutZoneMinutes(row.startTs, row.endTs, row.source, row.deviceId) ?: continue
+            built[workoutZoneKey(row)] = minutes
+        }
+        strapZoneMinutes = built
+    }
+
     LaunchedEffect(Unit) {
         vm.loadWorkouts()
     }
@@ -315,8 +332,8 @@ fun WorkoutsScreen(vm: AppViewModel) {
             item { EffortHero(rows = windowRows, effectiveRange = resolved, groups = groups) }
             item { SummarySection(rows = windowRows, effectiveRange = resolved, groups = groups) }
             item { CalorieHeatmapSection(recentDays) }
-            item { BreakdownSection(groups = groups, rows = windowRows) }
-            item { ZonesSection(windowRows) }
+            item { BreakdownSection(groups = groups, rows = windowRows, strapZoneMinutes = strapZoneMinutes) }
+            item { ZonesSection(windowRows, strapZoneMinutes) }
             if (recoveryTrend.isNotEmpty()) {
                 item { RecoveryTrendSection(recoveryTrend, recoveryRange.localizedCaption()) }
             }
@@ -1012,22 +1029,27 @@ private fun SummarySection(
 // MARK: - Activity breakdown (per-sport NoopCards, identical layout)
 
 @Composable
-private fun BreakdownSection(groups: List<SportGroup>, rows: List<WorkoutRow>) {
+private fun BreakdownSection(
+    groups: List<SportGroup>,
+    rows: List<WorkoutRow>,
+    strapZoneMinutes: Map<String, List<Double>>,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(Metrics.gap)) {
         SectionHeader(
             title = uiString(R.string.l10n_workouts_screen_activity_breakdown_214431d6),
             overline = uiString(R.string.i18n_g3_by_sport),
             trailing = if (groups.size == 1) uiString(R.string.i18n_g3_n_sport_one, groups.size) else uiString(R.string.i18n_g3_n_sports, groups.size),
         )
-        // This sport's own sessions, so each card can carry an HR-zone mini-bar.
-        groups.forEach { g -> SportCard(g, zones = zoneSummary(rows.filter { it.sport == g.sport })) }
+        // This sport's own sessions, so each card can carry an HR-zone mini-bar — from the same inputs
+        // as the zones card, so a sport's bar and the overall card count the same sessions.
+        groups.forEach { g -> SportCard(g, zones = zoneSummary(rows.filter { it.sport == g.sport }, strapZoneMinutes)) }
     }
 }
 
 @Composable
 private fun SportCard(g: SportGroup, zones: ZoneSummary?) {
     // Frosted Effort-tinted card with the sport glyph in the Effort world, plus an HR-zone mini-bar
-    // when the sessions carry imported zones.
+    // when the sessions carry imported zones or strap HR.
     NoopCard(tint = Palette.effortColor) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             // Identical header for every card.
@@ -1084,15 +1106,20 @@ private fun MiniStat(label: String, value: String, modifier: Modifier = Modifier
     }
 }
 
-// MARK: - HR zones (imported per-workout zone split, one card)
+// MARK: - HR zones (imported split where present, else strap HR; one card)
 
 @Composable
-private fun ZonesSection(rows: List<WorkoutRow>) {
-    val z = remember(rows) { zoneSummary(rows) } ?: return
+private fun ZonesSection(rows: List<WorkoutRow>, strapZoneMinutes: Map<String, List<Double>>) {
+    val z = remember(rows, strapZoneMinutes) { zoneSummary(rows, strapZoneMinutes) } ?: return
     Column(verticalArrangement = Arrangement.spacedBy(Metrics.gap)) {
         SectionHeader(
             title = uiString(R.string.l10n_workouts_screen_hr_zones_293d7175),
-            overline = uiString(R.string.i18n_g3_whoop_import),
+            // Name only the sources that actually contributed to the bar below.
+            overline = when {
+                z.strapSessions == 0 -> uiString(R.string.i18n_g3_whoop_import)
+                z.importedSessions == 0 -> uiString(R.string.i18n_g3_from_strap_hr)
+                else -> uiString(R.string.l10n_workouts_screen_zones_import_plus_strap_hr)
+            },
             trailing = if (rows.size == 1) uiString(R.string.i18n_g3_n_of_m_session_one, z.sessionsWithZones, rows.size)
             else uiString(R.string.i18n_g3_n_of_m_sessions, z.sessionsWithZones, rows.size),
         )
@@ -1114,7 +1141,8 @@ private fun ZonesSection(rows: List<WorkoutRow>) {
                     }
                 }
                 Text(
-                    uiString(R.string.l10n_workouts_screen_share_of_imported_zone_time_duration_b0985680),
+                    if (z.strapSessions == 0) uiString(R.string.l10n_workouts_screen_share_of_imported_zone_time_duration_b0985680)
+                    else uiString(R.string.l10n_workouts_screen_share_of_zone_time_imported_or_strap_hr),
                     style = NoopType.footnote,
                     color = Palette.textTertiary,
                 )
@@ -1478,13 +1506,10 @@ internal fun WorkoutDetailSheet(vm: AppViewModel, row: WorkoutRow, onDismiss: ()
     LaunchedEffect(row.startTs, row.endTs) {
         hrCurve = vm.workoutHrBuckets(row.startTs, row.endTs, row.source, row.deviceId)
         steps = if (WorkoutSport.isOnFoot(row.sport)) vm.workoutSteps(row.startTs, row.endTs) else null
-        val imported = parseZonePercents(row.zonesJSON)
+        val imported = importedZoneMinutes(row)
         if (imported != null) {
-            val durMin = (row.durationS ?: (row.endTs - row.startTs).toDouble()) / 60.0
-            if (durMin > 0.0) {
-                zoneMinutes = imported.map { durMin * it / 100.0 }
-                zonesFromImport = true
-            }
+            zoneMinutes = imported
+            zonesFromImport = true
         }
         if (zoneMinutes == null) {
             zoneMinutes = vm.workoutZoneMinutes(row.startTs, row.endTs, row.source, row.deviceId)
@@ -2541,24 +2566,51 @@ internal fun parseZonePercents(zonesJSON: String?): List<Double>? {
     return if (any && out.sum() > 0.0) out else null
 }
 
-internal data class ZoneSummary(val minutes: List<Double>, val sessionsWithZones: Int) {
+/** Zone minutes aggregated across sessions, split by where each session's minutes came from:
+ *  [importedSessions] carried a WHOOP-imported split, [strapSessions] were binned from strap HR. */
+internal data class ZoneSummary(
+    val minutes: List<Double>,
+    val importedSessions: Int,
+    val strapSessions: Int = 0,
+) {
+    val sessionsWithZones: Int get() = importedSessions + strapSessions
     val totalMinutes: Double get() = minutes.sum()
 }
 
-/** Duration-weighted zone minutes across [rows] — mirrors the macOS WorkoutZones.summary
- *  (duration-minutes × pct ÷ 100). APPROXIMATE: an on-device aggregate of imported
- *  per-workout percentages, not a WHOOP-computed figure. */
-internal fun zoneSummary(rows: List<WorkoutRow>): ZoneSummary? {
+/** One workout's imported Z1…Z5 MINUTES (duration-minutes × pct ÷ 100), or null when the row
+ *  carries no usable imported split. The single "imported" half of the per-workout zone rule: the
+ *  session detail and [zoneSummary] both read it, so a session and the aggregate that counts it
+ *  cannot disagree. Mirrors the macOS WorkoutZones.importedMinutes. */
+internal fun importedZoneMinutes(row: WorkoutRow): List<Double>? {
+    val p = parseZonePercents(row.zonesJSON) ?: return null
+    val durMin = (row.durationS ?: (row.endTs - row.startTs).toDouble()) / 60.0
+    if (durMin <= 0.0) return null
+    return p.map { durMin * it / 100.0 }
+}
+
+/** Screen-local identity for a row's strap-derived zone minutes. Includes source + device because
+ *  [AppViewModel.workoutZoneMinutes] resolves its HR ids from both. Never persisted. */
+internal fun workoutZoneKey(row: WorkoutRow): String =
+    "${row.startTs}|${row.endTs}|${row.source}|${row.deviceId}"
+
+/** Duration-weighted zone minutes across [rows] — mirrors the macOS WorkoutZones.summary.
+ *  Per row, the same rule as the session detail: the imported split wins; otherwise the minutes
+ *  binned from strap HR ([strapMinutes], keyed by [workoutZoneKey]); otherwise the row is skipped.
+ *  APPROXIMATE either way: an on-device aggregate, not a WHOOP-computed figure. */
+internal fun zoneSummary(
+    rows: List<WorkoutRow>,
+    strapMinutes: Map<String, List<Double>> = emptyMap(),
+): ZoneSummary? {
     val mins = MutableList(5) { 0.0 }
-    var n = 0
+    var imported = 0
+    var strap = 0
     for (r in rows) {
-        val p = parseZonePercents(r.zonesJSON) ?: continue
-        val durMin = (r.durationS ?: (r.endTs - r.startTs).toDouble()) / 60.0
-        if (durMin <= 0.0) continue
-        for (i in 0 until 5) mins[i] += durMin * p[i] / 100.0
-        n++
+        val fromImport = importedZoneMinutes(r)
+        val m = fromImport ?: strapMinutes[workoutZoneKey(r)]?.takeIf { it.size == 5 } ?: continue
+        for (i in 0 until 5) mins[i] += m[i]
+        if (fromImport != null) imported++ else strap++
     }
-    return if (n > 0 && mins.sum() > 0.0) ZoneSummary(mins, n) else null
+    return if (imported + strap > 0 && mins.sum() > 0.0) ZoneSummary(mins, imported, strap) else null
 }
 
 /**

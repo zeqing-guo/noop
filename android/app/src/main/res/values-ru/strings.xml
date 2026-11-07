@@ -1060,6 +1060,8 @@
     <string name="l10n_workouts_screen_re_label_as_33fec7b2">Переименовать в…</string>
     <string name="l10n_workouts_screen_search_sport_004b7928">Поиск вида спорта</string>
     <string name="l10n_workouts_screen_share_of_imported_zone_time_duration_b0985680">Доля импортированного времени в зонах, взвешенная по длительности сессий (приблизительно).</string>
+    <string name="l10n_workouts_screen_zones_import_plus_strap_hr">Импорт + пульс с браслета</string>
+    <string name="l10n_workouts_screen_share_of_zone_time_imported_or_strap_hr">Доля времени в зонах, взвешенная по длительности сессий (приблизительно). Где есть импортированное распределение WHOOP, используется оно; остальные сессии рассчитаны по пульсу с браслета.</string>
     <string name="l10n_workouts_screen_show_more_more_remaining_remaining_d1662e67">Показать ещё %1$s (осталось %2$s)</string>
     <string name="l10n_workouts_screen_show_more_more_sessions_25bce755">Показать ещё %1$s сессий</string>
     <string name="l10n_workouts_screen_started_faa9e7e7">Начата</string>

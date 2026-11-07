@@ -1177,6 +1177,8 @@
     <string name="l10n_workouts_screen_re_label_as_33fec7b2">Re-label as…</string>
     <string name="l10n_workouts_screen_search_sport_004b7928">Search sport</string>
     <string name="l10n_workouts_screen_share_of_imported_zone_time_duration_b0985680">Share of imported zone time, duration-weighted across sessions (approximate).</string>
+    <string name="l10n_workouts_screen_zones_import_plus_strap_hr">Import + strap HR</string>
+    <string name="l10n_workouts_screen_share_of_zone_time_imported_or_strap_hr">Share of zone time, duration-weighted across sessions (approximate). Imported WHOOP splits are used where present; other sessions are binned from strap HR.</string>
     <string name="l10n_workouts_screen_show_more_more_remaining_remaining_d1662e67">Show %1$s more (%2$s remaining)</string>
     <string name="l10n_workouts_screen_show_more_more_sessions_25bce755">Show %1$s more sessions</string>
     <string name="l10n_workouts_screen_started_faa9e7e7">Started</string>

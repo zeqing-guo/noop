@@ -49,8 +49,52 @@ class WorkoutZonesTest {
             ),
         )!!
         assertEquals(2, s.sessionsWithZones)
+        assertEquals(2, s.importedSessions)
+        assertEquals(0, s.strapSessions)
         assertEquals(60.0, s.minutes[0], 1e-9)
         assertEquals(30.0, s.minutes[4], 1e-9)
         assertEquals(90.0, s.totalMinutes, 1e-9)
+    }
+
+    private fun row(start: Long, durS: Double, zones: String?, source: String = "my-whoop") = WorkoutRow(
+        deviceId = "my-whoop", startTs = start, endTs = start + durS.toLong(),
+        sport = "Running", source = source, durationS = durS, zonesJSON = zones,
+    )
+
+    @Test
+    fun importedZoneMinutes_isDurationTimesPercent_orNull() {
+        assertEquals(listOf(30.0, 0.0, 0.0, 0.0, 15.0), importedZoneMinutes(row(0, 3600.0, """{"z1":50,"z5":25}""")))
+        assertNull(importedZoneMinutes(row(0, 3600.0, null)))
+        assertNull(importedZoneMinutes(row(0, 0.0, """{"z1":50}""")))
+    }
+
+    @Test
+    fun summaryCountsStrapMinutes_forRowsWithoutAnImportedSplit() {
+        val detected = row(20_000, 1800.0, null, source = "detected")
+        val s = zoneSummary(
+            listOf(row(0, 3600.0, """{"zone1":100}"""), detected),
+            mapOf(workoutZoneKey(detected) to listOf(0.0, 10.0, 20.0, 0.0, 0.0)),
+        )!!
+        assertEquals(1, s.importedSessions)
+        assertEquals(1, s.strapSessions)
+        assertEquals(2, s.sessionsWithZones)
+        assertEquals(listOf(60.0, 10.0, 20.0, 0.0, 0.0), s.minutes)
+    }
+
+    @Test
+    fun summaryPrefersTheImportedSplit_overStrapMinutesForTheSameRow() {
+        val r = row(0, 3600.0, """{"z3":100}""")
+        val s = zoneSummary(listOf(r), mapOf(workoutZoneKey(r) to listOf(99.0, 0.0, 0.0, 0.0, 0.0)))!!
+        assertEquals(1, s.importedSessions)
+        assertEquals(0, s.strapSessions)
+        assertEquals(listOf(0.0, 0.0, 60.0, 0.0, 0.0), s.minutes)
+    }
+
+    @Test
+    fun summaryIsNull_whenNoRowHasEitherSource() {
+        val r = row(0, 3600.0, null)
+        assertNull(zoneSummary(listOf(r)))
+        assertNull(zoneSummary(listOf(r), mapOf("other|key" to listOf(1.0, 1.0, 1.0, 1.0, 1.0))))
+        assertNull(zoneSummary(listOf(r), mapOf(workoutZoneKey(r) to listOf(1.0, 1.0))))
     }
 }

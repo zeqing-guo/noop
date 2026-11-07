@@ -147613,6 +147613,122 @@
         }
       }
     },
+    "Import + strap HR": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import + Strap-HF"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importación + FC de la pulsera"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import + FC du bracelet"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importazione + FC della fascia"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importação + FC da bracelete"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Импорт + пульс с браслета"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入 + 手环心率"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯入 + 手環心率"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import + tętno z paska"
+          }
+        }
+      }
+    },
+    "Share of zone time, duration-weighted across sessions (approximate). Imported WHOOP splits are used where present; other sessions are binned from strap HR.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anteil der Zonenzeit, dauergewichtet über Sitzungen (ungefähr). Wo vorhanden, wird die importierte WHOOP-Aufteilung verwendet; andere Sitzungen werden aus der Strap-HF berechnet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proporción del tiempo en zonas, ponderada por duración entre sesiones (aproximado). Se usa el reparto importado de WHOOP cuando existe; las demás sesiones se calculan con la FC de la pulsera."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Part du temps en zone, pondérée par la durée entre les séances (approximatif). La répartition WHOOP importée est utilisée lorsqu'elle existe ; les autres séances sont calculées à partir de la FC du bracelet."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quota del tempo in zona, ponderata per durata tra le sessioni (approssimativa). Dove presente si usa la ripartizione WHOOP importata; le altre sessioni sono calcolate dalla FC della fascia."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proporção do tempo em zonas, ponderada pela duração entre sessões (aproximado). Usa-se a divisão importada da WHOOP quando existe; as restantes sessões são calculadas a partir da FC da bracelete."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Доля времени в зонах, взвешенная по длительности сессий (приблизительно). Где есть импортированное распределение WHOOP, используется оно; остальные сессии рассчитаны по пульсу с браслета."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "各心率区间的时间占比，按每次运动时长加权（近似值）。有 WHOOP 导入区间的运动用导入数据，其余运动按手环心率计算。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "各心率區間的時間佔比，按每次運動時長加權（近似值）。有 WHOOP 匯入區間的運動用匯入資料，其餘運動按手環心率計算。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udział czasu w strefach, ważony czasem trwania sesji (przybliżony). Tam, gdzie jest, używany jest zaimportowany podział WHOOP; pozostałe sesje są liczone z tętna z paska."
+          }
+        }
+      }
+    },
     "Share of imported zone time, duration-weighted across sessions (approximate).": {
       "localizations": {
         "de": {

@@ -1083,6 +1083,8 @@
     <string name="l10n_workouts_screen_re_label_as_33fec7b2">Relabel als...</string>
     <string name="l10n_workouts_screen_search_sport_004b7928">Sportart suchen</string>
     <string name="l10n_workouts_screen_share_of_imported_zone_time_duration_b0985680">Anteil der importierten Zonenzeit, dauergewichtet über Sitzungen (ungefähr).</string>
+    <string name="l10n_workouts_screen_zones_import_plus_strap_hr">Import + Strap-HF</string>
+    <string name="l10n_workouts_screen_share_of_zone_time_imported_or_strap_hr">Anteil der Zonenzeit, dauergewichtet über Sitzungen (ungefähr). Wo vorhanden, wird die importierte WHOOP-Aufteilung verwendet; andere Sitzungen werden aus der Strap-HF berechnet.</string>
     <string name="l10n_workouts_screen_show_more_more_remaining_remaining_d1662e67">%1$s mehr anzeigen (%2$s bleibt übrig)</string>
     <string name="l10n_workouts_screen_show_more_more_sessions_25bce755">%1$s weitere Sessions anzeigen</string>
     <string name="l10n_workouts_screen_started_faa9e7e7">Beginn</string>

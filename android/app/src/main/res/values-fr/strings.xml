@@ -901,6 +901,8 @@
     <string name="l10n_workouts_screen_re_label_as_33fec7b2">Re-étiquetage comme...</string>
     <string name="l10n_workouts_screen_search_sport_004b7928">Rechercher un sport</string>
     <string name="l10n_workouts_screen_share_of_imported_zone_time_duration_b0985680">Part du temps en zone importé, pondérée par la durée entre les séances (approximatif).</string>
+    <string name="l10n_workouts_screen_zones_import_plus_strap_hr">Import + FC du bracelet</string>
+    <string name="l10n_workouts_screen_share_of_zone_time_imported_or_strap_hr">Part du temps en zone, pondérée par la durée entre les séances (approximatif). La répartition WHOOP importée est utilisée lorsqu\'elle existe ; les autres séances sont calculées à partir de la FC du bracelet.</string>
     <string name="l10n_workouts_screen_show_more_more_remaining_remaining_d1662e67">Afficher %1$s plus (%2$s restant)</string>
     <string name="l10n_workouts_screen_show_more_more_sessions_25bce755">Afficher plus de sessions %1$s</string>
     <string name="l10n_workouts_screen_started_faa9e7e7">Commencé</string>

@@ -114,6 +114,10 @@ struct WorkoutsView: View {
     /// workout ranges intentionally keep this trend capped at 90 days so opening a deep history never
     /// launches hundreds of raw-HR reads.
     @State private var recoveryTrend: [WorkoutRecoveryTrendPoint] = []
+    /// HR-zone minutes binned from strap HR for shown sessions with no imported split, keyed by
+    /// `WorkoutZones.strapKey`, so the zones card and the per-sport mini-bars count strap-recorded,
+    /// detected, manual and Apple Health sessions too. Kotlin twin: `strapZoneMinutes` in WorkoutsScreen.
+    @State private var strapZoneMinutes: [String: [Double]] = [:]
 
     // MARK: - Filters + selection (#64)
 
@@ -177,6 +181,9 @@ struct WorkoutsView: View {
         let resolved = effectiveRange
         let unscopedRows = sessions(for: resolved)
         let trendRows = recoveryTrendRows(from: unscopedRows)
+        // The same scoped set the sections below show, so the derived zone set is the shown set.
+        let strapZoneRows = Self.scopedRows(unscopedRows, scope: scope)
+            .filter { WorkoutZones.importedMinutes($0) == nil }
         return ScreenScaffold(title: "Workouts", subtitle: "Every session, threaded together.",
                        onRefresh: { await repo.refresh() },
                        // PERF: the column ends in the full "All Sessions" log (the breakdown grid, the
@@ -205,7 +212,7 @@ struct WorkoutsView: View {
                 // whole window.
                 let windowRows = Self.scopedRows(unscopedRows, scope: scope)
                 let groups = sportGroups(from: windowRows)
-                let zonesSummary = WorkoutZones.summary(from: windowRows)
+                let zonesSummary = WorkoutZones.summary(from: windowRows, strapMinutes: strapZoneMinutes)
 
                 workoutActionRow
                 scopeBar
@@ -255,6 +262,9 @@ struct WorkoutsView: View {
         // full read is needed to show the older sessions.
         .onChange(of: range) { newRange in
             Task { await expandWindowIfNeeded(for: newRange == .all ? .all : effectiveRange) }
+        }
+        .task(id: strapZoneInputKey(rows: strapZoneRows)) {
+            await loadStrapZoneMinutes(rows: strapZoneRows)
         }
         .task(id: recoveryTrendInputKey(rows: trendRows)) {
             await loadRecoveryTrend(rows: trendRows)
@@ -337,6 +347,28 @@ struct WorkoutsView: View {
     private var recoveryTrendCaption: String {
         if let days = effectiveRange.days, days <= 90 { return effectiveRange.caption }
         return String(localized: "last 90 days")
+    }
+
+    /// Stable task identity: changing the shown rows, a refresh, or the zone model rebuilds the map.
+    private func strapZoneInputKey(rows: [WorkoutRow]) -> String {
+        "\(repo.refreshSeq)|\(profile.hrZoneSet.zones.map(\.lower))|"
+            + rows.map(WorkoutZones.strapKey).joined(separator: ",")
+    }
+
+    /// Bins each row's strap HR through the same `Repository.workoutZoneMinutes` the session detail uses.
+    private func loadStrapZoneMinutes(rows: [WorkoutRow]) async {
+        guard !usesPreviewRows else { strapZoneMinutes = [:]; return }
+        let zoneSet = profile.hrZoneSet
+        var built: [String: [Double]] = [:]
+        for row in rows {
+            if Task.isCancelled { return }
+            if let minutes = await repo.workoutZoneMinutes(from: row.startTs, to: row.endTs, zoneSet: zoneSet,
+                                                           source: row.source) {
+                built[WorkoutZones.strapKey(row)] = minutes
+            }
+        }
+        guard !Task.isCancelled else { return }
+        strapZoneMinutes = built
     }
 
     private func loadRecoveryTrend(rows: [WorkoutRow]) async {
@@ -1050,8 +1082,10 @@ struct WorkoutsView: View {
                               : String(localized: "\(groups.count) sports"))
             LazyVGrid(columns: breakdownColumns, alignment: .leading, spacing: NoopMetrics.gap) {
                 ForEach(groups) { g in
-                    // This sport's own sessions, so the card can carry an HR-zone mini-bar.
-                    sportCard(g, zones: WorkoutZones.summary(from: rows.filter { $0.sport == g.sport }))
+                    // This sport's own sessions, so the card can carry an HR-zone mini-bar — from the same
+                    // inputs as the zones card, so a sport's bar and the overall card count the same sessions.
+                    sportCard(g, zones: WorkoutZones.summary(from: rows.filter { $0.sport == g.sport },
+                                                             strapMinutes: strapZoneMinutes))
                 }
             }
         }
@@ -1127,12 +1161,19 @@ struct WorkoutsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - HR zones (imported per-workout zone split, one card)
+    // MARK: - HR zones (imported split where present, else strap HR; one card)
+
+    /// Names only the sources that actually contributed to the card's bar.
+    private func zonesOverline(_ z: WorkoutZones.Summary) -> LocalizedStringKey {
+        if z.strapSessions == 0 { return "Whoop import" }
+        if z.importedSessions == 0 { return "From strap HR" }
+        return "Import + strap HR"
+    }
 
     private func zonesSection(_ z: WorkoutZones.Summary, totalSessions: Int) -> some View {
         VStack(alignment: .leading, spacing: NoopMetrics.gap) {
             SectionHeader("HR Zones",
-                          overline: "Whoop import",
+                          overline: zonesOverline(z),
                           trailing: totalSessions == 1
                               ? String(localized: "\(z.sessionsWithZones) of 1 session")
                               : String(localized: "\(z.sessionsWithZones) of \(totalSessions) sessions"))
@@ -1167,7 +1208,9 @@ struct WorkoutsView: View {
                             zoneStat(i + 1, minutes: z.minutes[i], total: z.totalMinutes)
                         }
                     }
-                    Text("Share of imported zone time, duration-weighted across sessions (approximate).")
+                    Text(z.strapSessions == 0
+                         ? String(localized: "Share of imported zone time, duration-weighted across sessions (approximate).")
+                         : String(localized: "Share of zone time, duration-weighted across sessions (approximate). Imported WHOOP splits are used where present; other sessions are binned from strap HR."))
                         .font(StrandFont.footnote)
                         .foregroundStyle(StrandPalette.textTertiary)
                 }
