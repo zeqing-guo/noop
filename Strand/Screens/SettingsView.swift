@@ -62,6 +62,10 @@ struct SettingsView: View {
     /// [PuffinExperiment.banisterEffortKey].
     @AppStorage(PuffinExperiment.banisterEffortKey) private var banisterEffortEnabled = false
 
+    /// Whether the Workouts weekly intensity card counts walks. Default off; only that card reads it.
+    /// The same UserDefaults key as Android's `NoopPrefs.KEY_WEEKLY_INTENSITY_INCLUDES_WALKING`.
+    @AppStorage(WorkoutZones.weeklyIntensityIncludesWalkingKey) private var weeklyIntensityIncludesWalking = false
+
     /// Opt-in "Continuous HRV capture" (off by default) — holds the dense realtime stream armed 24/7 so
     /// the strap banks beat-to-beat R-R for better overnight HRV/recovery/sleep, at a battery cost.
     /// See [PuffinExperiment.keepRealtimeForDataKey].
@@ -477,6 +481,17 @@ struct SettingsView: View {
                         }
                     }
                 }
+                rowDivider
+                FormRow(label: "Count walks in weekly intensity") {
+                    Toggle("Count walks in weekly intensity", isOn: $weeklyIntensityIncludesWalking)
+                        .labelsHidden()
+                        .tint(StrandPalette.accent)
+                        .accessibilityLabel("Count walks in weekly intensity")
+                }
+                Text("Off by default: walks are mostly light, and a phone that logs every walk can fill the moderate band on its own. Turn on to count them on the Workouts weekly intensity card.")
+                    .font(StrandFont.footnote)
+                    .foregroundStyle(StrandPalette.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
                 rowDivider
                 FormRow(label: "Day cycle") {
                     Picker("Day starts", selection: Binding(

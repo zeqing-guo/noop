@@ -51,6 +51,9 @@ struct WorkoutsView: View {
     @AppStorage(UnitPrefs.effortScaleKey) private var effortScaleRaw = EffortScale.hundred.rawValue
     private var effortScale: EffortScale { UnitPrefs.resolveEffortScale(effortScaleRaw) }
 
+    /// Whether the weekly intensity card counts walks (Settings → heart-rate zones). Default off.
+    @AppStorage(WorkoutZones.weeklyIntensityIncludesWalkingKey) private var weeklyIncludesWalking = false
+
     /// All loaded sessions, newest first. Seedable for previews. #797: this holds only the rows inside the
     /// currently-LOADED window (`loadedWindowDays`), not the entire history. A 1700+-workout import made
     /// the eager all-rows read + sort fire on every `refreshSeq` bump (first paint AND every backfill
@@ -181,9 +184,19 @@ struct WorkoutsView: View {
         let resolved = effectiveRange
         let unscopedRows = sessions(for: resolved)
         let trendRows = recoveryTrendRows(from: unscopedRows)
-        // The same scoped set the sections below show, so the derived zone set is the shown set.
-        let strapZoneRows = Self.scopedRows(unscopedRows, scope: scope)
-            .filter { WorkoutZones.importedMinutes($0) == nil }
+        // The weekly intensity card's window: the last `weeklyIntensityWeeks` calendar weeks, anchored to
+        // the clock (not to the latest session, unlike the range bar). Weeks start on MONDAY (ISO 8601)
+        // whatever the region says: a Sunday-first region otherwise empties "this week" on Sunday morning,
+        // in the middle of what the wearer counts as their week. Kotlin twin: `weekBounds` in WorkoutsScreen.
+        let weekBounds = WorkoutZones.weekBoundaries(
+            nowSec: Int(Date().timeIntervalSince1970), weeks: WorkoutZones.weeklyIntensityWeeks,
+            timeZone: .current, firstWeekday: 2)
+        let weekRows = weeklyIntensityRows(weekBounds: weekBounds)
+        // HR-zone minutes are read for the union of the scoped set the sections below show (so the derived
+        // zone set is the shown set) and the weekly card's calendar weeks.
+        var seenStrapKeys = Set<String>()
+        let strapZoneRows = (Self.scopedRows(unscopedRows, scope: scope) + weekRows)
+            .filter { WorkoutZones.importedMinutes($0) == nil && seenStrapKeys.insert(WorkoutZones.strapKey($0)).inserted }
         return ScreenScaffold(title: "Workouts", subtitle: "Every session, threaded together.",
                        onRefresh: { await repo.refresh() },
                        // PERF: the column ends in the full "All Sessions" log (the breakdown grid, the
@@ -225,6 +238,9 @@ struct WorkoutsView: View {
                 if let z = zonesSummary {
                     zonesSection(z, totalSessions: windowRows.count)
                 }
+                weeklyIntensitySection(
+                    WorkoutZones.weeklyIntensity(rows: weekRows, strapMinutes: strapZoneMinutes,
+                                                 weekBounds: weekBounds))
                 recoveryTrendSection
                 sessionsSection(rows: windowRows)
             }
@@ -1232,6 +1248,117 @@ struct WorkoutsView: View {
             Text(durationLabel(minutes * 60))
                 .font(StrandFont.footnote)
                 .foregroundStyle(StrandPalette.textTertiary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Weekly intensity (moderate Z2–Z3 / vigorous Z4–Z5 minutes this calendar week, one card)
+
+    /// The rows the weekly intensity card counts: every loaded session starting inside the card's weeks,
+    /// through the sport/source/search filter (every section reads one filtered set). Neither the range nor
+    /// the Current/Archived scope applies, because the card's window is its own calendar weeks. Walks are
+    /// left out unless the wearer turned them on in Settings. Kotlin twin: `weekRows` in WorkoutsScreen.
+    private func weeklyIntensityRows(weekBounds: [Int]) -> [WorkoutRow] {
+        guard let first = weekBounds.first, let last = weekBounds.last else { return [] }
+        return filter.apply(allRows.filter { $0.startTs >= first && $0.startTs < last })
+            .filter { weeklyIncludesWalking || !WorkoutZones.isWalkingSport($0.sport) }
+    }
+
+    /// "Md" in the user's locale (11/2, 2.11., 11月2日), for the card's "From …" caption.
+    private static let weekStartFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.setLocalizedDateFormatFromTemplate("Md")
+        return f
+    }()
+
+    /// This week's intensity against the WHO goal, laid out like the effort hero above it: a ring on the
+    /// left (the WHO combination, moderate + 2 x vigorous, against 150 minutes) and the split on the right.
+    /// The ring's number and the two stats are different quantities on purpose, and each is labelled as
+    /// what it is: the ring says "of 150 min", the stats name their zones, and the note says a vigorous
+    /// minute counts double. Moderate and vigorous are drawn in the zone colours they are made of: Z3 for
+    /// Z2–Z3, Z5 for Z4–Z5. Kotlin twin: `WeeklyIntensitySection`.
+    @ViewBuilder
+    private func weeklyIntensitySection(_ weeks: [WorkoutZones.WeekIntensity]) -> some View {
+        if let thisWeek = weeks.last {
+            let lastWeek = weeks.count >= 2 ? weeks[weeks.count - 2] : nil
+            let goal = WorkoutZones.whoWeeklyModerateEquivalentMinutes
+            let eq = thisWeek.whoEquivalentMinutes
+            let startLabel = Self.weekStartFormatter.string(
+                from: Date(timeIntervalSince1970: TimeInterval(thisWeek.weekStart)))
+            VStack(alignment: .leading, spacing: NoopMetrics.gap) {
+                SectionHeader("Weekly intensity",
+                              trailing: filter.isActive
+                                  ? String(localized: "From \(startLabel) · filtered")
+                                  : String(localized: "From \(startLabel)"))
+                NoopCard(tint: StrandPalette.effortColor) {
+                    VStack(alignment: .leading, spacing: 14) {
+                        HStack(alignment: .center, spacing: 20) {
+                            ZStack {
+                                // The ring's own centre number is left empty: the WHO total and its
+                                // "of 150 min" unit are stacked over it instead, so the unit reads with it.
+                                GlowRing(fraction: eq / goal, value: eq, format: { _ in "" },
+                                         color: StrandPalette.accent, diameter: 112, lineWidth: 10)
+                                VStack(spacing: 0) {
+                                    Text("\(Int(eq.rounded()))" as String)
+                                        .font(StrandFont.number(30, weight: .bold))
+                                        .foregroundStyle(StrandPalette.textPrimary)
+                                        .lineLimit(1)
+                                    Text("of 150 min")
+                                        .font(StrandFont.footnote)
+                                        .foregroundStyle(StrandPalette.textTertiary)
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.7)
+                                }
+                                .padding(.horizontal, 14)
+                            }
+                            .accessibilityElement(children: .combine)
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text(String(localized: "\(Int((eq / goal * 100).rounded()))% of the WHO weekly goal"))
+                                    .font(StrandFont.headline)
+                                    .foregroundStyle(StrandPalette.textPrimary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                HStack(alignment: .top, spacing: NoopMetrics.gap) {
+                                    intensityStat("Moderate · Z2–Z3", minutes: thisWeek.moderateMinutes,
+                                                  color: StrandPalette.hrZoneColor(3))
+                                    intensityStat("Vigorous · Z4–Z5", minutes: thisWeek.vigorousMinutes,
+                                                  color: StrandPalette.hrZoneColor(5))
+                                }
+                                if let lastWeek {
+                                    Text(String(localized: "Last week: \(Int(lastWeek.whoEquivalentMinutes.rounded())) of 150 min"))
+                                        .font(StrandFont.footnote)
+                                        .foregroundStyle(StrandPalette.textTertiary)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        Text(weeklyIncludesWalking
+                             ? String(localized: "WHO recommends at least 150 min of moderate activity a week; a vigorous minute counts as two. Counts workouts only, Monday to Sunday, walks included.")
+                             : String(localized: "WHO recommends at least 150 min of moderate activity a week; a vigorous minute counts as two. Counts workouts only, Monday to Sunday, without walks (Settings can include them)."))
+                            .font(StrandFont.footnote)
+                            .foregroundStyle(StrandPalette.textTertiary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+        }
+    }
+
+    private func intensityStat(_ label: LocalizedStringKey, minutes: Double, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 5) {
+                RoundedRectangle(cornerRadius: 2, style: .continuous)
+                    .fill(color)
+                    .frame(width: 8, height: 8)
+                Text(label)
+                    .font(StrandFont.footnote)
+                    .foregroundStyle(StrandPalette.textSecondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+            Text(String(localized: "\(Int(minutes.rounded())) min"))
+                .font(StrandFont.number(20))
+                .foregroundStyle(StrandPalette.textPrimary)
+                .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
