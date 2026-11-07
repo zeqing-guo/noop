@@ -416,6 +416,14 @@ object WorkoutsTrace {
         if (overlapSource != null) line += " overlapSource=$overlapSource"
         return line
     }
+
+    /**
+     * A manual-priority decision line: an imported row overlapped a manual row and was dropped, whatever its
+     * sport. `durMin` is the import's whole-minute length, `overlapMin` the whole minutes it shared with the
+     * manual row. No PII (a source label + minutes only). Swift twin WorkoutsTrace.importUnderManualLine.
+     */
+    fun importUnderManualLine(importSource: String, durMin: Int, overlapMin: Int): String =
+        "importRow verdict=droppedUnderManual source=$importSource durMin=$durMin overlapMin=$overlapMin"
 }
 
 /**

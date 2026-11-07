@@ -588,4 +588,46 @@ final class WorkoutSourceTests: XCTestCase {
         XCTAssertEqual(newEnd.timeIntervalSince(newStart), end.timeIntervalSince(start))
     }
 
+    // MARK: - Manual priority over imports (mirrors Android WorkoutEditingTest case-for-case)
+
+    func testManualPriorityDropsAnImportOverlappingByLessThanHalf() {
+        let manual = row(start: 49_320, end: 60_840, sport: "Walking", source: "manual")
+        let hc = row(start: 59_400, end: 66_600, sport: "Walking", source: "health-connect")
+        XCTAssertEqual(WorkoutSource.dedupCrossSource([manual, hc]), [manual])
+    }
+
+    func testManualPriorityDropsAnImportOfAnotherSport() {
+        let manual = row(start: 1_000, end: 5_000, sport: "Activity", source: "manual")
+        let hc = row(start: 2_000, end: 3_000, sport: "Walking", source: "health-connect")
+        let file = row(start: 4_000, end: 9_000, sport: "Running", source: "activity-file")
+        let lift = row(start: 4_500, end: 6_000, sport: "Strength", source: "lifting")
+        XCTAssertEqual(WorkoutSource.dedupCrossSource([hc, manual, file, lift]), [manual])
+    }
+
+    func testManualPriorityKeepsAnImportThatOnlyTouches() {
+        let manual = row(start: 1_000, end: 5_000, sport: "Walking", source: "manual")
+        let before = row(start: 0, end: 1_000, sport: "Walking", source: "health-connect")
+        let after = row(start: 5_000, end: 6_000, sport: "Walking", source: "health-connect")
+        XCTAssertEqual(WorkoutSource.dedupCrossSource([before, manual, after]), [before, manual, after])
+    }
+
+    func testManualPriorityLeavesStrapRowsToTheUsualRule() {
+        let manual = row(start: 1_000, end: 5_000, sport: "Walking", source: "manual")
+        let strap = row(start: 4_500, end: 9_000, sport: "Running", source: "my-whoop")
+        XCTAssertEqual(WorkoutSource.dedupCrossSource([manual, strap]), [manual, strap])
+    }
+
+    func testManualPriorityWithoutAManualRowChangesNothing() {
+        let a = row(start: 1_000, end: 5_000, sport: "Walking", source: "health-connect")
+        let b = row(start: 4_900, end: 9_000, sport: "Running", source: "activity-file")
+        XCTAssertEqual(WorkoutSource.dropImportsUnderManual([a, b]), [a, b])
+    }
+
+    func testManualPriorityTraceKeepsTheSameRowsAndExplainsTheDrop() {
+        let manual = row(start: 49_320, end: 60_840, sport: "Walking", source: "manual")
+        let hc = row(start: 59_400, end: 66_600, sport: "Walking", source: "health-connect")
+        let (kept, trace) = WorkoutSource.dedupCrossSourceTrace([manual, hc])
+        XCTAssertEqual(kept, WorkoutSource.dedupCrossSource([manual, hc]))
+        XCTAssertEqual(trace, ["importRow verdict=droppedUnderManual source=apple durMin=120 overlapMin=24"])
+    }
 }

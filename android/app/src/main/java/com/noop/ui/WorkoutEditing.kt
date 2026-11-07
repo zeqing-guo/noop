@@ -309,6 +309,38 @@ object WorkoutEditing {
         }
     }
 
+    // MARK: - Manual priority over imports
+
+    /**
+     * Whether a row is an IMPORT for the manual-priority rule: Apple Health / Health Connect, an activity
+     * file, or a lifting-app session. WHOOP rows (strap history) and detected bouts are not; detected bouts
+     * have their own rule in [dropDetectedShadows]. Mirrors Swift.
+     */
+    fun isImportForManualPriority(row: WorkoutRow): Boolean = when (classify(row.source)) {
+        WorkoutSource.APPLE, WorkoutSource.ACTIVITY_FILE, WorkoutSource.LIFTING -> true
+        WorkoutSource.WHOOP, WorkoutSource.DETECTED, WorkoutSource.MANUAL -> false
+    }
+
+    /** True when the two windows share any time at all (back-to-back sessions that only touch do not). */
+    fun overlapsAtAll(a: WorkoutRow, b: WorkoutRow): Boolean =
+        minOf(a.endTs, b.endTs) - maxOf(a.startTs, b.startTs) > 0
+
+    /**
+     * Drop every imported row that overlaps a MANUAL row at all, whatever its sport and however small the
+     * overlap: a manual entry is the wearer's own account of that time, so it wins outright. The same-sport,
+     * more-than-half rule in [collapseCrossSource] still governs every other pair, but on its own it let an
+     * imported walk that overlapped a manual one by less than half, or was labelled a different sport, be
+     * counted beside it, so the shared minutes counted twice. Order-stable; a list with no manual row passes
+     * through unchanged. Runs first in [dedupCrossSource]. Mirrors Swift.
+     */
+    fun dropImportsUnderManual(rows: List<WorkoutRow>): List<WorkoutRow> {
+        val manuals = rows.filter { classify(it.source) == WorkoutSource.MANUAL }
+        if (manuals.isEmpty()) return rows
+        return rows.filter { row ->
+            !isImportForManualPriority(row) || manuals.none { overlapsAtAll(row, it) }
+        }
+    }
+
     /**
      * Collapse cross-source duplicates of the same activity, keeping the richer row of each pair.
      * Order-stable: walks the input once, and a row that duplicates one already kept is dropped (with
@@ -317,7 +349,7 @@ object WorkoutEditing {
      * live+detected duplicate never shows and can't pollute the Effort/HR read-out.
      */
     fun dedupCrossSource(rows: List<WorkoutRow>): List<WorkoutRow> =
-        collapseCrossSource(dropDetectedShadows(rows))
+        collapseCrossSource(dropDetectedShadows(dropImportsUnderManual(rows)))
 
     /**
      * The shared cross-source collapse walk behind [dedupCrossSource] and [dedupCrossSourceTrace]. Byte-
@@ -372,11 +404,27 @@ object WorkoutEditing {
      */
     fun dedupCrossSourceTrace(rows: List<WorkoutRow>): Pair<List<WorkoutRow>, List<String>> {
         val lines = ArrayList<String>()
+        // Manual priority first (byte-identical to dedupCrossSource's dropImportsUnderManual), one line per
+        // dropped import naming the manual row's overlap, so a vanished import is explained in the export.
+        val manuals = rows.filter { classify(it.source) == WorkoutSource.MANUAL }
+        val afterManual = rows.filter { row ->
+            if (!isImportForManualPriority(row)) return@filter true
+            val hit = manuals.firstOrNull { overlapsAtAll(row, it) } ?: return@filter true
+            val overlapS = minOf(row.endTs, hit.endTs) - maxOf(row.startTs, hit.startTs)
+            lines.add(
+                WorkoutsTrace.importUnderManualLine(
+                    importSource = sourceLabel(row),
+                    durMin = maxOf(0L, (row.endTs - row.startTs) / 60L).toInt(),
+                    overlapMin = (overlapS / 60L).toInt(),
+                ),
+            )
+            false
+        }
         // #975: detected-shadow drop first (byte-identical to dedupCrossSource's dropDetectedShadows), tracing
         // each drop with a `detectedBout verdict=droppedShadow` line naming the real row it collided with.
-        val reals = rows.filter { classify(it.source) != WorkoutSource.DETECTED }
-        val input = ArrayList<WorkoutRow>(rows.size)
-        for (row in rows) {
+        val reals = afterManual.filter { classify(it.source) != WorkoutSource.DETECTED }
+        val input = ArrayList<WorkoutRow>(afterManual.size)
+        for (row in afterManual) {
             if (classify(row.source) == WorkoutSource.DETECTED) {
                 val hit = reals.firstOrNull { detectedShadowsReal(row, it) }
                 if (hit != null) {

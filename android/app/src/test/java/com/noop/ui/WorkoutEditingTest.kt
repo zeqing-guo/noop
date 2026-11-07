@@ -598,7 +598,7 @@ class WorkoutEditingTest {
 
     /** The ORIGINAL O(n²) collapse, kept here verbatim as the oracle the bucketed version must match. */
     private fun naiveDedupCrossSource(rows: List<WorkoutRow>): List<WorkoutRow> {
-        val input = WorkoutEditing.dropDetectedShadows(rows)
+        val input = WorkoutEditing.dropDetectedShadows(WorkoutEditing.dropImportsUnderManual(rows))
         val kept = ArrayList<WorkoutRow>(input.size)
         outer@ for (row in input) {
             for (i in kept.indices) {
@@ -655,5 +655,58 @@ class WorkoutEditingTest {
             // The trace twin must return the exact same kept list the plain path does.
             assertEquals(actual, WorkoutEditing.dedupCrossSourceTrace(rows).first)
         }
+    }
+    // MARK: - Manual priority over imports
+
+    @Test
+    fun manualPriority_dropsAnImportOverlappingByLessThanHalf() {
+        // Manual walk 13:42–16:54; a Health Connect walk 16:30–18:30 shares 24 min (< half of either).
+        val manual = row("my-whoop", 49_320, 60_840, "Walking", "manual")
+        val hc = row("health-connect", 59_400, 66_600, "Walking", "health-connect")
+        assertEquals(listOf(manual), WorkoutEditing.dedupCrossSource(listOf(manual, hc)))
+    }
+
+    @Test
+    fun manualPriority_dropsAnImportOfAnotherSport() {
+        val manual = row("my-whoop", 1_000, 5_000, "Activity", "manual")
+        val hc = row("health-connect", 2_000, 3_000, "Walking", "health-connect")
+        val file = row("activity-file", 4_000, 9_000, "Running", "activity-file")
+        val lift = row("lifting", 4_500, 6_000, "Strength", "lifting")
+        assertEquals(listOf(manual), WorkoutEditing.dedupCrossSource(listOf(hc, manual, file, lift)))
+    }
+
+    @Test
+    fun manualPriority_keepsAnImportThatOnlyTouches() {
+        val manual = row("my-whoop", 1_000, 5_000, "Walking", "manual")
+        val before = row("health-connect", 0, 1_000, "Walking", "health-connect")
+        val after = row("health-connect", 5_000, 6_000, "Walking", "health-connect")
+        assertEquals(listOf(before, manual, after), WorkoutEditing.dedupCrossSource(listOf(before, manual, after)))
+    }
+
+    @Test
+    fun manualPriority_leavesStrapRowsToTheUsualRule() {
+        // A WHOOP row is not an import for this rule: a small, different-sport overlap keeps both.
+        val manual = row("my-whoop", 1_000, 5_000, "Walking", "manual")
+        val strap = row("my-whoop", 4_500, 9_000, "Running", "my-whoop")
+        assertEquals(listOf(manual, strap), WorkoutEditing.dedupCrossSource(listOf(manual, strap)))
+    }
+
+    @Test
+    fun manualPriority_withoutAManualRow_changesNothing() {
+        val a = row("health-connect", 1_000, 5_000, "Walking", "health-connect")
+        val b = row("activity-file", 4_900, 9_000, "Running", "activity-file")
+        assertEquals(listOf(a, b), WorkoutEditing.dropImportsUnderManual(listOf(a, b)))
+    }
+
+    @Test
+    fun manualPriority_traceKeepsTheSameRows_andExplainsTheDrop() {
+        val manual = row("my-whoop", 49_320, 60_840, "Walking", "manual")
+        val hc = row("health-connect", 59_400, 66_600, "Walking", "health-connect")
+        val (kept, trace) = WorkoutEditing.dedupCrossSourceTrace(listOf(manual, hc))
+        assertEquals(WorkoutEditing.dedupCrossSource(listOf(manual, hc)), kept)
+        assertEquals(
+            listOf("importRow verdict=droppedUnderManual source=${WorkoutEditing.sourceLabel(hc)} durMin=120 overlapMin=24"),
+            trace,
+        )
     }
 }

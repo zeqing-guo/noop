@@ -223,7 +223,38 @@ enum WorkoutSource: Equatable {
     /// #975: a DETECTED bout that shadows a real logged session is dropped FIRST so the transient
     /// live+detected duplicate never shows and can't pollute the Effort/HR read-out.
     static func dedupCrossSource(_ rows: [WorkoutRow]) -> [WorkoutRow] {
-        collapseCrossSource(dropDetectedShadows(rows))
+        collapseCrossSource(dropDetectedShadows(dropImportsUnderManual(rows)))
+    }
+
+    // MARK: - Manual priority over imports
+
+    /// Whether a row is an IMPORT for the manual-priority rule: Apple Health / Health Connect, an activity
+    /// file, or a lifting-app session. WHOOP rows (strap history) and detected bouts are not; detected bouts
+    /// have their own rule in `dropDetectedShadows`. Kotlin twin: `WorkoutEditing.isImportForManualPriority`.
+    static func isImportForManualPriority(_ row: WorkoutRow) -> Bool {
+        switch classify(row.source) {
+        case .apple, .activityFile, .lifting: return true
+        case .whoop, .detected, .manual:      return false
+        }
+    }
+
+    /// True when the two windows share any time at all (back-to-back sessions that only touch do not).
+    static func overlapsAtAll(_ a: WorkoutRow, _ b: WorkoutRow) -> Bool {
+        min(a.endTs, b.endTs) - max(a.startTs, b.startTs) > 0
+    }
+
+    /// Drop every imported row that overlaps a MANUAL row at all, whatever its sport and however small the
+    /// overlap: a manual entry is the wearer's own account of that time, so it wins outright. The same-sport,
+    /// more-than-half rule in `collapseCrossSource` still governs every other pair, but on its own it let an
+    /// imported walk that overlapped a manual one by less than half, or was labelled a different sport, be
+    /// counted beside it, so the shared minutes counted twice. Order-stable; a list with no manual row passes
+    /// through unchanged. Runs first in `dedupCrossSource`. Kotlin twin: `WorkoutEditing.dropImportsUnderManual`.
+    static func dropImportsUnderManual(_ rows: [WorkoutRow]) -> [WorkoutRow] {
+        let manuals = rows.filter { classify($0.source) == .manual }
+        guard !manuals.isEmpty else { return rows }
+        return rows.filter { row in
+            !isImportForManualPriority(row) || !manuals.contains { overlapsAtAll(row, $0) }
+        }
     }
 
     /// The shared cross-source collapse walk behind `dedupCrossSource` and `dedupCrossSourceTrace`. Byte-
@@ -285,11 +316,24 @@ enum WorkoutSource: Equatable {
     /// exactly which detected twin was suppressed to keep the live/manual session single.
     static func dedupCrossSourceTrace(_ rows: [WorkoutRow]) -> (kept: [WorkoutRow], trace: [String]) {
         var lines: [String] = []
+        // Manual priority first (byte-identical to dedupCrossSource's `dropImportsUnderManual`), one line per
+        // dropped import naming the manual row's overlap, so a vanished import is explained in the export.
+        let manuals = rows.filter { classify($0.source) == .manual }
+        let afterManual = rows.filter { row in
+            guard isImportForManualPriority(row),
+                  let hit = manuals.first(where: { overlapsAtAll(row, $0) }) else { return true }
+            let overlapS = min(row.endTs, hit.endTs) - max(row.startTs, hit.startTs)
+            lines.append(WorkoutsTrace.importUnderManualLine(
+                importSource: sourceLabel(row),
+                durMin: max(0, (row.endTs - row.startTs) / 60),
+                overlapMin: overlapS / 60))
+            return false
+        }
         // Detected-shadow drop first (byte-identical to dedupCrossSource's `dropDetectedShadows`), tracing each.
-        let reals = rows.filter { classify($0.source) != .detected }
+        let reals = afterManual.filter { classify($0.source) != .detected }
         var input: [WorkoutRow] = []
-        input.reserveCapacity(rows.count)
-        for row in rows {
+        input.reserveCapacity(afterManual.count)
+        for row in afterManual {
             if classify(row.source) == .detected,
                let hit = reals.first(where: { detectedShadowsReal(row, $0) }) {
                 let durMin = max(0, (row.endTs - row.startTs) / 60)

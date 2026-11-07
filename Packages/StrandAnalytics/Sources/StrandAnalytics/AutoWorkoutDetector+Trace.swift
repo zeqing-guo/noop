@@ -424,6 +424,13 @@ public enum WorkoutsTrace {
         return line
     }
 
+    /// A manual-priority decision line: an imported row overlapped a manual row and was dropped, whatever its
+    /// sport. `durMin` is the import's whole-minute length, `overlapMin` the whole minutes it shared with the
+    /// manual row. No PII (a source label + minutes only). Mirrors Kotlin `WorkoutsTrace.importUnderManualLine`.
+    public static func importUnderManualLine(importSource: String, durMin: Int, overlapMin: Int) -> String {
+        "importRow verdict=droppedUnderManual source=\(importSource) durMin=\(durMin) overlapMin=\(overlapMin)"
+    }
+
     /// A cross-source dedup decision line: two same-activity rows from different sources were collapsed to
     /// the richer one. Reports the sources, the kept richness, and the overlap, so a "my workout shows twice"
     /// or "the richer one disappeared" report shows exactly which pair merged and which won.
