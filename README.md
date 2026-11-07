@@ -621,6 +621,7 @@ That's it — copy away.
 - [`DISCLAIMER.md`](DISCLAIMER.md) — trademark, interoperability, and medical/legal notice.
 - [`ATTRIBUTION.md`](ATTRIBUTION.md) — full credits and licensing notes.
 - [`docs/SCOPE.md`](docs/SCOPE.md) — which WHOOP-app features stay out of scope (and why) versus their local, on-device equivalents.
+- [`docs/COMPUTER_ACCESS.md`](docs/COMPUTER_ACCESS.md) — **fork-only, Android:** let an AI agent on a computer on the same Wi-Fi query the phone for ten minutes (the coach's data plus read-only SQL), with each computer approved on the phone. How to start it and how an agent pairs and queries.
 - [`project.yml`](project.yml) — XcodeGen project definition (source of `Strand.xcodeproj`).
 
 ---

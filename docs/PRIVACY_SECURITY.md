@@ -57,6 +57,7 @@ these are features, not a count of individual requests or destinations.
 | Oura history import / opt-in macOS, iOS build (§1.1b) | Compiled out by default; user starts authorization/import | OAuth credentials, authorization/refresh tokens and history query parameters; no existing NOOP health data | `cloud.ouraring.com`, `api.ouraring.com` |
 | Update check / macOS, iOS, Android (§1.1c) | Automatic check **on by default**, at most daily after onboarding/Terms; manual check on tap | Public release `GET`; no health data or app-added user/account identifier | `api.github.com` |
 | Self-hosted push / Android (§1.1d) | Experimental, **off by default**; configured export after offload/launch or on tap; explicit connection test | Bearer authentication; capability `GET`; versioned health batches with local installation/device IDs on export | User-owned HTTP(S) endpoint |
+| Computer access (inbound) / Android, fork-only ([`COMPUTER_ACCESS.md`](COMPUTER_ACCESS.md)) | **Off**; nothing listens until the wearer taps Start on the AI Coach page; closes after 10 minutes | To computers the wearer approves on the phone: the coach's data block (only with coach data consent) and results of read-only SQL over the whole app database | Agents on the same Wi-Fi (private-range peers only) |
 
 **Platform services are a separate boundary.** Apple's workout route view uses `MKMapView`
 (`Strand/Screens/WorkoutDetailView.swift`), which can load map data for the displayed region.
