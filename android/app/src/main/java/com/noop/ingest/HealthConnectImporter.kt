@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
+import androidx.health.connect.client.records.BloodPressureRecord
 import androidx.health.connect.client.records.BodyFatRecord
 import androidx.health.connect.client.records.DistanceRecord
 import androidx.health.connect.client.records.ExerciseRouteResult
@@ -25,10 +26,13 @@ import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import com.noop.analytics.FitnessAgeEngine
 import com.noop.analytics.HydrationStore
+import com.noop.analytics.LabBookProjection
+import com.noop.analytics.LabMarkerCategory
 import com.noop.analytics.RouteMath
 import com.noop.data.AppleDaily
 import com.noop.data.DailyMetric
 import com.noop.data.ImportSummary
+import com.noop.data.LabMarkerRow
 import com.noop.data.MetricSeriesRow
 import com.noop.data.SleepSession
 import com.noop.data.WhoopRepository
@@ -61,6 +65,8 @@ import kotlin.reflect.KClass
  *     stages), so we never clobber it — we only backfill days the strap left empty. A strap-only
  *     user has NO raw "my-whoop" rows, so the computed source is what marks their days as owned.
  *   - Exercise sessions -> [WorkoutRow] with source "health-connect".
+ *   - Blood-pressure readings -> two Lab Book [LabMarkerRow]s each (systolic + diastolic) under
+ *     deviceId "my-whoop" with source "health-connect"; see [bloodPressureLabRows].
  *
  * The UI requests only the selected categories before [import] is called. Partial grants are valid:
  * the importer reads granted types inside those categories and skips everything else. If Health
@@ -84,6 +90,12 @@ object HealthConnectImporter {
     // + workouts carry this source.) Internal so the profile weight sync reads the same bucket.
     internal const val HC_DEVICE = "health-connect"
     private const val HC_WORKOUT_SOURCE = "health-connect"
+    // Lab Book rows are read back under the strap id ("my-whoop", LabBookScreen's LAB_STRAP_DEVICE_ID,
+    // the same id the CSV importer and the marker editor write under), so imported blood pressure must
+    // be stored there too or it lands in the table and never shows. The SOURCE keeps it apart from a
+    // hand-entered ("manual") or CSV ("lab-csv") reading in the natural key.
+    private const val LAB_BOOK_DEVICE = WHOOP
+    internal const val HC_LAB_SOURCE = "health-connect"
 
     /** Read window: a wide ~10-year span ending now. Health Connect itself caps retention. */
     private const val WINDOW_YEARS = 10L
@@ -136,10 +148,28 @@ object HealthConnectImporter {
                 LeanBodyMassRecord::class,
             ),
         ),
+        // Its own category rather than a member of RECOVERY: RECOVERY is on by default, and adding a type
+        // to an enabled category re-prompts every existing user (see hasUnaskedPermissions). A cuff reading
+        // is a health record the user should opt into, and it lands in the Lab Book, not the daily stores.
+        BLOOD_PRESSURE(
+            "blood-pressure",
+            setOf(BloodPressureRecord::class),
+        ),
     }
 
     internal val ALL_CATEGORIES: Set<ImportCategory> = ImportCategory.entries.toSet()
     internal val DEFAULT_CATEGORIES: Set<ImportCategory> = setOf(ImportCategory.RECOVERY)
+
+    /**
+     * What the old all-at-once flow (before #645) imported, and so what an install prompted under it keeps.
+     * Deliberately NOT [ALL_CATEGORIES]: a category added since (blood pressure) was never part of what
+     * that user agreed to, so the fallback must not widen to it and prompt for a type they never chose.
+     */
+    internal val LEGACY_CATEGORIES: Set<ImportCategory> = setOf(
+        ImportCategory.RECOVERY,
+        ImportCategory.ACTIVITY,
+        ImportCategory.BODY_COMPOSITION,
+    )
 
     /** Every supported read permission. Kept as the compatibility/all-capabilities view. */
     val PERMISSIONS: Set<String> = permissionsFor(ALL_CATEGORIES)
@@ -171,8 +201,9 @@ object HealthConnectImporter {
 
     /**
      * The selected categories. New installs start with the narrow recovery/wellness group; an
-     * existing install that was already prompted under the old all-at-once flow keeps all categories
-     * enabled so an update never silently stops importing data it imported before (#645).
+     * existing install that was already prompted under the old all-at-once flow keeps every category
+     * that flow covered ([LEGACY_CATEGORIES]) so an update never silently stops importing data it
+     * imported before (#645).
      */
     fun selectedCategories(context: Context): Set<ImportCategory> {
         val preferences = prefs(context)
@@ -225,7 +256,7 @@ object HealthConnectImporter {
             val restored = ImportCategory.entries.filterTo(linkedSetOf()) { it.storageKey in storedKeys }
             if (restored.isNotEmpty()) return restored
         }
-        return if (hadLegacyPermissionSignature) ALL_CATEGORIES else DEFAULT_CATEGORIES
+        return if (hadLegacyPermissionSignature) LEGACY_CATEGORIES else DEFAULT_CATEGORIES
     }
 
     /**
@@ -405,6 +436,8 @@ object HealthConnectImporter {
         // screen (which reads repo.sleepSessions) fell to its empty state. Keep each night's bounds +
         // per-stage minutes here, paired with its wake day for the coveredDays gate at write-out.
         val hcSleepSessions = ArrayList<Pair<String, SleepSession>>()
+        // Blood-pressure readings, already split into Lab Book rows (two per reading).
+        val bpRows = ArrayList<LabMarkerRow>()
 
         try {
             // --- Steps ---
@@ -528,6 +561,10 @@ object HealthConnectImporter {
                     b.leanMassTs = r.time.epochSecond
                 }
             }
+            // --- Blood pressure (mmHg) -> Lab Book, one systolic + one diastolic row per reading ---
+            // Every reading is kept, not a per-day aggregate: the Lab Book holds individual readings and
+            // its metricSeries projection already resolves several in a day (latest wins).
+            readSelected(BloodPressureRecord::class) { r -> bpRows += bloodPressureLabRows(r, zone) }
             // --- Exercise sessions -> WorkoutRow(source="health-connect") ---
             readSelected(ExerciseSessionRecord::class) { r ->
                 val startS = r.startTime.epochSecond
@@ -726,7 +763,7 @@ object HealthConnectImporter {
             }
         }
 
-        if (acc.isEmpty() && workouts.isEmpty()) {
+        if (acc.isEmpty() && workouts.isEmpty() && bpRows.isEmpty()) {
         // #1735: record that an import RAN and what it brought. "Hours after a ride it still is not
         // there" cannot be told from "Health Connect never imported it" without this: the log had per-source
         // row counts but nothing about WHEN they last moved. Mirrors the sync.lastWriteOkAt pattern the
@@ -859,6 +896,9 @@ object HealthConnectImporter {
             if (workouts.isNotEmpty()) {
                 repo.upsertWorkouts(workouts)
             }
+            // Not gated on coveredDays: that guard stops HC from shadowing strap nights, and a strap never
+            // measures blood pressure. Idempotent by the natural key, and re-projects the Lab Book series.
+            if (bpRows.isNotEmpty()) repo.upsertLabMarkers(bpRows)
         } catch (e: Exception) {
             return ImportSummary.failure(SOURCE, "Saving Health Connect data failed: ${e.message}")
         }
@@ -877,6 +917,7 @@ object HealthConnectImporter {
             if (appleRows.isNotEmpty()) put("appleDaily", appleRows.size)
             if (dailyRows.isNotEmpty()) put("dailyMetric", dailyRows.size)
             if (workouts.isNotEmpty()) put("workout", workouts.size)
+            if (bpRows.isNotEmpty()) put("labMarker", bpRows.size)
         }
 
         // Day range across everything we touched (aggregates + workout start days).
@@ -884,6 +925,7 @@ object HealthConnectImporter {
             addAll(appleRows.map { it.day })
             addAll(dailyRows.map { it.day })
             addAll(workoutDays)   // #1002: same keys the workouts were bucketed under
+            addAll(bpRows.map { it.day })
         }
         val firstDay = touchedDays.firstOrNull()
         val lastDay = touchedDays.lastOrNull()
@@ -1159,6 +1201,36 @@ object HealthConnectImporter {
      */
     internal fun localDayKey(instant: Instant, offset: ZoneOffset?, zone: ZoneId): String =
         LocalDate.ofInstant(instant, offset ?: zone).toString()
+
+    /**
+     * One Health Connect blood-pressure reading as the Lab Book's systolic + diastolic pair, the same two
+     * keys the marker editor and the CSV importer write ([LabBookProjection.BP_SYSTOLIC_KEY] /
+     * [LabBookProjection.BP_DIASTOLIC_KEY]), so imported and hand-entered readings share one series.
+     *
+     * `takenAt` is the reading's own instant, not the CSV path's local-noon stand-in, and the day is keyed
+     * by the offset it was recorded in (#1002). The id is derived from the key and instant rather than
+     * random, so a re-import replaces the row in place instead of minting a new id under it each time.
+     * Pure, so the mapping is testable without a HealthConnectClient.
+     */
+    internal fun bloodPressureLabRows(record: BloodPressureRecord, zone: ZoneId): List<LabMarkerRow> {
+        val takenAt = record.time.epochSecond
+        val day = localDayKey(record.time, record.zoneOffset, zone)
+        fun row(key: String, mmHg: Double) = LabMarkerRow(
+            id = "hc-$key-$takenAt",
+            deviceId = LAB_BOOK_DEVICE,
+            markerKey = key,
+            category = LabMarkerCategory.BLOOD_PRESSURE.raw,
+            day = day,
+            takenAt = takenAt,
+            value = mmHg,
+            unit = "mmHg",
+            source = HC_LAB_SOURCE,
+        )
+        return listOf(
+            row(LabBookProjection.BP_SYSTOLIC_KEY, record.systolic.inMillimetersOfMercury),
+            row(LabBookProjection.BP_DIASTOLIC_KEY, record.diastolic.inMillimetersOfMercury),
+        )
+    }
 
     /**
      * #589 de-overlap for a per-source step map: SUM is already folded WITHIN each source by the read

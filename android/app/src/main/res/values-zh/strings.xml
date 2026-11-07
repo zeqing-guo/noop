@@ -378,6 +378,8 @@
     <string name="health_connect_category_activity_detail">步数、卡路里、锻炼、距离和最大摄氧量</string>
     <string name="health_connect_category_body_composition">身体成分</string>
     <string name="health_connect_category_body_composition_detail">体重、体脂和瘦体重</string>
+    <string name="health_connect_category_blood_pressure">血压</string>
+    <string name="health_connect_category_blood_pressure_detail">收缩压和舒张压读数，保存到「实验室」</string>
     <string name="l10n_data_sources_screen_import_apple_health_export_533fca27">导入 Apple Health 数据包…</string>
     <string name="l10n_data_sources_screen_import_from_health_connect_35d55e21">从 Health Connect 导入</string>
     <string name="l10n_data_sources_screen_import_lifting_log_8fac7b68">导入举重记录…</string>

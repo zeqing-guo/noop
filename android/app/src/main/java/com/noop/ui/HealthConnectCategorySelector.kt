@@ -86,6 +86,7 @@ private fun ImportCategory.titleRes(): Int = when (this) {
     ImportCategory.RECOVERY -> R.string.health_connect_category_recovery
     ImportCategory.ACTIVITY -> R.string.health_connect_category_activity
     ImportCategory.BODY_COMPOSITION -> R.string.health_connect_category_body_composition
+    ImportCategory.BLOOD_PRESSURE -> R.string.health_connect_category_blood_pressure
 }
 
 @StringRes
@@ -93,4 +94,5 @@ private fun ImportCategory.detailRes(): Int = when (this) {
     ImportCategory.RECOVERY -> R.string.health_connect_category_recovery_detail
     ImportCategory.ACTIVITY -> R.string.health_connect_category_activity_detail
     ImportCategory.BODY_COMPOSITION -> R.string.health_connect_category_body_composition_detail
+    ImportCategory.BLOOD_PRESSURE -> R.string.health_connect_category_blood_pressure_detail
 }

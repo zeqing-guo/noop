@@ -1103,7 +1103,7 @@ interface WhoopDao : DeviceRegistryDao {
 
     // MARK: - Lab Book markers (Swift labMarker, v17 / LabMarkerStore.swift)
     //
-    // The book is `labMarker` (one row per dated reading the user entered themselves); the daily
+    // The book is `labMarker` (one row per dated reading the user entered or imported); the daily
     // `metricSeries` projection under source [LAB_BOOK_SOURCE_ID] is HOW the book talks to the rest
     // of the app. [upsertLabMarkers] / [deleteLabMarker] keep the two in lockstep in a single
     // transaction, byte-identical to the Swift LabMarkerStore.

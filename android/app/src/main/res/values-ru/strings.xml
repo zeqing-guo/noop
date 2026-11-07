@@ -464,6 +464,8 @@
     <string name="health_connect_category_activity_detail">Шаги, калории, тренировки, дистанция и VO₂ max</string>
     <string name="health_connect_category_body_composition">Состав тела</string>
     <string name="health_connect_category_body_composition_detail">Вес, жировая и сухая масса</string>
+    <string name="health_connect_category_blood_pressure">Артериальное давление</string>
+    <string name="health_connect_category_blood_pressure_detail">Систолическое и диастолическое давление, сохраняются в лабораторном журнале</string>
     <string name="l10n_data_sources_screen_import_apple_health_export_533fca27">Импорт выгрузки Apple Health…</string>
     <string name="l10n_data_sources_screen_import_from_health_connect_35d55e21">Импорт из Health Connect</string>
     <string name="l10n_data_sources_screen_import_lifting_log_8fac7b68">Импорт журнала силовых…</string>

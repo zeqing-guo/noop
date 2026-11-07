@@ -216,6 +216,8 @@
     <string name="health_connect_category_activity_detail">Pasos, calorías, entrenamientos, distancia y VO₂ máx.</string>
     <string name="health_connect_category_body_composition">Composición corporal</string>
     <string name="health_connect_category_body_composition_detail">Peso, grasa corporal y masa magra</string>
+    <string name="health_connect_category_blood_pressure">Presión arterial</string>
+    <string name="health_connect_category_blood_pressure_detail">Lecturas sistólicas y diastólicas, guardadas en el cuaderno de laboratorio</string>
     <string name="l10n_data_sources_screen_import_apple_health_export_533fca27">Importar la exportación de Apple Health...</string>
     <string name="l10n_data_sources_screen_import_from_health_connect_35d55e21">Importación de Health Connect</string>
     <string name="l10n_data_sources_screen_import_lifting_log_8fac7b68">Registro de elevación de importación...</string>

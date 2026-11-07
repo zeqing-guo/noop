@@ -40,8 +40,13 @@ class HealthConnectPermissionCategoryTest {
             HealthConnectImporter.categoriesFromStoredKeys(null, hadLegacyPermissionSignature = false),
         )
         assertEquals(
-            HealthConnectImporter.ALL_CATEGORIES,
+            HealthConnectImporter.LEGACY_CATEGORIES,
             HealthConnectImporter.categoriesFromStoredKeys(null, hadLegacyPermissionSignature = true),
+        )
+        // A category added after the all-at-once flow is not part of what a legacy install agreed to.
+        assertFalse(
+            ImportCategory.BLOOD_PRESSURE in
+                HealthConnectImporter.categoriesFromStoredKeys(null, hadLegacyPermissionSignature = true),
         )
     }
 

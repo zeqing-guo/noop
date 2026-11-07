@@ -141,6 +141,10 @@
          bottle don't have to be entered twice. Read-only; NOOP never writes water back. MUST be
          declared or Health Connect silently drops the runtime request (same trap as #412 above). -->
     <uses-permission android:name="android.permission.health.READ_HYDRATION" />
+    <!-- Blood-pressure readings from a cuff app, imported into the Lab Book. Read-only; NOOP never
+         writes blood pressure. Its own opt-in category, default off. MUST be declared or Health Connect
+         silently drops the runtime request (same trap as #412 above). -->
+    <uses-permission android:name="android.permission.health.READ_BLOOD_PRESSURE" />
 
     <!-- Resolve the Health Connect provider on Android 14+ (platform) and earlier (app). -->
     <queries>

@@ -467,7 +467,8 @@ enum class Vo2MaxEstimator(val provenanceId: String) {
 /**
  * Lab Book marker reading (Health Records pillar). Swift `labMarker` (Database.swift v17 /
  * LabMarkerStore.swift). The richer source-of-truth behind the daily `metricSeries` projection:
- * one row per dated reading the USER entered themselves, a day can hold several readings, each
+ * one row per dated reading the USER entered themselves (by hand, from a CSV, or — for blood
+ * pressure — imported from their own Health Connect), a day can hold several readings, each
  * carries a precise `takenAt` instant and `unit`, and notes / qualitative (`valueText`) results
  * don't fit a REAL-only `metricSeries` cell.
  *
@@ -477,7 +478,7 @@ enum class Vo2MaxEstimator(val provenanceId: String) {
  * `ON CONFLICT(deviceId, markerKey, takenAt, source) DO UPDATE`). `value` is nullable (a
  * qualitative entry stores only `valueText`); `day` is the pre-derived yyyy-MM-dd projection key.
  *
- * NON-CLINICAL: holds ONLY user-entered values + an OPTIONAL user-entered `referenceText` (their
+ * NON-CLINICAL: holds ONLY the user's own readings + an OPTIONAL user-entered `referenceText` (their
  * own report's range, verbatim). No reference-range tables, no normality judgement. Added by
  * MIGRATION_10_11.
  */
