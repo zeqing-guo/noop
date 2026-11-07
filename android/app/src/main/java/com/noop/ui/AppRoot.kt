@@ -230,20 +230,22 @@ internal data class DrawerGroup(
     val defaultExpanded: Boolean,
 )
 
-// Mirrors the iOS RootTabView `moreTab` grouping + order one-for-one. Today / Trends / Sleep / Coach
-// are NOT listed (they're bottom-bar tabs, exactly as on iOS). Android-only screens (Vital Signs, Wake
-// Window, Notifications, Devices) are slotted into the matching iOS group.
+// Follows the iOS RootTabView `moreTab` grouping + order, with one fork-specific swap: Workouts is a
+// bottom-bar tab here and Coach lives in More (iOS has the reverse). Today / Trends / Sleep / Workouts
+// are NOT listed, because they are bottom-bar tabs. Android-only screens (Vital Signs, Wake Window,
+// Notifications, Devices) are slotted into the matching iOS group. What the More page actually draws
+// is [drawerGroupsFor], which drops Coach while its master switch is off.
 internal val drawerGroups: List<DrawerGroup> = listOf(
     DrawerGroup("Insights", R.string.more_group_insights, listOf(
-        // Coach is a bottom-bar tab now and is deliberately absent here, matching iOS: "K3: Coach
-        // promoted to a top-level tab — no longer listed under More." Leaving it would have put the
-        // same destination in two places at once, which is the duplication the note above says this
-        // list exists to avoid. (#2218)
+        // Coach heads Insights: its bar slot went to Workouts. A destination must not sit in the bar
+        // AND in this list at once (#2218); BottomBarTabsTest pins that.
+        Destination.Coach,
         Destination.InsightsHub, Destination.Intelligence,
         Destination.Insights, Destination.Explore, Destination.Compare,
     ), defaultExpanded = true),
     DrawerGroup("Body", R.string.more_group_body, listOf(
-        Destination.Live, Destination.Workouts, Destination.Health, Destination.VitalSigns,
+        // Workouts is a bottom-bar tab, so it is deliberately absent here.
+        Destination.Live, Destination.Health, Destination.VitalSigns,
         Destination.LabBook, Destination.Stress, Destination.Breathe, Destination.Intervals,
         Destination.Rhythm,
     ), defaultExpanded = true),
@@ -256,6 +258,15 @@ internal val drawerGroups: List<DrawerGroup> = listOf(
         Destination.TestCentre, Destination.PowerSaving, Destination.Settings,
     ), defaultExpanded = false),
 )
+
+/**
+ * The More page's groups for a given Coach setting: [drawerGroups] with Coach removed while the master
+ * switch is off, and nothing else touched. The one place that decides whether Coach is listed, so the
+ * page and the unit tests agree by construction.
+ */
+internal fun drawerGroupsFor(coachEnabled: Boolean): List<DrawerGroup> =
+    if (coachEnabled) drawerGroups
+    else drawerGroups.map { g -> g.copy(items = g.items.filterNot { it == Destination.Coach }) }
 
 /** The headers open by default at first run, derived from [drawerGroups.defaultExpanded] (Insights +
  *  Body), so the seed lives in one place and the persistence default can't drift from the UI default. */
@@ -502,8 +513,8 @@ object BottomBarStyleStore {
 }
 
 /**
- * App shell: a single [Scaffold] with a floating [GlassBottomBar] (Today · Trends · Sleep · Coach · More)
- * driving one [NavHost], mirroring the iOS RootTabView. There is NO global toolbar and no nav drawer
+ * App shell: a single [Scaffold] with a floating [GlassBottomBar] (Today · Trends · Sleep · Workouts · More)
+ * driving one [NavHost], modelled on the iOS RootTabView. There is NO global toolbar and no nav drawer
  * — every screen self-titles via [ScreenScaffold], and the "More" sheet (opened from the bar) reaches
  * every destination in [drawerGroups], so nothing is lost. A single [AppViewModel] is created here and
  * shared with every screen, so the BLE connection and cached metrics stay app-wide singletons.
@@ -577,7 +588,7 @@ fun AppRoot(viewModel: AppViewModel = viewModel()) {
         Scaffold(
             containerColor = Palette.surfaceBase,
             bottomBar = {
-                // One unified "glass" bar: four evenly-spaced tabs — Today · Trends · Sleep · More
+                // One unified "glass" bar: evenly-spaced tabs — Today · Trends · Sleep · Workouts · More
                 // (matches the iOS FloatingTabBar). The quick-action "+" lives in the Today header's
                 // top-right (balancing the avatar), so the bar is clean tabs only. "More" navigates to
                 // its own page (mirroring the iOS More tab) that reaches every grouped destination, so no
@@ -660,7 +671,8 @@ fun AppRoot(viewModel: AppViewModel = viewModel()) {
                         onOpenCoupled = { nav.navigate(Destination.CoupledView.route) },
                         // #1862: the Coach launcher hands off here. Without this the sheet's buttons
                         // would fall back to the parameter's no-op default and silently do nothing.
-                        onOpenCoach = { nav.navigateTopLevel(Destination.Coach.route) },
+                        // Coach is a More destination now, not a tab: a normal push so Back returns to Today.
+                        onOpenCoach = { nav.navigate(Destination.Coach.route) },
                         // The "workout in progress" indicator: raise the one-shot the Live screen consumes to
                         // re-open the in-exercise overlay, then route to Live. One tap from Today (iOS parity).
                         onOpenActiveWorkout = {
@@ -1005,7 +1017,9 @@ private fun MoreScreen(onNavigate: (String) -> Unit) {
         // Mirror the iOS More page: each group is a tappable UPPERCASE overline header (with a disclosure
         // chevron) over a single grouped white NoopCard whose rows are tight (accent icon + title +
         // chevron) and separated by inset hairlines (NOT loose NavigationDrawerItems on the bare surface).
-        drawerGroups.forEach { group ->
+        // Re-read on every composition: BottomBarStyleStore.coachEnabled is snapshot state, so flipping the
+        // Coach switch adds or removes its row without a restart.
+        drawerGroupsFor(BottomBarStyleStore.coachEnabled).forEach { group ->
             val isOpen = expanded[group.header] ?: group.defaultExpanded
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 MoreGroupHeader(
@@ -1108,7 +1122,7 @@ private fun MoreRow(dest: Destination, onClick: () -> Unit) {
 /** A single bottom-bar nav slot: the destination it switches to, plus the bar-specific icon/label. */
 internal data class BarTab(val dest: Destination, val icon: ImageVector, @StringRes val labelRes: Int)
 
-/** The nav slots in iOS order: Today · Trends · Sleep · Coach · More.
+/** The nav slots: Today · Trends · Sleep · Workouts · More. (iOS has Coach where Workouts sits.)
  *  More is special-cased (it opens the sheet rather than a route), so it is appended at the call site. */
 internal val barLeadingTabs = listOf(
     BarTab(Destination.Today, Icons.Outlined.GridView, R.string.nav_today),
@@ -1116,27 +1130,15 @@ internal val barLeadingTabs = listOf(
     BarTab(Destination.Trends, Icons.AutoMirrored.Filled.TrendingUp, R.string.nav_trends),
 )
 /**
- * The trailing tabs, as shipped. [barTrailingTabsFor] is what the bar actually draws: Coach is
- * conditional, so this list is the full set rather than the visible one.
+ * The trailing tabs. Workouts took the slot Coach used to hold; Coach now lives in the More page
+ * ([drawerGroupsFor]), so the bar no longer depends on the Coach master switch.
  */
 internal val barTrailingTabs = listOf(
     BarTab(Destination.Sleep, Icons.Filled.Bedtime, R.string.nav_sleep),
-    // #2218: Coach was promoted to a top-level tab on iOS and this side did not follow, so it sat in
-    // the More list while the comment above claimed the two bars matched. AutoAwesome is the sparkles
-    // glyph iOS uses, and the same one the More row already shows, so the entry a wearer has learned
-    // keeps its face when it moves up.
-    BarTab(Destination.Coach, Icons.Filled.AutoAwesome, R.string.nav_coach),
+    // The same glyph the Workouts row showed in More, so the entry a wearer has learned keeps its face
+    // when it moves up.
+    BarTab(Destination.Workouts, Icons.Filled.FitnessCenter, R.string.nav_workouts),
 )
-
-/**
- * The trailing tabs to draw for a given Coach setting.
- *
- * A function rather than a filter written inline at the bar so the Kotlin unit tests can assert the
- * two shapes directly, and so every surface that needs "which tabs are there" agrees by construction
- * instead of by two copies of the same predicate.
- */
-internal fun barTrailingTabsFor(coachEnabled: Boolean): List<BarTab> =
-    if (coachEnabled) barTrailingTabs else barTrailingTabs.filterNot { it.dest == Destination.Coach }
 
 @Composable
 private fun GlassBottomBar(
@@ -1144,10 +1146,9 @@ private fun GlassBottomBar(
     onTabSelected: (Destination) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // One binding, used by BOTH the slots and the More-lit predicate below. #2218's note applies here
-    // twice over: a second copy of "which tabs exist" is what let Coach light two slots at once, and a
-    // conditional tab makes that failure available again to anyone who filters in one place only.
-    val visibleTrailing = barTrailingTabsFor(BottomBarStyleStore.coachEnabled)
+    // One binding, used by BOTH the slots and the More-lit predicate below: a second copy of "which tabs
+    // exist" is what once let Coach light two slots at once (#2218).
+    val visibleTrailing = barTrailingTabs
     // Redesign: a solid full-width bar on the canvas with a hairline above it — no floating capsule.
     Column(
         modifier = modifier

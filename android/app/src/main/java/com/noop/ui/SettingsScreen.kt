@@ -1866,8 +1866,8 @@ fun SettingsScreen(
             title = uiString(R.string.l10n_settings_screen_bottom_bar_f84098a9),
             blurb = uiString(R.string.l10n_settings_screen_how_the_navigation_bar_looks_f186b099),
         ) {
-            // The Coach tab's master switch. It sits in this section because the tab is where a wearer
-            // meets the feature, but it is NOT tab chrome: switching it off disables the AI itself, takes
+            // The Coach master switch (it also adds or removes Coach's row in More). It sits in this
+            // section for historical reasons — Coach used to be a bar tab — but it is NOT tab chrome: switching it off disables the AI itself, takes
             // the Today launcher card with it, and cancels the daily brief (which otherwise keeps calling
             // a provider from the background and posting notifications, with no UI attached to reveal that
             // it is still running). The saved provider key is kept, so this is a flip and not a re-setup.

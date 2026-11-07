@@ -27,13 +27,20 @@ class BottomBarTabsTest {
         assertTrue("a bar tab must not also appear in the More sheet, found $both", both.isEmpty())
     }
 
-    /** Matching iOS: Today, Trends, Sleep, Coach, then More, which the bar appends itself. */
+    /** Today, Trends, Sleep, Workouts, then More, which the bar appends itself. iOS has Coach where
+     *  Workouts sits; on this fork Coach lives in More instead. */
     @Test
-    fun theBarCarriesTheSameFourNamedTabsAsIOS() {
+    fun theBarCarriesTodayTrendsSleepWorkouts() {
         assertEquals(
-            listOf(Destination.Today, Destination.Trends, Destination.Sleep, Destination.Coach),
+            listOf(Destination.Today, Destination.Trends, Destination.Sleep, Destination.Workouts),
             barTabs.map { it.dest },
         )
+    }
+
+    /** Coach left the bar, so it must be reachable from More, exactly once. */
+    @Test
+    fun coachIsListedInTheMoreSheetExactlyOnce() {
+        assertEquals(1, drawerGroups.flatMap { it.items }.count { it == Destination.Coach })
     }
 
     /** A destination cannot occupy two slots; the More slot's selected state derives from this list. */

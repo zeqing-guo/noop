@@ -10,37 +10,38 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 
 /**
- * The Coach master switch decides which trailing tabs the bar draws.
+ * The Coach master switch decides whether the More page lists Coach.
  *
- * Why this is a test rather than a filter trusted in place: #2218's note at the More slot records that
- * spelling the tab set out twice is what once lit Coach and More together, because the second copy had
- * never heard of the new tab. A CONDITIONAL tab makes that failure available again to anyone who filters
- * in one of the two places and not the other, so the shared helper is pinned here and both call sites are
- * required to come through it.
+ * Coach left the bottom bar for More, so the switch now filters the More groups instead of the bar's
+ * trailing tabs. The shared helper is pinned here so the page cannot filter one way and a future caller
+ * another.
  */
 class CoachTabVisibilityTest {
 
+    private fun destinations(groups: List<DrawerGroup>) = groups.flatMap { it.items }
+
     @Test
-    fun `coach enabled keeps the shipped trailing tabs`() {
-        assertEquals(barTrailingTabs, barTrailingTabsFor(coachEnabled = true))
+    fun `coach enabled keeps the shipped more groups`() {
+        assertEquals(drawerGroups, drawerGroupsFor(coachEnabled = true))
     }
 
     @Test
-    fun `coach disabled drops the coach tab and nothing else`() {
-        val visible = barTrailingTabsFor(coachEnabled = false)
-        assertFalse("coach tab must not be drawn", visible.any { it.dest == Destination.Coach })
+    fun `coach disabled drops the coach row and nothing else`() {
+        val visible = drawerGroupsFor(coachEnabled = false)
+        assertFalse("coach must not be listed", destinations(visible).contains(Destination.Coach))
         assertEquals(
             "only Coach may be removed",
-            barTrailingTabs.filterNot { it.dest == Destination.Coach },
-            visible,
+            destinations(drawerGroups).filterNot { it == Destination.Coach },
+            destinations(visible),
         )
+        assertEquals("no group may disappear", drawerGroups.map { it.header }, visible.map { it.header })
     }
 
     @Test
-    fun `sleep survives the filter`() {
-        // A filter written against the wrong predicate (index, label, icon) could empty the list and still
-        // satisfy "coach is absent". Pin a survivor so removal has to be specific.
-        assertTrue(barTrailingTabsFor(coachEnabled = false).any { it.dest == Destination.Sleep })
+    fun `the bar does not depend on the coach switch`() {
+        // Workouts took Coach's slot, and the bar draws barTrailingTabs as-is.
+        assertFalse(barTrailingTabs.any { it.dest == Destination.Coach })
+        assertTrue(barTrailingTabs.any { it.dest == Destination.Workouts })
     }
 
 }
@@ -61,7 +62,7 @@ class CoachEnabledPrefDefaultTest {
     @Test
     fun `an install that never touched the toggle has coach enabled`() {
         NoopPrefs.of(context).edit().remove(NoopPrefs.KEY_COACH_ENABLED).commit()
-        assertTrue("unset must read as ON, or upgrades lose the tab", NoopPrefs.coachEnabled(context))
+        assertTrue("unset must read as ON, or upgrades lose the coach", NoopPrefs.coachEnabled(context))
     }
 
     @Test
