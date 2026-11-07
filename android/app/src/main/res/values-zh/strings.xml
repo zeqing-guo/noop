@@ -2844,4 +2844,31 @@
     <string name="workouts_weekly_intensity_last_week">上周合计 %1$d / 150 分钟</string>
     <string name="workouts_weekly_intensity_note">WHO 建议每周至少 150 分钟中等强度运动，1 分钟高强度按 2 分钟计。只统计运动记录，周一到周日，不含步行（可在设置里开启）。</string>
     <string name="workouts_weekly_intensity_note_with_walking">WHO 建议每周至少 150 分钟中等强度运动，1 分钟高强度按 2 分钟计。只统计运动记录，周一到周日，包含步行。</string>
+    <!-- Fork-only: computer access (CoachLanServer) -->
+    <string name="coach_lan_title">电脑查询</string>
+    <string name="coach_lan_body">让同一 Wi-Fi 下电脑上的 AI agent 读取教练可见的数据，并只读查询 app 数据库，持续 10 分钟。每台电脑都要先在这里允许。</string>
+    <string name="coach_lan_start">开启 10 分钟</string>
+    <string name="coach_lan_stop">停止</string>
+    <string name="coach_lan_no_wifi">请先把手机连上 Wi-Fi。</string>
+    <string name="coach_lan_bind_failed">无法打开端口，请重试。</string>
+    <string name="coach_lan_address">地址</string>
+    <string name="coach_lan_copy">复制给 agent 的说明</string>
+    <string name="coach_lan_waiting">还没有允许任何电脑。把说明粘贴给你的 agent，它的请求会出现在这里。</string>
+    <string name="coach_lan_allowed">已允许：%1$s（%2$s）</string>
+    <string name="coach_lan_remaining">剩余 %1$s</string>
+    <string name="coach_lan_confirm_title">开启电脑查询？</string>
+    <string name="coach_lan_confirm_body">接下来 10 分钟内，这个 Wi-Fi 上的电脑可以申请访问。你允许的电脑可以读取教练的数据摘要（仅在开启「允许 AI 教练访问我的数据」时），并对整个 app 数据库执行只读 SQL，包括手环原始数据、日记和训练。任何数据都无法被修改。10 分钟后自动关闭。</string>
+    <string name="coach_lan_confirm_start">开启</string>
+    <string name="coach_lan_request_title">允许这台电脑？</string>
+    <string name="coach_lan_request_body">“%1$s”（%2$s）想在本次窗口关闭前查询你的 NOOP 数据。只有在你刚让 agent 连接时才允许。</string>
+    <string name="coach_lan_allow">允许</string>
+    <string name="coach_lan_deny">拒绝</string>
+    <string name="coach_lan_notif_title">电脑查询已开启</string>
+    <string name="coach_lan_channel_name">电脑查询</string>
+    <plurals name="coach_lan_queries">
+        <item quantity="other">已响应 %1$d 次查询</item>
+    </plurals>
+    <plurals name="coach_lan_notif_pending">
+        <item quantity="other">%1$d 台电脑等待批准</item>
+    </plurals>
 </resources>

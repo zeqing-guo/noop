@@ -2903,4 +2903,33 @@
     <string name="workouts_weekly_intensity_last_week">Last week: %1$d of 150 min</string>
     <string name="workouts_weekly_intensity_note">WHO recommends at least 150 min of moderate activity a week; a vigorous minute counts as two. Counts workouts only, Monday to Sunday, without walks (Settings can include them).</string>
     <string name="workouts_weekly_intensity_note_with_walking">WHO recommends at least 150 min of moderate activity a week; a vigorous minute counts as two. Counts workouts only, Monday to Sunday, walks included.</string>
+    <!-- Fork-only: computer access (CoachLanServer) -->
+    <string name="coach_lan_title">Computer access</string>
+    <string name="coach_lan_body">Let an AI agent on a computer on the same Wi-Fi read what the coach can see and query the app database read-only, for 10 minutes. You allow each computer here first.</string>
+    <string name="coach_lan_start">Start for 10 minutes</string>
+    <string name="coach_lan_stop">Stop</string>
+    <string name="coach_lan_no_wifi">Connect the phone to Wi-Fi first.</string>
+    <string name="coach_lan_bind_failed">Could not open a port. Try again.</string>
+    <string name="coach_lan_address">Address</string>
+    <string name="coach_lan_copy">Copy instructions for the agent</string>
+    <string name="coach_lan_waiting">No computer allowed yet. Paste the instructions into your agent; its request will appear here.</string>
+    <string name="coach_lan_allowed">Allowed: %1$s (%2$s)</string>
+    <string name="coach_lan_remaining">%1$s left</string>
+    <string name="coach_lan_confirm_title">Open computer access?</string>
+    <string name="coach_lan_confirm_body">For 10 minutes, computers on this Wi-Fi can ask for access. A computer you allow can read the coach\'s data summary (only when \"Let the coach use my data\" is on) and run read-only SQL over the whole app database, including raw strap data, journal and workouts. Nothing can be changed. Access closes by itself after 10 minutes.</string>
+    <string name="coach_lan_confirm_start">Open</string>
+    <string name="coach_lan_request_title">Allow this computer?</string>
+    <string name="coach_lan_request_body">\"%1$s\" at %2$s wants to query your NOOP data until the window closes. Only allow it if you just asked an agent to connect.</string>
+    <string name="coach_lan_allow">Allow</string>
+    <string name="coach_lan_deny">Deny</string>
+    <string name="coach_lan_notif_title">Computer access is open</string>
+    <string name="coach_lan_channel_name">Computer access</string>
+    <plurals name="coach_lan_queries">
+        <item quantity="one">%1$d query served</item>
+        <item quantity="other">%1$d queries served</item>
+    </plurals>
+    <plurals name="coach_lan_notif_pending">
+        <item quantity="one">%1$d computer is waiting for approval</item>
+        <item quantity="other">%1$d computers are waiting for approval</item>
+    </plurals>
 </resources>

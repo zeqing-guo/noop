@@ -2887,4 +2887,33 @@
     <string name="workouts_weekly_intensity_last_week">Letzte Woche: %1$d von 150 Min.</string>
     <string name="workouts_weekly_intensity_note">Die WHO empfiehlt mindestens 150 Min. moderate Aktivität pro Woche; eine intensive Minute zählt doppelt. Zählt nur Trainings, Montag bis Sonntag, ohne Spaziergänge (in den Einstellungen einschaltbar).</string>
     <string name="workouts_weekly_intensity_note_with_walking">Die WHO empfiehlt mindestens 150 Min. moderate Aktivität pro Woche; eine intensive Minute zählt doppelt. Zählt nur Trainings, Montag bis Sonntag, einschließlich Spaziergängen.</string>
+    <!-- Fork-only: computer access (CoachLanServer) -->
+    <string name="coach_lan_title">Computerzugriff</string>
+    <string name="coach_lan_body">Ein KI-Agent auf einem Computer im selben WLAN darf 10 Minuten lang lesen, was der Coach sieht, und die App-Datenbank schreibgeschützt abfragen. Jeden Computer erlaubst du zuerst hier.</string>
+    <string name="coach_lan_start">Für 10 Minuten starten</string>
+    <string name="coach_lan_stop">Beenden</string>
+    <string name="coach_lan_no_wifi">Verbinde das Telefon zuerst mit einem WLAN.</string>
+    <string name="coach_lan_bind_failed">Port konnte nicht geöffnet werden. Erneut versuchen.</string>
+    <string name="coach_lan_address">Adresse</string>
+    <string name="coach_lan_copy">Anleitung für den Agenten kopieren</string>
+    <string name="coach_lan_waiting">Noch kein Computer erlaubt. Füge die Anleitung in deinen Agenten ein; seine Anfrage erscheint hier.</string>
+    <string name="coach_lan_allowed">Erlaubt: %1$s (%2$s)</string>
+    <string name="coach_lan_remaining">noch %1$s</string>
+    <string name="coach_lan_confirm_title">Computerzugriff öffnen?</string>
+    <string name="coach_lan_confirm_body">10 Minuten lang können Computer in diesem WLAN Zugriff anfragen. Ein erlaubter Computer kann die Datenzusammenfassung des Coachs lesen (nur wenn „Dem Coach erlauben, meine Daten zu nutzen“ an ist) und schreibgeschütztes SQL auf der gesamten App-Datenbank ausführen, einschließlich Rohdaten des Armbands, Journal und Workouts. Nichts kann geändert werden. Der Zugriff endet nach 10 Minuten von selbst.</string>
+    <string name="coach_lan_confirm_start">Öffnen</string>
+    <string name="coach_lan_request_title">Diesen Computer erlauben?</string>
+    <string name="coach_lan_request_body">„%1$s“ unter %2$s möchte deine NOOP-Daten abfragen, bis das Zeitfenster endet. Erlaube das nur, wenn du gerade einen Agenten verbinden lässt.</string>
+    <string name="coach_lan_allow">Erlauben</string>
+    <string name="coach_lan_deny">Ablehnen</string>
+    <string name="coach_lan_notif_title">Computerzugriff ist offen</string>
+    <string name="coach_lan_channel_name">Computerzugriff</string>
+    <plurals name="coach_lan_queries">
+        <item quantity="one">%1$d Abfrage beantwortet</item>
+        <item quantity="other">%1$d Abfragen beantwortet</item>
+    </plurals>
+    <plurals name="coach_lan_notif_pending">
+        <item quantity="one">%1$d Computer wartet auf Freigabe</item>
+        <item quantity="other">%1$d Computer warten auf Freigabe</item>
+    </plurals>
 </resources>

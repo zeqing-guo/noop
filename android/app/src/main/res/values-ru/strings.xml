@@ -2769,4 +2769,37 @@
     <string name="workouts_weekly_intensity_last_week">Прошлая неделя: %1$d из 150 мин</string>
     <string name="workouts_weekly_intensity_note">ВОЗ рекомендует не менее 150 мин умеренной активности в неделю; минута высокой активности считается за две. Учитываются только тренировки, с понедельника по воскресенье, без ходьбы (её можно включить в настройках).</string>
     <string name="workouts_weekly_intensity_note_with_walking">ВОЗ рекомендует не менее 150 мин умеренной активности в неделю; минута высокой активности считается за две. Учитываются только тренировки, с понедельника по воскресенье, включая ходьбу.</string>
+    <!-- Fork-only: computer access (CoachLanServer) -->
+    <string name="coach_lan_title">Доступ с компьютера</string>
+    <string name="coach_lan_body">Позволяет ИИ-агенту на компьютере в той же сети Wi-Fi в течение 10 минут читать то, что видит коуч, и запрашивать базу данных приложения только для чтения. Каждый компьютер сначала разрешается здесь.</string>
+    <string name="coach_lan_start">Включить на 10 минут</string>
+    <string name="coach_lan_stop">Остановить</string>
+    <string name="coach_lan_no_wifi">Сначала подключите телефон к Wi-Fi.</string>
+    <string name="coach_lan_bind_failed">Не удалось открыть порт. Повторите попытку.</string>
+    <string name="coach_lan_address">Адрес</string>
+    <string name="coach_lan_copy">Скопировать инструкции для агента</string>
+    <string name="coach_lan_waiting">Пока ни один компьютер не разрешён. Вставьте инструкции в агента; его запрос появится здесь.</string>
+    <string name="coach_lan_allowed">Разрешён: %1$s (%2$s)</string>
+    <string name="coach_lan_remaining">осталось %1$s</string>
+    <string name="coach_lan_confirm_title">Открыть доступ с компьютера?</string>
+    <string name="coach_lan_confirm_body">В течение 10 минут компьютеры в этой сети Wi-Fi могут запросить доступ. Разрешённый компьютер может читать сводку данных коуча (только если включено «Разрешить ИИ-тренеру использовать мои данные») и выполнять SQL только для чтения по всей базе данных приложения, включая сырые данные браслета, дневник и тренировки. Ничего изменить нельзя. Доступ закрывается сам через 10 минут.</string>
+    <string name="coach_lan_confirm_start">Открыть</string>
+    <string name="coach_lan_request_title">Разрешить этот компьютер?</string>
+    <string name="coach_lan_request_body">«%1$s» (%2$s) хочет запрашивать ваши данные NOOP до закрытия окна. Разрешайте, только если вы сами только что попросили агента подключиться.</string>
+    <string name="coach_lan_allow">Разрешить</string>
+    <string name="coach_lan_deny">Отклонить</string>
+    <string name="coach_lan_notif_title">Доступ с компьютера открыт</string>
+    <string name="coach_lan_channel_name">Доступ с компьютера</string>
+    <plurals name="coach_lan_queries">
+        <item quantity="one">Обработан %1$d запрос</item>
+        <item quantity="few">Обработано %1$d запроса</item>
+        <item quantity="many">Обработано %1$d запросов</item>
+        <item quantity="other">Обработано %1$d запроса</item>
+    </plurals>
+    <plurals name="coach_lan_notif_pending">
+        <item quantity="one">%1$d компьютер ждёт разрешения</item>
+        <item quantity="few">%1$d компьютера ждут разрешения</item>
+        <item quantity="many">%1$d компьютеров ждут разрешения</item>
+        <item quantity="other">%1$d компьютера ждут разрешения</item>
+    </plurals>
 </resources>

@@ -111,6 +111,9 @@ fun CoachScreen(vm: CoachViewModel = viewModel(), onOpenSettings: () -> Unit = {
         } else {
             CoachChat(vm = vm, onOpenSettings = onOpenSettings)
         }
+        // Fork-only: the ten-minute "let a computer query my data" window. Below the chat (or setup)
+        // so the conversation keeps the top of the page; it needs no provider, so it shows in both.
+        CoachLanCard()
     }
 }
 

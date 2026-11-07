@@ -2873,4 +2873,33 @@
     <string name="workouts_weekly_intensity_last_week">Semaine dernière : %1$d sur 150 min</string>
     <string name="workouts_weekly_intensity_note">L\'OMS recommande au moins 150 min d\'activité modérée par semaine ; une minute soutenue compte double. Ne compte que les séances, du lundi au dimanche, sans la marche (activable dans les Réglages).</string>
     <string name="workouts_weekly_intensity_note_with_walking">L\'OMS recommande au moins 150 min d\'activité modérée par semaine ; une minute soutenue compte double. Ne compte que les séances, du lundi au dimanche, marche comprise.</string>
+    <!-- Fork-only: computer access (CoachLanServer) -->
+    <string name="coach_lan_title">Accès depuis l\'ordinateur</string>
+    <string name="coach_lan_body">Permet à un agent IA sur un ordinateur du même Wi-Fi de lire ce que voit le coach et d\'interroger la base de données de l\'app en lecture seule pendant 10 minutes. Vous autorisez d\'abord chaque ordinateur ici.</string>
+    <string name="coach_lan_start">Démarrer pour 10 minutes</string>
+    <string name="coach_lan_stop">Arrêter</string>
+    <string name="coach_lan_no_wifi">Connectez d\'abord le téléphone à un Wi-Fi.</string>
+    <string name="coach_lan_bind_failed">Impossible d\'ouvrir un port. Réessayez.</string>
+    <string name="coach_lan_address">Adresse IP</string>
+    <string name="coach_lan_copy">Copier les instructions pour l\'agent</string>
+    <string name="coach_lan_waiting">Aucun ordinateur autorisé pour l\'instant. Collez les instructions dans votre agent ; sa demande apparaîtra ici.</string>
+    <string name="coach_lan_allowed">Autorisé : %1$s (%2$s)</string>
+    <string name="coach_lan_remaining">encore %1$s</string>
+    <string name="coach_lan_confirm_title">Ouvrir l\'accès depuis l\'ordinateur ?</string>
+    <string name="coach_lan_confirm_body">Pendant 10 minutes, les ordinateurs de ce Wi-Fi peuvent demander l\'accès. Un ordinateur autorisé peut lire le résumé des données du coach (seulement si « Laisser le coach utiliser mes données » est activé) et exécuter du SQL en lecture seule sur toute la base de données de l\'app, y compris les données brutes du bracelet, le journal et les entraînements. Rien ne peut être modifié. L\'accès se ferme tout seul au bout de 10 minutes.</string>
+    <string name="coach_lan_confirm_start">Ouvrir</string>
+    <string name="coach_lan_request_title">Autoriser cet ordinateur ?</string>
+    <string name="coach_lan_request_body">« %1$s » (%2$s) veut interroger vos données NOOP jusqu\'à la fermeture de la fenêtre. N\'autorisez que si vous venez de demander à un agent de se connecter.</string>
+    <string name="coach_lan_allow">Autoriser</string>
+    <string name="coach_lan_deny">Refuser</string>
+    <string name="coach_lan_notif_title">L\'accès depuis l\'ordinateur est ouvert</string>
+    <string name="coach_lan_channel_name">Accès depuis l\'ordinateur</string>
+    <plurals name="coach_lan_queries">
+        <item quantity="one">%1$d requête traitée</item>
+        <item quantity="other">%1$d requêtes traitées</item>
+    </plurals>
+    <plurals name="coach_lan_notif_pending">
+        <item quantity="one">%1$d ordinateur attend une autorisation</item>
+        <item quantity="other">%1$d ordinateurs attendent une autorisation</item>
+    </plurals>
 </resources>

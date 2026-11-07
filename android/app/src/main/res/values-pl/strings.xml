@@ -2890,4 +2890,37 @@
     <string name="workouts_weekly_intensity_last_week">Poprzedni tydzień: %1$d ze 150 min</string>
     <string name="workouts_weekly_intensity_note">WHO zaleca co najmniej 150 min umiarkowanej aktywności tygodniowo; minuta intensywna liczy się podwójnie. Liczone są tylko treningi, od poniedziałku do niedzieli, bez spacerów (można je włączyć w Ustawieniach).</string>
     <string name="workouts_weekly_intensity_note_with_walking">WHO zaleca co najmniej 150 min umiarkowanej aktywności tygodniowo; minuta intensywna liczy się podwójnie. Liczone są tylko treningi, od poniedziałku do niedzieli, łącznie ze spacerami.</string>
+    <!-- Fork-only: computer access (CoachLanServer) -->
+    <string name="coach_lan_title">Dostęp z komputera</string>
+    <string name="coach_lan_body">Pozwala agentowi AI na komputerze w tej samej sieci Wi-Fi przez 10 minut czytać to, co widzi coach, i odpytywać bazę danych aplikacji tylko do odczytu. Każdy komputer najpierw zatwierdzasz tutaj.</string>
+    <string name="coach_lan_start">Włącz na 10 minut</string>
+    <string name="coach_lan_stop">Zatrzymaj</string>
+    <string name="coach_lan_no_wifi">Najpierw połącz telefon z Wi-Fi.</string>
+    <string name="coach_lan_bind_failed">Nie udało się otworzyć portu. Spróbuj ponownie.</string>
+    <string name="coach_lan_address">Adres</string>
+    <string name="coach_lan_copy">Kopiuj instrukcje dla agenta</string>
+    <string name="coach_lan_waiting">Żaden komputer nie ma jeszcze dostępu. Wklej instrukcje do agenta; jego prośba pojawi się tutaj.</string>
+    <string name="coach_lan_allowed">Dozwolony: %1$s (%2$s)</string>
+    <string name="coach_lan_remaining">zostało %1$s</string>
+    <string name="coach_lan_confirm_title">Otworzyć dostęp z komputera?</string>
+    <string name="coach_lan_confirm_body">Przez 10 minut komputery w tej sieci Wi-Fi mogą prosić o dostęp. Zatwierdzony komputer może czytać podsumowanie danych coacha (tylko gdy włączone jest „Niech trener wykorzysta moje dane”) i wykonywać SQL tylko do odczytu na całej bazie danych aplikacji, w tym surowych danych opaski, dzienniku i treningach. Niczego nie można zmienić. Dostęp zamyka się sam po 10 minutach.</string>
+    <string name="coach_lan_confirm_start">Otwórz</string>
+    <string name="coach_lan_request_title">Zezwolić temu komputerowi?</string>
+    <string name="coach_lan_request_body">„%1$s” (%2$s) chce odpytywać Twoje dane NOOP do zamknięcia okna. Zezwól tylko, jeśli właśnie poprosiłeś agenta o połączenie.</string>
+    <string name="coach_lan_allow">Zezwól</string>
+    <string name="coach_lan_deny">Odmów</string>
+    <string name="coach_lan_notif_title">Dostęp z komputera jest otwarty</string>
+    <string name="coach_lan_channel_name">Dostęp z komputera</string>
+    <plurals name="coach_lan_queries">
+        <item quantity="one">Obsłużono %1$d zapytanie</item>
+        <item quantity="few">Obsłużono %1$d zapytania</item>
+        <item quantity="many">Obsłużono %1$d zapytań</item>
+        <item quantity="other">Obsłużono %1$d zapytania</item>
+    </plurals>
+    <plurals name="coach_lan_notif_pending">
+        <item quantity="one">%1$d komputer czeka na zgodę</item>
+        <item quantity="few">%1$d komputery czekają na zgodę</item>
+        <item quantity="many">%1$d komputerów czeka na zgodę</item>
+        <item quantity="other">%1$d komputera czeka na zgodę</item>
+    </plurals>
 </resources>

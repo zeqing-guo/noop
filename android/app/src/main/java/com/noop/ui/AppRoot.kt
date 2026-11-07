@@ -972,6 +972,8 @@ fun AppRoot(viewModel: AppViewModel = viewModel()) {
                     BottomBarStyleStore.barHeight = with(density) { it.height.toDp() }
                 },
         )
+        // Fork-only: a computer asking to query this phone's data is answered on whatever screen is up.
+        CoachLanApprovalDialog()
     }
 }
 

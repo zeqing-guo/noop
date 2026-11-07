@@ -111,33 +111,7 @@ class AiCoach(
         require(history.last().role == "user") { "The last message must be your question." }
 
         // Include the user's data ONLY with explicit consent; otherwise a note, never their numbers.
-        val groundedFull = if (consent) {
-            // Merged read, NOT raw days(): a live-strap user's scores live under "my-whoop-noop"
-            // and a raw read misses them, the coach then claimed it had no data. (#124)
-            val days = runCatching { repo.daysMerged(activeStrapId()) }.getOrDefault(emptyList())
-            // Derived stress: a single Baevsky Stress Index summary line over TODAY's R-R, read the
-            // same way StressScreen does (repo.rrIntervals over the local day) and gated UNDER this same
-            // `consent` block as the HRV/RHR summary, a derived number, never raw R-R egress. Absent
-            // when there aren't enough clean beats yet. Best-effort; never blocks the send.
-            val stress = runCatching { stressLineToday() }.getOrNull()
-            // v5: a SECOND opt-in (on top of `consent`) may append a SUMMARY-ONLY line of the user's
-            // strongest on-device patterns + Lab Book markers. Summary text only, no raw rows, no
-            // per-day series, so the anonymity / no-raw-egress posture holds. Best-effort; never blocks.
-            val signals = if (includeSignals) runCatching { buildSignalsContext() }.getOrNull() else null
-            // #2033: per-session workout detail, so the coach can tell a run from a lift. Best-effort
-            // like the blocks around it; a read that throws leaves the day table standing rather than
-            // failing the send. Matches where Swift appends it in `buildFullContext`.
-            val workouts = runCatching { recentWorkoutsBlock(ctx) }.getOrNull()
-            val full = buildString {
-                append(buildContext(days))
-                if (!workouts.isNullOrBlank()) append("\n\n").append(workouts)
-                if (!stress.isNullOrBlank()) append("\n\n").append(stress)
-                if (!signals.isNullOrBlank()) append("\n\n").append(signals)
-            }
-            injectContext(history, full)
-        } else {
-            injectContext(history, NO_CONSENT_NOTE)
-        }
+        val groundedFull = injectContext(history, coachDataContext(ctx, consent, includeSignals))
 
         // Resolve the system prompt fresh (user override or the built-in default) so an edit in the
         // Coach settings takes effect on this very send.
@@ -202,24 +176,7 @@ class AiCoach(
         require(history.isNotEmpty()) { "Ask a question first." }
         require(history.last().role == "user") { "The last message must be your question." }
 
-        val groundedFull = if (consent) {
-            val days = runCatching { repo.daysMerged(activeStrapId()) }.getOrDefault(emptyList())
-            val stress = runCatching { stressLineToday() }.getOrNull()
-            val signals = if (includeSignals) runCatching { buildSignalsContext() }.getOrNull() else null
-            // #2033: per-session workout detail, so the coach can tell a run from a lift. Best-effort
-            // like the blocks around it; a read that throws leaves the day table standing rather than
-            // failing the send. Matches where Swift appends it in `buildFullContext`.
-            val workouts = runCatching { recentWorkoutsBlock(ctx) }.getOrNull()
-            val full = buildString {
-                append(buildContext(days))
-                if (!workouts.isNullOrBlank()) append("\n\n").append(workouts)
-                if (!stress.isNullOrBlank()) append("\n\n").append(stress)
-                if (!signals.isNullOrBlank()) append("\n\n").append(signals)
-            }
-            injectContext(history, full)
-        } else {
-            injectContext(history, NO_CONSENT_NOTE)
-        }
+        val groundedFull = injectContext(history, coachDataContext(ctx, consent, includeSignals))
 
         val systemPrompt = resolveSystemPrompt(ctx)
         val grounded = trimmedHistory(groundedFull, MAX_HISTORY_TURNS)
@@ -238,6 +195,41 @@ class AiCoach(
                 )
         }
     }
+
+    /**
+     * The data block the coach is allowed to see, exactly as it is prepended to the first user turn.
+     *
+     * The ONE funnel for that fact: [chat], [chatStream] and the computer-query server
+     * ([CoachLanServer]'s `/v1/coach/context`) all read it here, so what a computer is told the coach
+     * sees cannot drift from what the provider is actually sent. Without [consent] it is
+     * [NO_CONSENT_NOTE] and none of the user's numbers.
+     */
+    suspend fun coachDataContext(ctx: Context, consent: Boolean, includeSignals: Boolean): String =
+        withContext(Dispatchers.IO) {
+            if (!consent) return@withContext NO_CONSENT_NOTE
+            // Merged read, NOT raw days(): a live-strap user's scores live under "my-whoop-noop"
+            // and a raw read misses them, the coach then claimed it had no data. (#124)
+            val days = runCatching { repo.daysMerged(activeStrapId()) }.getOrDefault(emptyList())
+            // Derived stress: a single Baevsky Stress Index summary line over TODAY's R-R, read the
+            // same way StressScreen does (repo.rrIntervals over the local day) and gated UNDER this same
+            // `consent` block as the HRV/RHR summary, a derived number, never raw R-R egress. Absent
+            // when there aren't enough clean beats yet. Best-effort; never blocks the send.
+            val stress = runCatching { stressLineToday() }.getOrNull()
+            // v5: a SECOND opt-in (on top of `consent`) may append a SUMMARY-ONLY line of the user's
+            // strongest on-device patterns + Lab Book markers. Summary text only, no raw rows, no
+            // per-day series, so the anonymity / no-raw-egress posture holds. Best-effort; never blocks.
+            val signals = if (includeSignals) runCatching { buildSignalsContext() }.getOrNull() else null
+            // #2033: per-session workout detail, so the coach can tell a run from a lift. Best-effort
+            // like the blocks around it; a read that throws leaves the day table standing rather than
+            // failing the send. Matches where Swift appends it in `buildFullContext`.
+            val workouts = runCatching { recentWorkoutsBlock(ctx) }.getOrNull()
+            buildString {
+                append(buildContext(days))
+                if (!workouts.isNullOrBlank()) append("\n\n").append(workouts)
+                if (!stress.isNullOrBlank()) append("\n\n").append(stress)
+                if (!signals.isNullOrBlank()) append("\n\n").append(signals)
+            }
+        }
 
     /**
      * Today's derived stress line for the consent-gated coach context. Reads R-R for the local day

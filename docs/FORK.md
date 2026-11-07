@@ -102,6 +102,12 @@ As of the redesign merge (2026-11-07), `main` carries failures introduced by the
 helpers, and Home resources missing de/es/fr/pt-PT) and `i18n-coverage` (a localized string concatenated at
 `SleepScreen.kt:1415`). Fixing these is open work; update this section when they are fixed.
 
+Locally on this Mac (2026-11-08), `./gradlew testFullDebugUnitTest` on `origin/main` also fails 8 Kotlin
+tests: `RecoveryDriversTest` (2 half-tie rounding cases), `TodayExplainabilityTest` (4 carried/stale score
+states), `StepsDetailIntegrationTest` (monthly bucket) and `VitalReadingsTableTest` (row order). Not yet
+checked against CI, so they may depend on this machine's time zone or locale. A branch that fails exactly
+these 8 has not broken them.
+
 ## Mistakes log
 
 ### 2026-11-07: work moved off the branch the user was running
