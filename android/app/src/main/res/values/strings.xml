@@ -2891,4 +2891,16 @@
     <string name="raw_diag_ecg_probe_running">A capture may still be running on this strap. The verdict goes to the strap log.</string>
     <string name="today_customize_live_session_availability">Appears today when Live Sessions is enabled in Settings or a session is active.</string>
     <string name="l10n_app_changelog_today_your_way_heart_rate_any_5e1308b3">Today your way, heart rate any app can read, and Italian</string>
+    <string name="workouts_weekly_intensity_title">Weekly intensity</string>
+    <string name="workouts_weekly_intensity_minutes">%1$d min</string>
+    <string name="workouts_weekly_intensity_legend_moderate">Moderate · Z2–Z3</string>
+    <string name="workouts_weekly_intensity_legend_vigorous">Vigorous · Z4–Z5</string>
+    <string name="settings_weekly_intensity_includes_walking">Count walks in weekly intensity</string>
+    <string name="settings_weekly_intensity_includes_walking_hint">Off by default: walks are mostly light, and a phone that logs every walk can fill the moderate band on its own. Turn on to count them on the Workouts weekly intensity card.</string>
+    <string name="workouts_weekly_intensity_week_from">From %1$s%2$s</string>
+    <string name="workouts_weekly_intensity_ring_goal">of 150 min</string>
+    <string name="workouts_weekly_intensity_goal_percent">%1$d%% of the WHO weekly goal</string>
+    <string name="workouts_weekly_intensity_last_week">Last week: %1$d of 150 min</string>
+    <string name="workouts_weekly_intensity_note">WHO recommends at least 150 min of moderate activity a week; a vigorous minute counts as two. Counts workouts only, Monday to Sunday, without walks (Settings can include them).</string>
+    <string name="workouts_weekly_intensity_note_with_walking">WHO recommends at least 150 min of moderate activity a week; a vigorous minute counts as two. Counts workouts only, Monday to Sunday, walks included.</string>
 </resources>

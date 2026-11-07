@@ -2878,4 +2878,16 @@
     <string name="raw_diag_ecg_probe_running">Na tym pasku może nadal trwać zapis. Werdykt trafia do strap log.</string>
     <string name="today_customize_live_session_availability">Pojawia się dzisiaj, gdy sesje na żywo są włączone w Ustawieniach lub trwa sesja.</string>
     <string name="l10n_app_changelog_today_your_way_heart_rate_any_5e1308b3">Dziś po swojemu, tętno dostępne dla każdej aplikacji i język włoski</string>
+    <string name="workouts_weekly_intensity_title">Intensywność tygodniowa</string>
+    <string name="workouts_weekly_intensity_minutes">%1$d min.</string>
+    <string name="workouts_weekly_intensity_legend_moderate">Umiarkowana · Z2–Z3</string>
+    <string name="workouts_weekly_intensity_legend_vigorous">Intensywna · Z4–Z5</string>
+    <string name="settings_weekly_intensity_includes_walking">Licz spacery w tygodniowej intensywności</string>
+    <string name="settings_weekly_intensity_includes_walking_hint">Domyślnie wyłączone: chodzenie jest zwykle lekkie, a telefon zapisujący każdy spacer może sam wypełnić strefę umiarkowaną. Włącz, aby liczyć spacery na karcie tygodniowej intensywności w Treningach.</string>
+    <string name="workouts_weekly_intensity_week_from">Od %1$s%2$s</string>
+    <string name="workouts_weekly_intensity_ring_goal">z 150 min</string>
+    <string name="workouts_weekly_intensity_goal_percent">%1$d%% tygodniowego celu WHO</string>
+    <string name="workouts_weekly_intensity_last_week">Poprzedni tydzień: %1$d ze 150 min</string>
+    <string name="workouts_weekly_intensity_note">WHO zaleca co najmniej 150 min umiarkowanej aktywności tygodniowo; minuta intensywna liczy się podwójnie. Liczone są tylko treningi, od poniedziałku do niedzieli, bez spacerów (można je włączyć w Ustawieniach).</string>
+    <string name="workouts_weekly_intensity_note_with_walking">WHO zaleca co najmniej 150 min umiarkowanej aktywności tygodniowo; minuta intensywna liczy się podwójnie. Liczone są tylko treningi, od poniedziałku do niedzieli, łącznie ze spacerami.</string>
 </resources>

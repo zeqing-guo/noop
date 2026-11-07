@@ -1160,6 +1160,17 @@ object NoopPrefs {
     fun coachEnabled(context: Context): Boolean =
         of(context).getBoolean(KEY_COACH_ENABLED, true)
 
+    /** Whether the Workouts weekly intensity card counts walks. Default OFF: walking is mostly light, and
+     *  an all-day phone walk detector can fill the moderate band on its own. */
+    const val KEY_WEEKLY_INTENSITY_INCLUDES_WALKING = "noop.weeklyIntensityIncludesWalking"
+
+    fun weeklyIntensityIncludesWalking(context: Context): Boolean =
+        of(context).getBoolean(KEY_WEEKLY_INTENSITY_INCLUDES_WALKING, false)
+
+    fun setWeeklyIntensityIncludesWalking(context: Context, value: Boolean) {
+        of(context).edit().putBoolean(KEY_WEEKLY_INTENSITY_INCLUDES_WALKING, value).apply()
+    }
+
     fun setCoachEnabled(context: Context, enabled: Boolean) {
         of(context).edit().putBoolean(KEY_COACH_ENABLED, enabled).apply()
     }

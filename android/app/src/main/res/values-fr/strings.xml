@@ -2861,4 +2861,16 @@
     <string name="raw_diag_ecg_probe_running">Une capture est peut-être encore active sur ce bracelet. Le verdict est écrit dans le strap log.</string>
     <string name="today_customize_live_session_availability">Apparaît aujourd’hui si les sessions en direct sont activées dans Paramètres ou si une session est active.</string>
     <string name="l10n_app_changelog_today_your_way_heart_rate_any_5e1308b3">Aujourd\'hui à votre façon, fréquence cardiaque lisible par toute application, et l\'italien</string>
+    <string name="workouts_weekly_intensity_title">Intensité hebdomadaire</string>
+    <string name="workouts_weekly_intensity_minutes">%1$d minutes</string>
+    <string name="workouts_weekly_intensity_legend_moderate">Modérée · Z2–Z3</string>
+    <string name="workouts_weekly_intensity_legend_vigorous">Soutenue · Z4–Z5</string>
+    <string name="settings_weekly_intensity_includes_walking">Compter la marche dans l\'intensité hebdo</string>
+    <string name="settings_weekly_intensity_includes_walking_hint">Désactivé par défaut : la marche est surtout légère, et un téléphone qui enregistre chaque marche peut remplir à lui seul la zone modérée. Activez pour la compter dans la carte Intensité hebdomadaire des séances.</string>
+    <string name="workouts_weekly_intensity_week_from">Depuis le %1$s%2$s</string>
+    <string name="workouts_weekly_intensity_ring_goal">sur 150 min</string>
+    <string name="workouts_weekly_intensity_goal_percent">%1$d %% de l\'objectif hebdomadaire de l\'OMS</string>
+    <string name="workouts_weekly_intensity_last_week">Semaine dernière : %1$d sur 150 min</string>
+    <string name="workouts_weekly_intensity_note">L\'OMS recommande au moins 150 min d\'activité modérée par semaine ; une minute soutenue compte double. Ne compte que les séances, du lundi au dimanche, sans la marche (activable dans les Réglages).</string>
+    <string name="workouts_weekly_intensity_note_with_walking">L\'OMS recommande au moins 150 min d\'activité modérée par semaine ; une minute soutenue compte double. Ne compte que les séances, du lundi au dimanche, marche comprise.</string>
 </resources>

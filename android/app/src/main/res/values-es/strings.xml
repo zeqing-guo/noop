@@ -2862,4 +2862,16 @@
     <string name="raw_diag_ecg_probe_running">Puede que siga activa una captura en esta correa. El veredicto se registra en el strap log.</string>
     <string name="today_customize_live_session_availability">Aparece hoy si Live Sessions está activado en Ajustes o hay una sesión activa.</string>
     <string name="l10n_app_changelog_today_your_way_heart_rate_any_5e1308b3">Hoy a tu manera, frecuencia cardíaca para cualquier aplicación e italiano</string>
+    <string name="workouts_weekly_intensity_title">Intensidad semanal</string>
+    <string name="workouts_weekly_intensity_minutes">%1$d minutos</string>
+    <string name="workouts_weekly_intensity_legend_moderate">Moderada · Z2–Z3</string>
+    <string name="workouts_weekly_intensity_legend_vigorous">Vigorosa · Z4–Z5</string>
+    <string name="settings_weekly_intensity_includes_walking">Contar caminatas en la intensidad semanal</string>
+    <string name="settings_weekly_intensity_includes_walking_hint">Desactivado por defecto: caminar suele ser ligero y un móvil que registra cada caminata puede llenar por sí solo la franja moderada. Actívalo para contarlas en la tarjeta de intensidad semanal de Entrenamientos.</string>
+    <string name="workouts_weekly_intensity_week_from">Desde el %1$s%2$s</string>
+    <string name="workouts_weekly_intensity_ring_goal">de 150 min</string>
+    <string name="workouts_weekly_intensity_goal_percent">%1$d %% del objetivo semanal de la OMS</string>
+    <string name="workouts_weekly_intensity_last_week">La semana pasada: %1$d de 150 min</string>
+    <string name="workouts_weekly_intensity_note">La OMS recomienda al menos 150 min de actividad moderada a la semana; un minuto vigoroso cuenta doble. Solo cuenta entrenamientos, de lunes a domingo, sin caminatas (se pueden incluir en Ajustes).</string>
+    <string name="workouts_weekly_intensity_note_with_walking">La OMS recomienda al menos 150 min de actividad moderada a la semana; un minuto vigoroso cuenta doble. Solo cuenta entrenamientos, de lunes a domingo, incluidas las caminatas.</string>
 </resources>

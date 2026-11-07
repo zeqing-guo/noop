@@ -2832,4 +2832,16 @@
     <string name="raw_diag_ecg_probe_running">此手环上可能仍在采集。结论会写入手环日志。</string>
     <string name="today_customize_live_session_availability">在设置中启用“实时会话”或有进行中的会话时，今日页会显示此部分。</string>
     <string name="l10n_app_changelog_today_your_way_heart_rate_any_5e1308b3">自定义「今天」页面、任何应用都能读取的心率，以及意大利语</string>
+    <string name="workouts_weekly_intensity_title">每周运动强度</string>
+    <string name="workouts_weekly_intensity_minutes">%1$d 分钟</string>
+    <string name="workouts_weekly_intensity_legend_moderate">中等强度 · Z2–Z3</string>
+    <string name="workouts_weekly_intensity_legend_vigorous">高强度 · Z4–Z5</string>
+    <string name="settings_weekly_intensity_includes_walking">每周运动强度计入步行</string>
+    <string name="settings_weekly_intensity_includes_walking_hint">默认不计入：步行大多强度较低，手机自动记录的步行又多，算进去会把中等强度时间撑大。打开后，运动页的每周运动强度会把步行也算进去。</string>
+    <string name="workouts_weekly_intensity_week_from">%1$s 起%2$s</string>
+    <string name="workouts_weekly_intensity_ring_goal">/ 150 分钟</string>
+    <string name="workouts_weekly_intensity_goal_percent">已完成 WHO 每周目标的 %1$d%%</string>
+    <string name="workouts_weekly_intensity_last_week">上周合计 %1$d / 150 分钟</string>
+    <string name="workouts_weekly_intensity_note">WHO 建议每周至少 150 分钟中等强度运动，1 分钟高强度按 2 分钟计。只统计运动记录，周一到周日，不含步行（可在设置里开启）。</string>
+    <string name="workouts_weekly_intensity_note_with_walking">WHO 建议每周至少 150 分钟中等强度运动，1 分钟高强度按 2 分钟计。只统计运动记录，周一到周日，包含步行。</string>
 </resources>

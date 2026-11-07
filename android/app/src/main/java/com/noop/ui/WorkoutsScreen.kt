@@ -237,21 +237,43 @@ fun WorkoutsScreen(vm: AppViewModel) {
         recoveryTrend = built
     }
 
-    // HR-zone minutes binned from strap HR for the shown sessions that carry no imported split, so the
-    // zones card and the per-sport mini-bars count strap-recorded, detected, manual and Health Connect
-    // sessions too — the same per-row rule as the session detail (imported wins, else strap HR). The
-    // window is resolved by the SAME functions the list uses below, so the derived set is the shown set.
-    var strapZoneMinutes by remember { mutableStateOf<Map<String, List<Double>>>(emptyMap()) }
+    // HR-zone minutes binned from strap HR for the sessions that carry no imported split, so the zones
+    // card, the per-sport mini-bars and the weekly intensity card count strap-recorded, detected, manual
+    // and Health Connect sessions too — the same per-row rule as the session detail (imported wins, else
+    // strap HR). The rows needed are the union of the shown window (resolved by the SAME functions the
+    // list uses below) and the weekly card's calendar weeks.
+    //
+    // The minutes themselves live in the ViewModel (see [AppViewModel.ensureStrapZoneMinutes]), which keeps
+    // each read the moment it lands; this effect only says which rows the screen needs.
+    val strapZoneMinutes by vm.strapZoneMinutes.collectAsState()
+    val zoneContext = LocalContext.current
+
+    // The weekly card's window: the last [WEEKLY_INTENSITY_WEEKS] calendar weeks, anchored to the clock
+    // (not to the latest session, unlike the range bar). Weeks start on MONDAY (ISO 8601) whatever the
+    // phone's region says: a Sunday-first region otherwise empties "this week" on Sunday morning, in the
+    // middle of what the wearer counts as their week.
+    val weekBounds = remember(lastHistorySyncAt) {
+        weekBoundaries(
+            nowSec = System.currentTimeMillis() / 1000,
+            weeks = WEEKLY_INTENSITY_WEEKS,
+            zone = java.time.ZoneId.systemDefault(),
+            firstDay = java.time.DayOfWeek.MONDAY,
+        )
+    }
+    // The sport/source/search filter applies here too (every section reads one filtered set); the range
+    // does not, because the card's window is its own eight calendar weeks. Walks are left out unless the
+    // wearer turned them on in Settings (default off). Read once per entry, like the other screen prefs.
+    val weeklyIncludesWalking = remember { NoopPrefs.weeklyIntensityIncludesWalking(zoneContext) }
+    val weekRows = filter.apply(allRows.filter { it.startTs >= weekBounds.first() && it.startTs < weekBounds.last() })
+        .filter { weeklyIncludesWalking || !isWalkingSport(it.sport) }
     val zoneWindowRows = filter.apply(sessions(allRows, effectiveRange(allRows, range, filter)))
-    val strapZoneRows = zoneWindowRows.filter { importedZoneMinutes(it) == null }
+    val strapZoneRows = (zoneWindowRows + weekRows).distinctBy { workoutZoneKey(it) }
     val strapZoneInputKey = strapZoneRows.joinToString(",") { workoutZoneKey(it) }
-    LaunchedEffect(strapZoneInputKey, vm.activeStrapId, lastHistorySyncAt) {
-        val built = HashMap<String, List<Double>>()
-        for (row in strapZoneRows) {
-            val minutes = vm.workoutZoneMinutes(row.startTs, row.endTs, row.source, row.deviceId) ?: continue
-            built[workoutZoneKey(row)] = minutes
-        }
-        strapZoneMinutes = built
+    LaunchedEffect(strapZoneInputKey, lastHistorySyncAt) {
+        vm.ensureStrapZoneMinutes(strapZoneRows, lastHistorySyncAt)
+    }
+    val weeks = remember(weekRows, strapZoneMinutes, weekBounds) {
+        weeklyIntensity(weekRows, strapZoneMinutes, weekBounds)
     }
 
     LaunchedEffect(Unit) {
@@ -334,6 +356,7 @@ fun WorkoutsScreen(vm: AppViewModel) {
             item { CalorieHeatmapSection(recentDays) }
             item { BreakdownSection(groups = groups, rows = windowRows, strapZoneMinutes = strapZoneMinutes) }
             item { ZonesSection(windowRows, strapZoneMinutes) }
+            item { WeeklyIntensitySection(weeks, filterActive = filter.isActive, includesWalking = weeklyIncludesWalking) }
             if (recoveryTrend.isNotEmpty()) {
                 item { RecoveryTrendSection(recoveryTrend, recoveryRange.localizedCaption()) }
             }
@@ -1148,6 +1171,126 @@ private fun ZonesSection(rows: List<WorkoutRow>, strapZoneMinutes: Map<String, L
                 )
             }
         }
+    }
+}
+
+// MARK: - Weekly intensity (moderate Z2–Z3 / vigorous Z4–Z5 minutes this calendar week, one card)
+
+/** Calendar weeks the weekly intensity card reads: this week, plus last week for the comparison line. */
+internal const val WEEKLY_INTENSITY_WEEKS = 2
+
+/** Moderate and vigorous are drawn in the zone colours they are made of: Z3 for Z2–Z3, Z5 for Z4–Z5. */
+private val moderateIntensityColor: Color @Composable get() = Palette.hrZoneColor(3)
+private val vigorousIntensityColor: Color @Composable get() = Palette.hrZoneColor(5)
+
+/**
+ * This week's intensity against the WHO goal, laid out like [EffortHero] above it: a ring on the left (the
+ * WHO combination, moderate + 2 x vigorous, against 150 minutes) and the split on the right. The ring's
+ * number and the two stats are different quantities on purpose, and each is labelled as what it is: the
+ * ring says "/ 150 min", the stats name their zones, and the note says a vigorous minute counts double.
+ */
+@Composable
+private fun WeeklyIntensitySection(weeks: List<WeekIntensity>, filterActive: Boolean, includesWalking: Boolean) {
+    if (weeks.isEmpty()) return
+    val thisWeek = weeks.last()
+    val lastWeek = weeks.getOrNull(weeks.size - 2)
+    val goal = WHO_WEEKLY_MODERATE_EQUIVALENT_MINUTES
+    val eq = thisWeek.whoEquivalentMinutes
+    val dayPattern = remember { android.text.format.DateFormat.getBestDateTimePattern(Locale.getDefault(), "Md") }
+    val startLabel = remember(thisWeek.weekStart, dayPattern) {
+        java.time.Instant.ofEpochSecond(thisWeek.weekStart).atZone(java.time.ZoneId.systemDefault())
+            .format(java.time.format.DateTimeFormatter.ofPattern(dayPattern, Locale.getDefault()))
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(Metrics.gap)) {
+        SectionHeader(
+            title = uiString(R.string.workouts_weekly_intensity_title),
+            // The #64 "· filtered" suffix rides in as a format argument, as the range bar's caption does.
+            trailing = uiString(
+                R.string.workouts_weekly_intensity_week_from,
+                startLabel,
+                if (filterActive) uiString(R.string.i18n_g3_filtered) else "",
+            ),
+        )
+        NoopCard(tint = Palette.effortColor) {
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    Box(contentAlignment = Alignment.Center) {
+                        GlowRing(
+                            fraction = (eq / goal).toFloat(),
+                            value = eq,
+                            color = Palette.accent,
+                            diameter = 112.dp,
+                            lineWidth = 10.dp,
+                            showsLabel = false,
+                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                eq.roundToInt().toString(),
+                                style = NoopType.number(30f, weight = FontWeight.Bold),
+                                color = Palette.textPrimary,
+                                maxLines = 1,
+                            )
+                            Text(
+                                uiString(R.string.workouts_weekly_intensity_ring_goal),
+                                style = NoopType.footnote,
+                                color = Palette.textTertiary,
+                                maxLines = 1,
+                            )
+                        }
+                    }
+                    Spacer(Modifier.width(20.dp))
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            uiString(R.string.workouts_weekly_intensity_goal_percent, (eq / goal * 100).roundToInt()),
+                            style = NoopType.headline,
+                            color = Palette.textPrimary,
+                        )
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Metrics.gap)) {
+                            IntensityStat(
+                                uiString(R.string.workouts_weekly_intensity_legend_moderate),
+                                thisWeek.moderateMinutes, moderateIntensityColor, Modifier.weight(1f),
+                            )
+                            IntensityStat(
+                                uiString(R.string.workouts_weekly_intensity_legend_vigorous),
+                                thisWeek.vigorousMinutes, vigorousIntensityColor, Modifier.weight(1f),
+                            )
+                        }
+                        if (lastWeek != null) {
+                            Text(
+                                uiString(R.string.workouts_weekly_intensity_last_week, lastWeek.whoEquivalentMinutes.roundToInt()),
+                                style = NoopType.footnote,
+                                color = Palette.textTertiary,
+                            )
+                        }
+                    }
+                }
+                Text(
+                    uiString(
+                        if (includesWalking) R.string.workouts_weekly_intensity_note_with_walking
+                        else R.string.workouts_weekly_intensity_note,
+                    ),
+                    style = NoopType.footnote,
+                    color = Palette.textTertiary,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun IntensityStat(label: String, minutes: Double, color: Color, modifier: Modifier = Modifier) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(8.dp).background(color, RoundedCornerShape(2.dp)))
+            Spacer(Modifier.width(5.dp))
+            Text(label, style = NoopType.footnote, color = Palette.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        Text(
+            uiString(R.string.workouts_weekly_intensity_minutes, minutes.roundToInt()),
+            style = NoopType.number(20f),
+            color = Palette.textPrimary,
+            maxLines = 1,
+        )
     }
 }
 
@@ -2605,12 +2748,91 @@ internal fun zoneSummary(
     var imported = 0
     var strap = 0
     for (r in rows) {
-        val fromImport = importedZoneMinutes(r)
-        val m = fromImport ?: strapMinutes[workoutZoneKey(r)]?.takeIf { it.size == 5 } ?: continue
+        val m = resolvedZoneMinutes(r, strapMinutes) ?: continue
         for (i in 0 until 5) mins[i] += m[i]
-        if (fromImport != null) imported++ else strap++
+        if (importedZoneMinutes(r) != null) imported++ else strap++
     }
     return if (imported + strap > 0 && mins.sum() > 0.0) ZoneSummary(mins, imported, strap) else null
+}
+
+/**
+ * Whether a workout is a walk, for the weekly intensity card's walking switch: the catalogue's Walking and
+ * Treadmill walk under every spelling the sources use (WHOOP / Health Connect "Walking", camel-cased
+ * "TreadmillWalk", a bare "walk") plus the two Chinese names a wearer might type. Hiking is NOT a walk here.
+ */
+internal fun isWalkingSport(sport: String): Boolean =
+    WorkoutEditing.sportKey(sport) in setOf("walking", "walk", "treadmillwalk", "步行", "走路")
+
+/** One workout's Z1…Z5 minutes under the per-row rule every zone readout shares: the imported split
+ *  wins, otherwise the strap-HR minutes in [strapMinutes] (keyed by [workoutZoneKey]), otherwise null.
+ *  The zones card, the weekly intensity card and the session detail all resolve through this rule, so
+ *  no two of them can count one session differently. Mirrors the macOS WorkoutZones.resolvedMinutes. */
+internal fun resolvedZoneMinutes(row: WorkoutRow, strapMinutes: Map<String, List<Double>>): List<Double>? =
+    importedZoneMinutes(row) ?: strapMinutes[workoutZoneKey(row)]?.takeIf { it.size == 5 }
+
+/**
+ * WHO 2020 physical-activity guideline for adults: at least 150 minutes of moderate-intensity, or 75
+ * minutes of vigorous-intensity, aerobic activity a week, or an equivalent combination, in which a
+ * vigorous minute counts as two moderate ones (Bull et al., Br J Sports Med 2020;54:1451-1462).
+ */
+internal const val WHO_WEEKLY_MODERATE_EQUIVALENT_MINUTES = 150.0
+
+/** One calendar week of workout intensity. Moderate = Z2 + Z3 (60–80% HRmax under the default model),
+ *  vigorous = Z4 + Z5 (80% HRmax and above), both in the user's own zone model. */
+internal data class WeekIntensity(
+    /** Epoch seconds of the week's first instant (local midnight on the week's first day, Monday). */
+    val weekStart: Long,
+    val moderateMinutes: Double,
+    val vigorousMinutes: Double,
+    /** Sessions in this week that carried zone minutes (imported or strap HR). */
+    val sessions: Int,
+) {
+    val totalMinutes: Double get() = moderateMinutes + vigorousMinutes
+    /** The WHO combination: moderate minutes plus twice the vigorous minutes. */
+    val whoEquivalentMinutes: Double get() = moderateMinutes + 2.0 * vigorousMinutes
+}
+
+/**
+ * Per-week moderate / vigorous minutes, oldest week first. [weekBounds] holds N+1 ascending epoch-second
+ * boundaries for N weeks; a session belongs to week i when weekBounds[i] <= startTs < weekBounds[i+1].
+ * Sessions outside the bounds or without zone minutes are skipped. Pure: the calendar lives in
+ * [weekBoundaries]. Mirrors the macOS WorkoutZones.weeklyIntensity.
+ */
+internal fun weeklyIntensity(
+    rows: List<WorkoutRow>,
+    strapMinutes: Map<String, List<Double>>,
+    weekBounds: List<Long>,
+): List<WeekIntensity> {
+    if (weekBounds.size < 2) return emptyList()
+    val n = weekBounds.size - 1
+    val moderate = DoubleArray(n)
+    val vigorous = DoubleArray(n)
+    val sessions = IntArray(n)
+    for (r in rows) {
+        val i = (0 until n).firstOrNull { r.startTs >= weekBounds[it] && r.startTs < weekBounds[it + 1] } ?: continue
+        val m = resolvedZoneMinutes(r, strapMinutes) ?: continue
+        moderate[i] += m[1] + m[2]
+        vigorous[i] += m[3] + m[4]
+        sessions[i]++
+    }
+    return (0 until n).map { WeekIntensity(weekBounds[it], moderate[it], vigorous[it], sessions[it]) }
+}
+
+/**
+ * N+1 boundaries for the [weeks] calendar weeks ending with the one containing [nowSec]: each is local
+ * midnight on [firstDay] in [zone], and the last is the start of next week. Local midnights rather than
+ * fixed 7-day strides, so a DST week is 167 or 169 hours, as the calendar says. Mirrors the macOS
+ * WorkoutZones.weekBoundaries.
+ */
+internal fun weekBoundaries(
+    nowSec: Long,
+    weeks: Int,
+    zone: java.time.ZoneId,
+    firstDay: java.time.DayOfWeek,
+): List<Long> {
+    val today = java.time.Instant.ofEpochSecond(nowSec).atZone(zone).toLocalDate()
+    val thisWeek = today.with(java.time.temporal.TemporalAdjusters.previousOrSame(firstDay))
+    return (weeks - 1 downTo -1).map { thisWeek.minusWeeks(it.toLong()).atStartOfDay(zone).toEpochSecond() }
 }
 
 /**

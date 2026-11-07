@@ -2875,4 +2875,16 @@
     <string name="raw_diag_ecg_probe_running">Auf diesem Strap läuft möglicherweise noch eine Aufzeichnung. Das Ergebnis steht im Strap-Log.</string>
     <string name="today_customize_live_session_availability">Erscheint heute, wenn Live Sessions in den Einstellungen aktiviert sind oder eine Session aktiv ist.</string>
     <string name="l10n_app_changelog_today_your_way_heart_rate_any_5e1308b3">Today nach Ihren Wünschen, Herzfrequenz für jede App und Italienisch</string>
+    <string name="workouts_weekly_intensity_title">Wöchentliche Intensität</string>
+    <string name="workouts_weekly_intensity_minutes">%1$d Min.</string>
+    <string name="workouts_weekly_intensity_legend_moderate">Moderat · Z2–Z3</string>
+    <string name="workouts_weekly_intensity_legend_vigorous">Intensiv · Z4–Z5</string>
+    <string name="settings_weekly_intensity_includes_walking">Spaziergänge in Wochenintensität zählen</string>
+    <string name="settings_weekly_intensity_includes_walking_hint">Standardmäßig aus: Gehen ist meist leicht, und ein Handy, das jeden Spaziergang protokolliert, kann den moderaten Bereich allein füllen. Einschalten, um Spaziergänge auf der Karte „Wöchentliche Intensität“ mitzuzählen.</string>
+    <string name="workouts_weekly_intensity_week_from">Ab %1$s%2$s</string>
+    <string name="workouts_weekly_intensity_ring_goal">von 150 Min.</string>
+    <string name="workouts_weekly_intensity_goal_percent">%1$d %% des WHO-Wochenziels</string>
+    <string name="workouts_weekly_intensity_last_week">Letzte Woche: %1$d von 150 Min.</string>
+    <string name="workouts_weekly_intensity_note">Die WHO empfiehlt mindestens 150 Min. moderate Aktivität pro Woche; eine intensive Minute zählt doppelt. Zählt nur Trainings, Montag bis Sonntag, ohne Spaziergänge (in den Einstellungen einschaltbar).</string>
+    <string name="workouts_weekly_intensity_note_with_walking">Die WHO empfiehlt mindestens 150 Min. moderate Aktivität pro Woche; eine intensive Minute zählt doppelt. Zählt nur Trainings, Montag bis Sonntag, einschließlich Spaziergängen.</string>
 </resources>

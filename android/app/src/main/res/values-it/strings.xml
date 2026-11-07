@@ -2830,4 +2830,16 @@
     <string name="raw_diag_ecg_probe_running">Una acquisizione potrebbe essere ancora attiva su questo strap. Il verdetto va nello strap log.</string>
     <string name="today_customize_live_session_availability">Compare oggi se le sessioni in diretta sono attivate nelle Impostazioni o una sessione è attiva.</string>
     <string name="l10n_app_changelog_today_your_way_heart_rate_any_5e1308b3">Oggi a modo tuo, frequenza cardiaca leggibile da ogni app e l\'italiano</string>
+    <string name="workouts_weekly_intensity_title">Intensità settimanale</string>
+    <string name="workouts_weekly_intensity_minutes">%1$d minuti</string>
+    <string name="workouts_weekly_intensity_legend_moderate">Moderata · Z2–Z3</string>
+    <string name="workouts_weekly_intensity_legend_vigorous">Vigorosa · Z4–Z5</string>
+    <string name="settings_weekly_intensity_includes_walking">Conta le camminate nell\'intensità settimanale</string>
+    <string name="settings_weekly_intensity_includes_walking_hint">Disattivato per impostazione predefinita: camminare è perlopiù leggero e un telefono che registra ogni camminata può riempire da solo la fascia moderata. Attiva per contarle nella scheda Intensità settimanale degli allenamenti.</string>
+    <string name="workouts_weekly_intensity_week_from">Dal %1$s%2$s</string>
+    <string name="workouts_weekly_intensity_ring_goal">su 150 min</string>
+    <string name="workouts_weekly_intensity_goal_percent">%1$d%% dell\'obiettivo settimanale OMS</string>
+    <string name="workouts_weekly_intensity_last_week">Settimana scorsa: %1$d su 150 min</string>
+    <string name="workouts_weekly_intensity_note">L\'OMS raccomanda almeno 150 min di attività moderata a settimana; un minuto vigoroso vale doppio. Conta solo gli allenamenti, da lunedì a domenica, senza camminate (attivabili nelle Impostazioni).</string>
+    <string name="workouts_weekly_intensity_note_with_walking">L\'OMS raccomanda almeno 150 min di attività moderata a settimana; un minuto vigoroso vale doppio. Conta solo gli allenamenti, da lunedì a domenica, camminate incluse.</string>
 </resources>

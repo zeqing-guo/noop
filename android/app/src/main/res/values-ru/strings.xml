@@ -2757,4 +2757,16 @@
     <string name="raw_diag_ecg_probe_running">На этом ремешке запись может всё ещё идти. Результат попадёт в strap log.</string>
     <string name="today_customize_live_session_availability">Появляется сегодня, если сессии в реальном времени включены в Настройках или сеанс уже активен.</string>
     <string name="l10n_app_changelog_today_your_way_heart_rate_any_5e1308b3">«Сегодня» на ваш вкус, пульс для любого приложения и итальянский язык</string>
+    <string name="workouts_weekly_intensity_title">Интенсивность за неделю</string>
+    <string name="workouts_weekly_intensity_minutes">%1$d мин</string>
+    <string name="workouts_weekly_intensity_legend_moderate">Умеренная · Z2–Z3</string>
+    <string name="workouts_weekly_intensity_legend_vigorous">Высокая · Z4–Z5</string>
+    <string name="settings_weekly_intensity_includes_walking">Учитывать ходьбу в недельной интенсивности</string>
+    <string name="settings_weekly_intensity_includes_walking_hint">По умолчанию выключено: ходьба обычно лёгкая, а телефон, записывающий каждую прогулку, может сам заполнить умеренную зону. Включите, чтобы учитывать её в карточке недельной интенсивности в Тренировках.</string>
+    <string name="workouts_weekly_intensity_week_from">С %1$s%2$s</string>
+    <string name="workouts_weekly_intensity_ring_goal">из 150 мин</string>
+    <string name="workouts_weekly_intensity_goal_percent">%1$d%% недельной цели ВОЗ</string>
+    <string name="workouts_weekly_intensity_last_week">Прошлая неделя: %1$d из 150 мин</string>
+    <string name="workouts_weekly_intensity_note">ВОЗ рекомендует не менее 150 мин умеренной активности в неделю; минута высокой активности считается за две. Учитываются только тренировки, с понедельника по воскресенье, без ходьбы (её можно включить в настройках).</string>
+    <string name="workouts_weekly_intensity_note_with_walking">ВОЗ рекомендует не менее 150 мин умеренной активности в неделю; минута высокой активности считается за две. Учитываются только тренировки, с понедельника по воскресенье, включая ходьбу.</string>
 </resources>

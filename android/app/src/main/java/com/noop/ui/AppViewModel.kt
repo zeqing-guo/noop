@@ -2185,6 +2185,70 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         return runCatching { repository.hrBucketsFor(ids, from, to, bucket) }.getOrDefault(emptyList())
     }
 
+    // MARK: - Strap-HR zone minutes for the Workouts screen's aggregate cards
+
+    /**
+     * Zone minutes binned from strap HR, keyed by [workoutZoneKey], for sessions with no imported split.
+     * Feeds the Workouts zones card, the per-sport bars and the weekly intensity card.
+     *
+     * Held HERE rather than in the screen. It used to live in a `remember` + `LaunchedEffect` pair, which
+     * lost every unpublished read whenever the effect restarted (a recomposition with a changed key, the
+     * screen leaving and re-entering composition), so a long first pass could restart forever and the
+     * cards never appeared. Now each result is stored the moment it is read, so a cancelled pass resumes
+     * where it stopped instead of starting over.
+     */
+    private val _strapZoneMinutes = MutableStateFlow<Map<String, List<Double>>>(emptyMap())
+    val strapZoneMinutes: StateFlow<Map<String, List<Double>>> = _strapZoneMinutes.asStateFlow()
+    private val strapZoneCache = HashMap<String, List<Double>>()
+    /** Keys already read, with or without HR, so an HR-less session is not re-read every time. */
+    private val strapZoneTried = HashSet<String>()
+    /** What every cached answer depends on: the active strap and the user's zone model. */
+    private var strapZoneIdentity: Any? = null
+    /** The history sync the cache was last brought up to date with. */
+    private var strapZoneSyncSeen: Long? = null
+    private var strapZoneJob: Job? = null
+
+    /**
+     * Make sure [rows]' strap-HR zone minutes are (being) read. Idempotent and cheap to call on every change
+     * of the screen's rows: rows already read are skipped. Runs on the main dispatcher, so the cache needs
+     * no locking; each read suspends into Room.
+     */
+    fun ensureStrapZoneMinutes(rows: List<WorkoutRow>, syncAt: Long?) {
+        val identity = activeStrapId to profileStore.hrZoneSet.zones.map { it.lower }
+        if (identity != strapZoneIdentity) {
+            // A different strap or zone model changes every answer: start over.
+            strapZoneIdentity = identity
+            strapZoneCache.clear()
+            strapZoneTried.clear()
+            _strapZoneMinutes.value = emptyMap()
+        } else {
+            val previous = strapZoneSyncSeen
+            if (syncAt != null && previous != null && syncAt != previous) {
+                // An offload banks the HR recorded since the previous one, so only sessions that ended after
+                // the previous sync (an hour of slack) can read differently now. Their old answers stay on
+                // screen until the re-read replaces them, so nothing blinks out.
+                val since = previous - 3_600L
+                rows.filter { it.endTs >= since }.forEach { strapZoneTried.remove(workoutZoneKey(it)) }
+            }
+        }
+        strapZoneSyncSeen = syncAt
+        val pending = rows.filter { importedZoneMinutes(it) == null && workoutZoneKey(it) !in strapZoneTried }
+            .distinctBy { workoutZoneKey(it) }
+        if (pending.isEmpty()) return
+        strapZoneJob?.cancel()
+        strapZoneJob = viewModelScope.launch {
+            pending.forEachIndexed { i, row ->
+                val key = workoutZoneKey(row)
+                val minutes = workoutZoneMinutes(row.startTs, row.endTs, row.source, row.deviceId)
+                if (minutes != null) strapZoneCache[key] = minutes else strapZoneCache.remove(key)
+                strapZoneTried += key
+                // Publish in small batches so the cards fill in as reads land.
+                if (i % 10 == 9) _strapZoneMinutes.value = HashMap(strapZoneCache)
+            }
+            _strapZoneMinutes.value = HashMap(strapZoneCache)
+        }
+    }
+
     /** Per-zone MINUTES for a workout window, binning the strap's raw HR samples into the age-derived
      *  (Tanaka) %HRmax zones — the same display zone model the Workouts screen uses for imported zone
      *  percentages, but from the strap's own samples so a session WITHOUT imported zones still gets a

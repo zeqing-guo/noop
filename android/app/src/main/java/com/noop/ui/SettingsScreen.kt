@@ -1222,6 +1222,32 @@ fun SettingsScreen(
                     }
                 }
                 SettingsRowDivider()
+                // Whether the Workouts weekly intensity card counts walks. Default off; read and written
+                // straight through NoopPrefs, since only that card reads it and it re-reads on entry.
+                var weeklyIncludesWalking by remember { mutableStateOf(NoopPrefs.weeklyIntensityIncludesWalking(context)) }
+                SettingsFormRow(label = uiString(R.string.settings_weekly_intensity_includes_walking)) {
+                    Switch(
+                        checked = weeklyIncludesWalking,
+                        onCheckedChange = {
+                            weeklyIncludesWalking = it
+                            NoopPrefs.setWeeklyIntensityIncludesWalking(context, it)
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Palette.surfaceBase,
+                            checkedTrackColor = Palette.accent,
+                            uncheckedThumbColor = Palette.textSecondary,
+                            uncheckedTrackColor = Palette.surfaceInset,
+                            uncheckedBorderColor = Palette.hairline,
+                        ),
+                    )
+                }
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = uiString(R.string.settings_weekly_intensity_includes_walking_hint),
+                    style = NoopType.footnote,
+                    color = Palette.textTertiary,
+                )
+                SettingsRowDivider()
                 // Step calibration (#139/#132): daily steps = @57 counter ticks ÷ this divisor.
                 // 1.0 = raw pass-through until the true 5/MG tick rate is known. The divisor goes
                 // up to 30 because a 5/MG motion counter can overcount by ~24×; the stepper uses a
