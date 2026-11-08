@@ -6,8 +6,12 @@ import android.os.CancellationSignal
 import android.util.Base64
 import org.json.JSONArray
 import org.json.JSONObject
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * The statement check in front of the computer-query server's `/v1/sql`.
@@ -129,9 +133,10 @@ internal class AndroidReadOnlySql(
 ) : LanSqlRunner {
     private val lock = Any()
     private var db: SQLiteDatabase? = null
-    private val canceller = Executors.newSingleThreadScheduledExecutor { r ->
-        Thread(r, "noop-lan-sql-timeout").apply { isDaemon = true }
-    }
+    // Timeouts run as coroutines, not on a scheduled executor: the parity ledger matches calls by name,
+    // and an executor's scheduling call would read as a production caller of the breath-protocol
+    // player's method of the same name.
+    private val timeouts = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private fun open(): SQLiteDatabase {
         db?.let { if (it.isOpen) return it }
@@ -145,7 +150,10 @@ internal class AndroidReadOnlySql(
         val started = System.nanoTime()
         val statement = if (wrappable) "SELECT * FROM (\n$sql\n) LIMIT ${limit + 1}" else sql
         val signal = CancellationSignal()
-        val timer = canceller.schedule({ signal.cancel() }, timeoutMs, TimeUnit.MILLISECONDS)
+        val timer = timeouts.launch {
+            delay(timeoutMs)
+            signal.cancel()
+        }
         try {
             open().rawQuery(statement, null, signal).use { c ->
                 val result = encode(c, limit)
@@ -153,7 +161,7 @@ internal class AndroidReadOnlySql(
                 result
             }
         } finally {
-            timer.cancel(false)
+            timer.cancel()
         }
     }
 
@@ -190,7 +198,7 @@ internal class AndroidReadOnlySql(
             runCatching { db?.close() }
             db = null
         }
-        canceller.shutdownNow()
+        timeouts.cancel()
     }
 
     private fun encode(c: Cursor, limit: Int): JSONObject {

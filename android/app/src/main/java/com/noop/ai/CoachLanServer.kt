@@ -9,7 +9,13 @@ import com.noop.NoopApplication
 import com.noop.data.WhoopDatabase
 import com.noop.data.WhoopRepository
 import com.noop.ui.NoopPrefs
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.runBlocking
@@ -22,8 +28,6 @@ import java.net.Socket
 import java.net.SocketTimeoutException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.TimeUnit
 
 /**
  * "Let a computer query my data": a ten-minute, Wi-Fi-only HTTP server the wearer starts from the
@@ -67,13 +71,14 @@ object CoachLanServer {
 
     private val lock = Any()
     private var running: Running? = null
+    private val timerScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private class Running(
         val socket: ServerSocket,
         val session: CoachLanSession,
         val sql: LanSqlRunner,
         val workers: ExecutorService,
-        val timer: ScheduledExecutorService,
+        var expiry: Job? = null,
         val url: String,
         var nsd: NsdManager.RegistrationListener? = null,
     )
@@ -106,7 +111,6 @@ object CoachLanServer {
                 session = session,
                 sql = sql,
                 workers = Executors.newFixedThreadPool(4) { Thread(it, "noop-lan-conn").apply { isDaemon = true } },
-                timer = Executors.newSingleThreadScheduledExecutor { Thread(it, "noop-lan-timer").apply { isDaemon = true } },
                 url = "http://$address:$port",
             )
             val router = CoachLanRouter(
@@ -118,7 +122,13 @@ object CoachLanServer {
             )
             running = r
             Thread({ acceptLoop(r, router) }, "noop-lan-accept").apply { isDaemon = true }.start()
-            r.timer.schedule({ stop(app) }, WINDOW_MILLIS, TimeUnit.MILLISECONDS)
+            // The window's one deadline, kept by a coroutine rather than a scheduled executor: the parity
+            // ledger matches calls by name, and an executor's scheduling call would read as a production
+            // caller of the breath-protocol player's method of the same name.
+            r.expiry = timerScope.launch {
+                delay(WINDOW_MILLIS)
+                stop(app)
+            }
             r.nsd = registerNsd(app, port)
             // Rare-event evidence, always on: that a listener opened and where. Never the token.
             Log.i(TAG, "computer-query window opened on ${r.url} for ${WINDOW_MILLIS / 60_000} min")
@@ -133,7 +143,7 @@ object CoachLanServer {
         val r = synchronized(lock) { running.also { running = null } } ?: return
         runCatching { r.socket.close() }
         r.workers.shutdownNow()
-        r.timer.shutdownNow()
+        r.expiry?.cancel()
         runCatching { r.sql.close() }
         r.nsd?.let { listener ->
             runCatching {
