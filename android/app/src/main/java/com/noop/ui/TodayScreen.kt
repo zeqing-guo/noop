@@ -2152,7 +2152,7 @@ private fun WorkoutInProgressCard(
         pausedDurationMs = workout.pausedDurationMs, nowMs = nowMs,
     )
     val elapsed = elapsedClock(elapsedS)
-    val sportLabel = workout.sport.name
+    val sportLabel = WorkoutEditing.localizedSport(workout.sport.name)
     // The card below sets ONE contentDescription on a merged node, which REPLACES its children's
     // semantics — so the visible "Paused" tag would be invisible to TalkBack unless it is folded in
     // here. A frozen clock the screen reader cannot explain is worse than a running one.

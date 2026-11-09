@@ -60,7 +60,8 @@ fun StartWorkoutSheet(vm: AppViewModel, onDismiss: () -> Unit) {
     var query by remember { mutableStateOf("") }
     var selected by remember { mutableStateOf<Sport>(WorkoutSport.default) }
     var gpsOn by remember(selected) { mutableStateOf(selected.isDistanceSport) }
-    val filtered = WorkoutSport.all.filter { it.name.contains(query, ignoreCase = true) }
+    // Search matches the English catalogue name OR its app-language label ("sauna", "桑拿").
+    val filtered = WorkoutSport.all.filter { WorkoutEditing.sportMatchesQuery(it.name, query) }
     // #297: the user's last selections, one tap away above the full catalogue. Only catalogue-resolvable
     // recents show here — a live start selects a typed [Sport], and the shared store can hold free-typed
     // names from the manual add/edit picker. Hidden once the user starts searching.
@@ -156,7 +157,7 @@ fun StartWorkoutSheet(vm: AppViewModel, onDismiss: () -> Unit) {
                     showLiveWorkout = true
                 }
             }) {
-                Text(uiString(R.string.l10n_workout_start_start_selected_name_10603889, selected.name))
+                Text(uiString(R.string.l10n_workout_start_start_selected_name_10603889, WorkoutEditing.localizedSport(selected.name)))
             }
         },
         dismissButton = {
@@ -182,8 +183,9 @@ private fun StartSportRow(sp: Sport, isSelected: Boolean, onPick: () -> Unit) {
             modifier = Modifier.size(20.dp),
         )
         Spacer(Modifier.width(12.dp))
+        // The app-language label; the session still stores the catalogue name (sp.name).
         Text(
-            sp.name, style = NoopType.body,
+            WorkoutEditing.localizedSport(sp.name), style = NoopType.body,
             color = if (isSelected) Palette.accent else Palette.textPrimary,
         )
         if (sp.isDistanceSport) {
@@ -229,7 +231,7 @@ fun WorkoutStartSection(vm: AppViewModel, onAdd: () -> Unit) {
                 // reads on top, the actions sit below with equal weight.
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                        Text(uiString(R.string.l10n_workout_start_w_sport_name_uppercase_e59bc678, w.sport.name.uppercase()), style = NoopType.overline, color = Palette.statusCritical)
+                        Text(uiString(R.string.l10n_workout_start_w_sport_name_uppercase_e59bc678, WorkoutEditing.localizedSport(w.sport.name).uppercase()), style = NoopType.overline, color = Palette.statusCritical)
                         // A frozen clock alone is ambiguous with a STALLED one, so say which it is. Reuses
                         // the string #1533 already localized rather than minting new copy for a tag.
                         if (w.pausedAtMs != null) {

@@ -400,7 +400,7 @@ fun LiveScreen(viewModel: AppViewModel, onManageDevices: () -> Unit = {}) {
             NoopCard(tint = Palette.effortColor) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                        Text(uiString(R.string.l10n_live_screen_w_sport_name_uppercase_e59bc678, w.sport.name.uppercase()), style = NoopType.overline, color = Palette.statusCritical)
+                        Text(uiString(R.string.l10n_live_screen_w_sport_name_uppercase_e59bc678, WorkoutEditing.localizedSport(w.sport.name).uppercase()), style = NoopType.overline, color = Palette.statusCritical)
                         // A frozen clock alone is ambiguous with a STALLED one, so say which it is. Reuses
                         // the string #1533 already localized rather than minting new copy for a tag.
                         if (w.pausedAtMs != null) {

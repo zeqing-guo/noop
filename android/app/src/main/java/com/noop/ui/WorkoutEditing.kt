@@ -75,9 +75,41 @@ object WorkoutEditing {
      *  other name through unchanged. */
     fun localizedSport(sport: String): String {
         val shown = displaySport(sport)
-        val res = sportLabels[shown.trim().lowercase()] ?: return shown
+        // The stored name first: displaySport splits run-together capitals, which turns catalogue names
+        // such as "CrossFit" and "Hurling/Camogie" into "Cross Fit" / "Hurling/ Camogie".
+        val res = sportLabels[sport.trim().lowercase()] ?: sportLabels[shown.trim().lowercase()] ?: return shown
         return uiString(res)
     }
+
+    /**
+     * Whether a catalogue sport matches what the user typed in a picker's search: its stored English name
+     * OR its label in the app language, case-insensitively, so "sauna", "Sau" and "桑拿" all find Sauna.
+     * A blank query matches everything. [label] is injectable so the rule is JVM-testable without resources.
+     */
+    fun sportMatchesQuery(name: String, query: String, label: (String) -> String = ::localizedSport): Boolean {
+        val q = query.trim()
+        if (q.isEmpty()) return true
+        return name.contains(q, ignoreCase = true) || label(name).contains(q, ignoreCase = true)
+    }
+
+    /**
+     * The name to STORE for what the sport field holds. The pickers show and fill in the app-language label
+     * ("桑拿"), but the stored sport stays the catalogue's English name ("Sauna"): it is what the other
+     * platform, imports, exports and every name-keyed rule (recovery activities, GPS, on-foot steps) read.
+     * A catalogue name typed in any case, or a catalogue sport's label, resolves to the catalogue name;
+     * anything else is a free-typed sport and is kept as typed (trimmed).
+     */
+    fun canonicalSportName(input: String, label: (String) -> String = ::localizedSport): String {
+        val t = input.trim()
+        if (t.isEmpty()) return t
+        com.noop.analytics.WorkoutSport.all.firstOrNull { it.name.equals(t, ignoreCase = true) }?.let { return it.name }
+        com.noop.analytics.WorkoutSport.all.firstOrNull { label(it.name).equals(t, ignoreCase = true) }?.let { return it.name }
+        return t
+    }
+
+    /** True when [sport] has a translated label (test hook: every catalogue sport must have one). */
+    internal fun hasSportLabel(sport: String): Boolean =
+        sport.trim().lowercase() in sportLabels || displaySport(sport).trim().lowercase() in sportLabels
 
     private val sportLabels: Map<String, Int> = mapOf(
         "activity" to R.string.redesign_sport_activity,
@@ -144,6 +176,73 @@ object WorkoutEditing {
         "hot bath" to R.string.recovery_sport_hot_bath,
         "ice bath" to R.string.recovery_sport_ice_bath,
         "massage" to R.string.recovery_sport_massage,
+        "open-water swim" to R.string.redesign_sport_open_water_swim,
+        "treadmill run" to R.string.redesign_sport_treadmill_run,
+        "indoor cycle" to R.string.redesign_sport_indoor_cycle,
+        "pool swim" to R.string.redesign_sport_pool_swim,
+        "row machine" to R.string.redesign_sport_row_machine,
+        "baseball" to R.string.redesign_sport_baseball,
+        "ice hockey" to R.string.redesign_sport_ice_hockey,
+        "squash" to R.string.redesign_sport_squash,
+        "racquetball" to R.string.redesign_sport_racquetball,
+        "american football" to R.string.redesign_sport_american_football,
+        "australian football" to R.string.redesign_sport_australian_football,
+        "rugby" to R.string.redesign_sport_rugby,
+        "cricket" to R.string.redesign_sport_cricket,
+        "softball" to R.string.redesign_sport_softball,
+        "handball" to R.string.redesign_sport_handball,
+        "water polo" to R.string.redesign_sport_water_polo,
+        "frisbee" to R.string.redesign_sport_frisbee,
+        "sailing" to R.string.redesign_sport_sailing,
+        "scuba diving" to R.string.redesign_sport_scuba_diving,
+        "ice skating" to R.string.redesign_sport_ice_skating,
+        "inline skating" to R.string.redesign_sport_inline_skating,
+        "snowshoeing" to R.string.redesign_sport_snowshoeing,
+        "gymnastics" to R.string.redesign_sport_gymnastics,
+        "fencing" to R.string.redesign_sport_fencing,
+        "calisthenics" to R.string.redesign_sport_calisthenics,
+        "stair climber" to R.string.redesign_sport_stair_climber,
+        "boot camp" to R.string.redesign_sport_boot_camp,
+        "padel" to R.string.redesign_sport_padel,
+        "pickleball" to R.string.redesign_sport_pickleball,
+        "bowling" to R.string.redesign_sport_bowling,
+        "treadmill walk" to R.string.redesign_sport_treadmill_walk,
+        "bodybuilding" to R.string.redesign_sport_bodybuilding,
+        "lacrosse" to R.string.redesign_sport_lacrosse,
+        "field hockey" to R.string.redesign_sport_field_hockey,
+        "mountain biking" to R.string.redesign_sport_mountain_biking,
+        "skateboarding" to R.string.redesign_sport_skateboarding,
+        "stand-up paddleboard" to R.string.redesign_sport_stand_up_paddleboard,
+        "rucking" to R.string.redesign_sport_rucking,
+        "sand volleyball" to R.string.redesign_sport_sand_volleyball,
+        "archery" to R.string.redesign_sport_archery,
+        "fishing" to R.string.redesign_sport_fishing,
+        "hunting" to R.string.redesign_sport_hunting,
+        "curling" to R.string.redesign_sport_curling,
+        "netball" to R.string.redesign_sport_netball,
+        "gaelic football" to R.string.redesign_sport_gaelic_football,
+        "spikeball" to R.string.redesign_sport_spikeball,
+        "horseback riding" to R.string.redesign_sport_horseback_riding,
+        "wheelchair" to R.string.redesign_sport_wheelchair,
+        "gaming" to R.string.redesign_sport_gaming,
+        "motor racing" to R.string.redesign_sport_motor_racing,
+        "nordic walking" to R.string.redesign_sport_nordic_walking,
+        "ballet" to R.string.redesign_sport_ballet,
+        "billiards" to R.string.redesign_sport_billiards,
+        "breakdancing" to R.string.redesign_sport_breakdancing,
+        "cheerleading" to R.string.redesign_sport_cheerleading,
+        "darts" to R.string.redesign_sport_darts,
+        "disc golf" to R.string.redesign_sport_disc_golf,
+        "hurling/camogie" to R.string.redesign_sport_hurling_camogie,
+        "jiu jitsu" to R.string.redesign_sport_jiu_jitsu,
+        "judo" to R.string.redesign_sport_judo,
+        "kiteboarding" to R.string.redesign_sport_kiteboarding,
+        "motocross" to R.string.redesign_sport_motocross,
+        "muay thai" to R.string.redesign_sport_muay_thai,
+        "paintball" to R.string.redesign_sport_paintball,
+        "parkour" to R.string.redesign_sport_parkour,
+        "polo" to R.string.redesign_sport_polo,
+        "skydiving" to R.string.redesign_sport_skydiving,
         "cooldown" to R.string.redesign_sport_cooldown,
     )
 

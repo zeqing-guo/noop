@@ -734,8 +734,10 @@ private fun MergeSportDialog(onDismiss: () -> Unit, onPick: (String) -> Unit) {
                 if (sport.isNotBlank()) {
                     // #297: naming a merge is a real selection too — parity with the macOS/iOS sheet,
                     // whose reused StartWorkoutSheet records on its action button.
-                    RecentSportsPrefs.record(context, sport.trim())
-                    onPick(sport.trim())
+                    // The field shows the app-language label; the stored sport is the catalogue name.
+                    val stored = WorkoutEditing.canonicalSportName(sport)
+                    RecentSportsPrefs.record(context, stored)
+                    onPick(stored)
                 }
             }, enabled = sport.isNotBlank()) {
                 Text(uiString(R.string.l10n_workouts_screen_merge_ea8f0d02), style = NoopType.body, color = if (sport.isNotBlank()) Palette.accent else Palette.textTertiary)
@@ -2326,7 +2328,16 @@ private fun ManualWorkoutDialog(
 ) {
     val nowSec = System.currentTimeMillis() / 1000
     // Pre-fill from the edited row ("detected" shown as "Activity" so a re-label starts clean).
-    var sport by remember { mutableStateOf(editing?.let { WorkoutEditing.displaySport(it.sport) } ?: "") }
+    // A catalogue sport is shown by its app-language label ("桑拿"); a free-typed or imported name that is
+    // not in the catalogue is shown as stored, so an edit never silently renames it. Save resolves the
+    // field back to the stored catalogue name (WorkoutEditing.canonicalSportName).
+    var sport by remember {
+        mutableStateOf(editing?.let {
+            val shown = WorkoutEditing.displaySport(it.sport)
+            if (WorkoutSport.all.any { s -> s.name.equals(shown.trim(), ignoreCase = true) }) WorkoutEditing.localizedSport(shown)
+            else shown
+        } ?: "")
+    }
     // #598 — absolute start date+time (parity with the macOS/iOS sheet's DatePicker) instead of the old
     // "minutes ago" field. Defaults to the edited row's start, or one hour ago for a fresh add.
     var startMillis by remember {
@@ -2386,7 +2397,7 @@ private fun ManualWorkoutDialog(
             deviceId = "my-whoop",
             startSeconds = (startMillis / 1000L).coerceAtMost(nowSec),
             endSeconds = endMillis / 1000L,
-            sport = sport,
+            sport = WorkoutEditing.canonicalSportName(sport),
             avgHr = hr,
             energyKcal = k,
             distanceM = distM,
@@ -2464,7 +2475,7 @@ private fun ManualWorkoutDialog(
                 DialogField(uiString(R.string.i18n_g3_avg_hr_bpm_optional), avgHr, onChange = { avgHr = it }, numeric = true)
                 // A recovery activity stores no calories (WhoopRepository.saveManualWorkout drops them), so
                 // the field is not offered for one.
-                if (!RecoveryActivity.isRecovery(sport)) {
+                if (!RecoveryActivity.isRecovery(WorkoutEditing.canonicalSportName(sport))) {
                     DialogField(uiString(R.string.i18n_g3_calories_kcal_optional), kcal, onChange = { kcal = it }, numeric = true)
                 }
                 if (built == null) {
@@ -2583,11 +2594,13 @@ private fun SportPickerField(value: String, onChange: (String) -> Unit) {
     val context = LocalContext.current
     val sportScroll = rememberScrollState()
     val q = value.trim()
-    val matches = if (q.isEmpty()) WorkoutSport.all
-    else WorkoutSport.all.filter { it.name.contains(q, ignoreCase = true) }
-    // Hide the list once the field exactly equals a catalogue name (a settled choice) or once it's a
-    // free-typed sport with no partial matches — so the dialog isn't permanently half-covered.
-    val exact = WorkoutSport.all.any { it.name.equals(q, ignoreCase = true) }
+    // Search matches the English catalogue name OR its app-language label ("sauna", "桑拿").
+    val matches = WorkoutSport.all.filter { WorkoutEditing.sportMatchesQuery(it.name, q) }
+    // Hide the list once the field exactly equals a catalogue name or its label (a settled choice) or once
+    // it's a free-typed sport with no partial matches — so the dialog isn't permanently half-covered.
+    val exact = WorkoutSport.all.any {
+        it.name.equals(q, ignoreCase = true) || WorkoutEditing.localizedSport(it.name).equals(q, ignoreCase = true)
+    }
     val showList = matches.isNotEmpty() && !exact
     // #297: the user's last selections, one tap away above the full catalogue. Raw stored names —
     // this picker allows free text, so an off-catalogue recent stays selectable here (it just
@@ -2607,23 +2620,26 @@ private fun SportPickerField(value: String, onChange: (String) -> Unit) {
                 Overline(uiString(R.string.i18n_g3_recent), modifier = Modifier.padding(top = 6.dp))
                 recents.forEach { name ->
                     SportSuggestionRow(
-                        name = name,
+                        name = WorkoutEditing.localizedSport(name),
                         isDistance = WorkoutSport.all
                             .firstOrNull { it.name.equals(name, ignoreCase = true) }?.isDistanceSport == true,
-                        onPick = { onChange(name) },
+                        onPick = { onChange(WorkoutEditing.localizedSport(name)) },
                     )
                 }
                 Overline(uiString(R.string.i18n_g3_all_activities), modifier = Modifier.padding(top = 6.dp))
             }
             // Training sports, then the recovery activities under their own heading (same rows).
             val (trainingMatches, recoveryMatches) = matches.partition { !RecoveryActivity.isRecovery(it.name) }
+            // Rows show (and fill in) the app-language label; save stores the catalogue name.
             trainingMatches.forEach { sp ->
-                SportSuggestionRow(name = sp.name, isDistance = sp.isDistanceSport, onPick = { onChange(sp.name) })
+                val label = WorkoutEditing.localizedSport(sp.name)
+                SportSuggestionRow(name = label, isDistance = sp.isDistanceSport, onPick = { onChange(label) })
             }
             if (recoveryMatches.isNotEmpty()) {
                 Overline(uiString(R.string.recovery_activity_title), modifier = Modifier.padding(top = 6.dp))
                 recoveryMatches.forEach { sp ->
-                    SportSuggestionRow(name = sp.name, isDistance = sp.isDistanceSport, onPick = { onChange(sp.name) })
+                    val label = WorkoutEditing.localizedSport(sp.name)
+                    SportSuggestionRow(name = label, isDistance = sp.isDistanceSport, onPick = { onChange(label) })
                 }
             }
         }

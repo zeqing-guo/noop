@@ -137,7 +137,7 @@ fun LiveWorkoutScreen(vm: AppViewModel, onClose: () -> Unit) {
             // centered TIME hero below).
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    w.sport.name, style = NoopType.title1, color = Palette.textPrimary,
+                    WorkoutEditing.localizedSport(w.sport.name), style = NoopType.title1, color = Palette.textPrimary,
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
