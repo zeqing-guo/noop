@@ -4193,8 +4193,11 @@ struct TodayView: View {
                                 label: "\(WorkoutSource.displaySport(w.sport))",
                                 value: workoutDuration(w),
                                 caption: workoutCaption(w),
-                                accent: StrandPalette.effortTint(fraction: (w.strain ?? 0) / StrainScorer.maxStrain),
-                                delta: w.energyKcal.map { "\(Int($0.rounded())) kcal" },
+                                // A recovery activity reads in the Charge colour with no calories.
+                                accent: RecoveryActivity.isRecovery(w.sport)
+                                    ? StrandPalette.chargeColor
+                                    : StrandPalette.effortTint(fraction: (w.strain ?? 0) / StrainScorer.maxStrain),
+                                delta: WorkoutsView.trainingKcal(w).map { "\(Int($0.rounded())) kcal" },
                                 deltaColor: StrandPalette.metricAmber
                             )
                         }

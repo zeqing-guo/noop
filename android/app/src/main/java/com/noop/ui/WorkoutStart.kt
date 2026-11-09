@@ -115,9 +115,22 @@ fun StartWorkoutSheet(vm: AppViewModel, onDismiss: () -> Unit) {
                         }
                         Overline(uiString(R.string.i18n_g2_ws_all_activities), modifier = Modifier.padding(top = 6.dp))
                     }
-                    filtered.forEach { sp ->
+                    // Training sports, then the recovery activities (sauna, bath, stretching…) under their
+                    // own heading: same rows, and a recovery session still starts here like any other.
+                    val (trainingSports, recoverySports) = filtered.partition {
+                        !com.noop.analytics.RecoveryActivity.isRecovery(it.name)
+                    }
+                    trainingSports.forEach { sp ->
                         StartSportRow(sp, isSelected = sp == selected) {
                             selected = sp; gpsOn = sp.isDistanceSport
+                        }
+                    }
+                    if (recoverySports.isNotEmpty()) {
+                        Overline(uiString(R.string.recovery_activity_title), modifier = Modifier.padding(top = 6.dp))
+                        recoverySports.forEach { sp ->
+                            StartSportRow(sp, isSelected = sp == selected) {
+                                selected = sp; gpsOn = sp.isDistanceSport
+                            }
                         }
                     }
                 }

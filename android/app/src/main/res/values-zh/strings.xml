@@ -2873,4 +2873,12 @@
     <plurals name="coach_lan_notif_pending">
         <item quantity="other">%1$d 台电脑等待批准</item>
     </plurals>
+    <!-- Recovery activities (sauna, bath, stretching…): logged apart from training. -->
+    <string name="recovery_activity_title">恢复活动</string>
+    <string name="recovery_activity_overline">与训练分开统计</string>
+    <string name="recovery_activity_sessions">次数</string>
+    <string name="recovery_activity_detail_note">恢复活动不计负荷和热量，也不计入训练统计。当天的负荷仍按全天心率计算。</string>
+    <string name="recovery_sport_hot_bath">泡澡</string>
+    <string name="recovery_sport_ice_bath">冰浴</string>
+    <string name="recovery_sport_massage">按摩</string>
 </resources>

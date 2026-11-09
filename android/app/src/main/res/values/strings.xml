@@ -2934,4 +2934,12 @@
         <item quantity="one">%1$d computer is waiting for approval</item>
         <item quantity="other">%1$d computers are waiting for approval</item>
     </plurals>
+    <!-- Recovery activities (sauna, bath, stretching…): logged apart from training. -->
+    <string name="recovery_activity_title">Recovery activities</string>
+    <string name="recovery_activity_overline">Logged apart from training</string>
+    <string name="recovery_activity_sessions">Sessions</string>
+    <string name="recovery_activity_detail_note">Recovery activities carry no Effort or calories and stay out of your training totals. The day\'s Effort still counts the whole day\'s heart rate.</string>
+    <string name="recovery_sport_hot_bath">Hot bath</string>
+    <string name="recovery_sport_ice_bath">Ice bath</string>
+    <string name="recovery_sport_massage">Massage</string>
 </resources>

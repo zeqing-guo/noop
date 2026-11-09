@@ -2352,6 +2352,16 @@ object IntelligenceEngine {
         val updated = ArrayList<WorkoutRow>()
         for (row in rows) {
             if (row.source != "manual") continue
+            // A recovery activity never takes an Effort or calories (it stores neither on purpose, which
+            // would otherwise read as "under-scored" forever). Only its missing heart rate is filled in.
+            if (RecoveryActivity.isRecovery(row.sport)) {
+                if (row.avgHr != null) continue
+                val samples = runCatching { repo.hrSamplesForDevice(deviceId, row.startTs, row.endTs, 20_000) }
+                    .getOrNull() ?: continue
+                val s = ManualWorkoutRescore.scored(samples, profile, hrMax, restingHR, effortMethod) ?: continue
+                updated.add(RecoveryActivityRows.withoutTrainingMetrics(row.copy(avgHr = s.avgHr, maxHr = s.maxHr)))
+                continue
+            }
             // Eligible when it looks under-scored (negligible kcal, #137) OR it's missing strain (the
             // merged-workout case, where kcal is the SUM of inputs so it never looks under-scored yet
             // Effort stays blank forever). improves() then accepts a strain-only gain for the latter.

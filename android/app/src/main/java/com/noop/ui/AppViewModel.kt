@@ -1808,14 +1808,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             Calories.estimateBoutCalories(samples, currentProfile(), profileStore.hrMax.toDouble(), restingHR)
                 .first.takeIf { it > 0 }
         else null
-        val row = WorkoutRow(
+        // A recovery activity (sauna, bath, stretching…) keeps its heart rate but no Effort or calories.
+        val row = com.noop.analytics.RecoveryActivityRows.withoutTrainingMetrics(WorkoutRow(
             deviceId = deviceId, startTs = w.startMs / 1000, endTs = endMs / 1000,
             sport = w.sport.name, source = "manual", durationS = activeDurationMs / 1000.0,
             energyKcal = energyKcal,
             avgHr = avg, maxHr = peak, strain = strain,
             distanceM = distanceM.takeIf { it > 0 },
             routePolyline = if (track.size >= 2) RouteMath.encode(track) else null,
-        )
+        ))
         _lastWorkout.value = row
         // Workouts & GPS test mode: one session-end summary tagged .workouts (the lastSessionSummary readout
         // source) carrying the captured HR window size, the duration, and the accepted GPS point count (the
@@ -1839,8 +1840,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             // after the row and HR are persisted so its sessions, stats and first-workout empty state
             // update without leaving and re-entering the screen.
             if (saved) loadWorkouts()
+            // A recovery activity Health Connect has no type for is not written as an exercise at all.
+            val hcType = WorkoutSport.healthConnectExerciseType(row.sport, w.sport.exerciseType)
             if (_hcWriteback.value) {
-                runCatching { HealthConnectWriter.writeExercise(appContext, row, w.sport.exerciseType) }
+                if (hcType != null) runCatching { HealthConnectWriter.writeExercise(appContext, row, hcType) }
                 // #528: export the just-captured HR series now (workout row already upserted above, so
                 // the export's window logic keeps these samples at full 1 Hz rather than ~1/30 s).
                 writebackHealthConnectNow()
@@ -2333,7 +2336,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             if (_hcWriteback.value) {
                 runCatching {
                     replacing?.let { HealthConnectWriter.deleteExercise(appContext, it.startTs) }
-                    HealthConnectWriter.writeExercise(appContext, row, WorkoutSport.exerciseTypeForName(row.sport))
+                    WorkoutSport.healthConnectExerciseType(row.sport)?.let { type ->
+                        HealthConnectWriter.writeExercise(appContext, row, type)
+                    }
                 }
             }
         }

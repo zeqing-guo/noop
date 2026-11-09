@@ -24,6 +24,13 @@ object WorkoutSport {
     }
     fun nameFor(type: Int) = ExerciseTypes.nameFor(type)
 
+    /** The pickers' two groups: training sports in catalogue order (still ending on "Other"), then the
+     *  recovery activities in [RecoveryActivity.catalogueNames] order. Together they are exactly [all]. */
+    val training: List<Sport> by lazy { all.filterNot { RecoveryActivity.isRecovery(it.name) } }
+    val recovery: List<Sport> by lazy {
+        RecoveryActivity.catalogueNames.mapNotNull { n -> all.firstOrNull { it.name == n } }
+    }
+
     /** The default when none is chosen ("Other"). */
     val default: Sport get() = all.first { it.name == "Other" }
 
@@ -32,6 +39,19 @@ object WorkoutSport {
      *  manual-workout HC writeback so a hand-entered workout maps to the same type the live path uses. */
     fun exerciseTypeForName(name: String): Int =
         (all.firstOrNull { it.name.equals(name.trim(), ignoreCase = true) } ?: default).exerciseType
+
+    /**
+     * The Health Connect exercise type a session named [name] is written back as, or null when it must
+     * not be written at all. Only a recovery activity can be null: one whose catalogue type is the
+     * generic OTHER_WORKOUT (a sauna, a bath, a massage, meditation) would land in Health Connect as an
+     * unnamed workout and count as exercise in every app that reads it. A recovery activity Health
+     * Connect has a real type for (Stretching, Breathwork) is written as that type. Training sessions
+     * are unchanged: the resolved [exerciseTypeForName], "Other" included.
+     */
+    fun healthConnectExerciseType(name: String, resolvedType: Int = exerciseTypeForName(name)): Int? =
+        if (RecoveryActivity.isRecovery(name) &&
+            resolvedType == androidx.health.connect.client.records.ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT
+        ) null else resolvedType
 
     /** Sports where a step count is meaningful — feet on the ground — so the workout summary can show
      *  steps (#398). Deliberately narrow: outdoor + treadmill run/walk and hiking, NOT cycling/rowing/

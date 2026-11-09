@@ -1224,13 +1224,18 @@ private struct ActiveWorkoutLive: View {
                      tint: model.bpm == nil ? StrandPalette.textPrimary : StrandPalette.metricRose)
                 stat(String(localized: "Avg"), workout.avgHr > 0 ? "\(workout.avgHr)" : "—")
                 stat(String(localized: "Peak"), workout.peakHr > 0 ? "\(workout.peakHr)" : "—")
-                stat(String(localized: "Effort"), UnitFormatter.effortDisplay(workout.liveStrain, scale: effortScale),
-                     tint: StrandPalette.strainColor(workout.liveStrain))
+                // No Effort for a recovery activity (sauna, bath, stretching…): it earns none.
+                if !RecoveryActivity.isRecovery(workout.sport) {
+                    stat(String(localized: "Effort"), UnitFormatter.effortDisplay(workout.liveStrain, scale: effortScale),
+                         tint: StrandPalette.strainColor(workout.liveStrain))
+                }
             }
             // A liquid effort tube — the live effort as a fraction of the 0–100 strain axis.
-            LiquidTube(frac: max(0, min(1, workout.liveStrain / 100)),
-                       tint: StrandPalette.strainColor(workout.liveStrain), height: 10, animated: true)
-                .accessibilityHidden(true)
+            if !RecoveryActivity.isRecovery(workout.sport) {
+                LiquidTube(frac: max(0, min(1, workout.liveStrain / 100)),
+                           tint: StrandPalette.strainColor(workout.liveStrain), height: 10, animated: true)
+                    .accessibilityHidden(true)
+            }
         }
     }
 

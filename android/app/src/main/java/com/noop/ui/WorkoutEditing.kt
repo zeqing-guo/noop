@@ -141,6 +141,9 @@ object WorkoutEditing {
         "paddleboarding" to R.string.redesign_sport_paddleboarding,
         "kayaking" to R.string.redesign_sport_kayaking,
         "sauna" to R.string.redesign_sport_sauna,
+        "hot bath" to R.string.recovery_sport_hot_bath,
+        "ice bath" to R.string.recovery_sport_ice_bath,
+        "massage" to R.string.recovery_sport_massage,
         "cooldown" to R.string.redesign_sport_cooldown,
     )
 

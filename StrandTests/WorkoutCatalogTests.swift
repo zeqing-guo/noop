@@ -1,6 +1,8 @@
 import XCTest
 @testable import Strand
 import StrandDesign
+import StrandAnalytics
+import WhoopStore
 
 /// Pins the suggestion catalogue (#714): the two new indoor presets exist, are spelled byte-for-byte
 /// the way Android persists them (the stored sport label round-trips cross-platform via CSV / export),
@@ -108,5 +110,37 @@ final class WorkoutCatalogTests: XCTestCase {
             identities.insert(id)
         }
         XCTAssertEqual(identities.count, WorkoutCatalog.all.count)
+    }
+
+    /// Recovery activities: every catalogue name is offered, GPS off, and the pickers' two groups are
+    /// exactly the catalogue. Twin of Android RecoveryActivityTest.
+    func testRecoveryActivitiesAreOfferedAsTheirOwnGroup() {
+        for name in RecoveryActivity.catalogueNames {
+            let s = WorkoutCatalog.sport(named: name)
+            XCTAssertEqual(s?.name, name, "Name is persisted data, must match Android byte-for-byte")
+            XCTAssertEqual(s?.isDistanceSport, false, "\(name) has no route, GPS defaults off")
+        }
+        XCTAssertEqual(WorkoutCatalog.recovery.map(\.name), RecoveryActivity.catalogueNames)
+        XCTAssertEqual(WorkoutCatalog.training.count + WorkoutCatalog.recovery.count, WorkoutCatalog.all.count)
+        XCTAssertEqual(WorkoutCatalog.training.last?.name, "Other")
+        XCTAssertFalse(WorkoutCatalog.training.contains { RecoveryActivity.isRecovery($0.name) })
+    }
+
+    /// A session saved, edited or relabelled INTO a recovery activity drops Effort, calories and zones and
+    /// keeps what was measured or typed. Twin of Android withoutTrainingMetrics_stripsOnlyRecoveryRows.
+    func testWithoutTrainingMetricsStripsOnlyRecoveryRows() {
+        func row(_ sport: String) -> WorkoutRow {
+            WorkoutRow(startTs: 1_000, endTs: 4_600, sport: sport, source: "manual", durationS: 3_600,
+                       energyKcal: 410, avgHr: 112, maxHr: 131, strain: 9.4, distanceM: nil,
+                       zonesJSON: "{\"zone1\":40}", notes: "n", steps: nil)
+        }
+        let sauna = WorkoutSource.withoutTrainingMetrics(row("Sauna"))
+        XCTAssertNil(sauna.strain); XCTAssertNil(sauna.energyKcal); XCTAssertNil(sauna.zonesJSON)
+        XCTAssertEqual(sauna.avgHr, 112); XCTAssertEqual(sauna.maxHr, 131); XCTAssertEqual(sauna.notes, "n")
+        XCTAssertNil(WorkoutSource.withoutTrainingMetrics(row("IceBath")).strain)
+        XCTAssertEqual(WorkoutSource.withoutTrainingMetrics(row("Running")), row("Running"))
+        let split = WorkoutSource.partitionRecovery([row("Running"), row("Sauna"), row("Yoga"), row("Hot bath")])
+        XCTAssertEqual(split.training.map(\.sport), ["Running", "Yoga"])
+        XCTAssertEqual(split.recovery.map(\.sport), ["Sauna", "Hot bath"])
     }
 }

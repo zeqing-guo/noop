@@ -152,6 +152,16 @@ object ExerciseTypes {
         // Polo: as Horseback riding already does.
         "Polo" to EX.EXERCISE_TYPE_OTHER_WORKOUT,
         "Skydiving" to EX.EXERCISE_TYPE_OTHER_WORKOUT,
+        // Recovery activities (com.noop.analytics.RecoveryActivity): logged like any session but they
+        // carry no Effort or calories and stay out of the training summaries. Breathwork has a real HC
+        // type and writes back as it. The other four have none, and an "Other" exercise session for a
+        // sauna would count as a workout in every app that reads Health Connect, so they are never
+        // written back (see WorkoutSport.healthConnectExerciseType). Stretching and Meditation are above.
+        "Breathwork" to EX.EXERCISE_TYPE_GUIDED_BREATHING,
+        "Sauna" to EX.EXERCISE_TYPE_OTHER_WORKOUT,
+        "Hot bath" to EX.EXERCISE_TYPE_OTHER_WORKOUT,
+        "Ice bath" to EX.EXERCISE_TYPE_OTHER_WORKOUT,
+        "Massage" to EX.EXERCISE_TYPE_OTHER_WORKOUT,
     )
 
     /** Types where a route makes sense -> GPS defaults on. */

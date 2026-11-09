@@ -7298,7 +7298,11 @@ private fun TodayWorkoutsSection(workouts: List<WorkoutRow>, onSelect: (WorkoutR
                             .background(Palette.hairline),
                     )
                 }
-                val tint = workout.strain?.let { Palette.effortTint(it / StrainScorer.maxStrain) } ?: Palette.effortColor
+                // A recovery activity (sauna, bath, stretching…) reads in the Charge colour with its own glyph
+                // and no calories, as on the Workouts screen.
+                val recoveryActivity = com.noop.analytics.RecoveryActivity.isRecovery(workout.sport)
+                val tint = if (recoveryActivity) Palette.chargeColor
+                else workout.strain?.let { Palette.effortTint(it / StrainScorer.maxStrain) } ?: Palette.effortColor
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -7318,7 +7322,10 @@ private fun TodayWorkoutsSection(workouts: List<WorkoutRow>, onSelect: (WorkoutR
                             .background(tint.copy(alpha = 0.14f)),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(Icons.Filled.FitnessCenter, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
+                        Icon(
+                            if (recoveryActivity) sportIcon(workout.sport) else Icons.Filled.FitnessCenter,
+                            contentDescription = null, tint = tint, modifier = Modifier.size(20.dp),
+                        )
                     }
                     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
@@ -7343,7 +7350,7 @@ private fun TodayWorkoutsSection(workouts: List<WorkoutRow>, onSelect: (WorkoutR
                             color = Palette.textPrimary,
                             maxLines = 1,
                         )
-                        workout.energyKcal?.let {
+                        workout.energyKcal?.takeUnless { recoveryActivity }?.let {
                             Text(
                                 uiString(R.string.redesign_kcal, it.roundToInt()),
                                 style = NoopType.caption,

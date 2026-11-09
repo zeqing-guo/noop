@@ -87,10 +87,20 @@ struct WorkoutDetailView: View {
             statStrip
             routeCard
             hrCurveCard
-            zonesCard
-            heartRateRecoveryCard
-            if let strain = row.strain {
-                effortCard(strain: strain)
+            // A recovery activity shows its time and heart rate only: no Effort, calories, zone split or
+            // heart-rate recovery (an after-exercise reading). A short note says why. Kotlin twin: the
+            // `recoveryActivity` gates in WorkoutsScreen.WorkoutDetailSheet.
+            if isRecoveryActivity {
+                Text("Recovery activities carry no Effort or calories and stay out of your training totals. The day's Effort still counts the whole day's heart rate.")
+                    .font(StrandFont.footnote)
+                    .foregroundStyle(StrandPalette.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                zonesCard
+                heartRateRecoveryCard
+                if let strain = row.strain {
+                    effortCard(strain: strain)
+                }
             }
         }
         .toolbar {
@@ -235,6 +245,8 @@ struct WorkoutDetailView: View {
         }
     }
 
+    private var isRecoveryActivity: Bool { RecoveryActivity.isRecovery(row.sport) }
+
     // MARK: - Stat strip
 
     @ViewBuilder private var statStrip: some View {
@@ -252,10 +264,12 @@ struct WorkoutDetailView: View {
                      value: row.maxHr.map { "\($0)" } ?? "–",
                      caption: row.maxHr != nil ? "bpm" : nil,
                      accent: row.maxHr != nil ? StrandPalette.metricRose : StrandPalette.textTertiary)
-            StatTile(label: "Calories",
-                     value: row.energyKcal.map { grouped($0) } ?? "–",
-                     caption: row.energyKcal != nil ? "kcal" : nil,
-                     accent: row.energyKcal != nil ? StrandPalette.metricAmber : StrandPalette.textTertiary)
+            if !isRecoveryActivity {
+                StatTile(label: "Calories",
+                         value: row.energyKcal.map { grouped($0) } ?? "–",
+                         caption: row.energyKcal != nil ? "kcal" : nil,
+                         accent: row.energyKcal != nil ? StrandPalette.metricAmber : StrandPalette.textTertiary)
+            }
             if row.distanceM != nil {
                 StatTile(label: "Distance",
                          value: distanceLabel(row.distanceM),

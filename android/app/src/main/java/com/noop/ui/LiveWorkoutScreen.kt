@@ -178,7 +178,10 @@ fun LiveWorkoutScreen(vm: AppViewModel, onClose: () -> Unit) {
 
             // The accumulating Effort — same liveStrain source and 0–21 / 0–100 scale, rendered as a centered
             // free metric to sit alongside TIME and HEART RATE. Keeps the "of N" scale the iOS redesign dropped.
-            EffortGauge(liveStrain = w.liveStrain, effortScale = effortScale)
+            // A recovery activity (sauna, bath, stretching…) earns no Effort, so neither the gauge nor the
+            // Effort tile is shown for it; time and heart rate are.
+            val recoveryActivity = com.noop.analytics.RecoveryActivity.isRecovery(w.sport.name)
+            if (!recoveryActivity) EffortGauge(liveStrain = w.liveStrain, effortScale = effortScale)
 
             // Zone section — the zone label capsule on the header row, the five-segment rail, and the band.
             ZoneRail(zone = zone, zoneSet = zoneSet)
@@ -189,8 +192,10 @@ fun LiveWorkoutScreen(vm: AppViewModel, onClose: () -> Unit) {
                     accent = if (w.avgHr > 0) Palette.metricRose else Palette.textPrimary)
                 StatTile(modifier = Modifier.weight(1f), label = uiString(R.string.l10n_live_workout_screen_peak_c83dbbd3), value = if (w.peakHr > 0) "${w.peakHr}" else "—",
                     accent = if (w.peakHr > 0) Palette.metricRose else Palette.textPrimary)
-                StatTile(modifier = Modifier.weight(1f), label = uiString(R.string.l10n_live_workout_screen_effort_8c974bc6), value = UnitFormatter.effortDisplay(w.liveStrain, effortScale),
-                    accent = Palette.strainColor(w.liveStrain))
+                if (!recoveryActivity) {
+                    StatTile(modifier = Modifier.weight(1f), label = uiString(R.string.l10n_live_workout_screen_effort_8c974bc6), value = UnitFormatter.effortDisplay(w.liveStrain, effortScale),
+                        accent = Palette.strainColor(w.liveStrain))
+                }
             }
 
             // Live GPS distance + average pace for distance sports (#1195). The values are already computed

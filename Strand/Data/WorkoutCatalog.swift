@@ -1,4 +1,5 @@
 import Foundation
+import StrandAnalytics
 
 /// The named-sport catalogue for the workout pickers (manual add/edit + live tracking), the Apple-side
 /// mirror of Android's `WorkoutSport.all` (built from `ExerciseTypes.NAMES` + `EXTRA`). The two lists
@@ -143,8 +144,24 @@ enum WorkoutCatalog {
         Sport(name: "Parkour", isDistanceSport: false),
         Sport(name: "Polo", isDistanceSport: false),
         Sport(name: "Skydiving", isDistanceSport: false),
+        // Recovery activities (StrandAnalytics `RecoveryActivity`): logged like any session but they carry
+        // no Effort or calories and stay out of the training summaries. Twin of the Android EXTRA
+        // entries of the same names; Stretching and Meditation are above.
+        Sport(name: "Breathwork", isDistanceSport: false),
+        Sport(name: "Sauna", isDistanceSport: false),
+        Sport(name: "Hot bath", isDistanceSport: false),
+        Sport(name: "Ice bath", isDistanceSport: false),
+        Sport(name: "Massage", isDistanceSport: false),
         Sport(name: "Other", isDistanceSport: false),
     ]
+
+    /// The pickers' two groups: training sports in catalogue order (still ending on "Other"), then the
+    /// recovery activities in `RecoveryActivity.catalogueNames` order. Together they are exactly `all`.
+    /// Twin of Android `WorkoutSport.training` / `WorkoutSport.recovery`.
+    static let training: [Sport] = all.filter { !RecoveryActivity.isRecovery($0.name) }
+    static let recovery: [Sport] = RecoveryActivity.catalogueNames.compactMap { name in
+        all.first { $0.name == name }
+    }
 
     /// The default sport for a live workout when the user starts one without picking , the generic
     /// "Other", matching Android `WorkoutSport.default`. (The auto-detector relabels detected bouts;

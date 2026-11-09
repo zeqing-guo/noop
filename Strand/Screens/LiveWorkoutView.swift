@@ -45,11 +45,13 @@ struct LiveWorkoutView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: NoopMetrics.sectionSpacing) {
+                // A recovery activity (sauna, bath, stretching…) earns no Effort, so neither the gauge nor
+                // the Effort stat is shown for it; time and heart rate are. Kotlin twin: LiveWorkoutScreen.
                 let cards: [AnyView] = [
                     AnyView(header),
                     AnyView(timeBlock),
                     AnyView(heartRateBlock),
-                    AnyView(effortGauge),
+                ] + (isRecoveryActivity ? [] : [AnyView(effortGauge)]) + [
                     AnyView(zoneSection),
                     AnyView(statsGrid),
                     // Live GPS distance + pace (#1195) — a self-gating leaf owning its own recorder
@@ -197,6 +199,11 @@ struct LiveWorkoutView: View {
         .frame(maxWidth: .infinity)
     }
 
+    /// A recovery activity (sauna, bath, stretching…) earns no Effort, so its live view shows none.
+    private var isRecoveryActivity: Bool {
+        RecoveryActivity.isRecovery(model.activeWorkout?.sport ?? "")
+    }
+
     /// Centered Effort stack — same `liveStrain` / Effort-scale conversion and `StrainGauge` intensity
     /// label as before. Card chrome and side-by-side layout removed so the value sits as a free hero
     /// metric between heart rate and the zone rail. Display-only; captured value stays 0–100.
@@ -290,9 +297,11 @@ struct LiveWorkoutView: View {
                 statDivider
                 stat(String(localized: "PEAK"), (w?.peakHr ?? 0) > 0 ? "\(w!.peakHr)" : "—",
                      tint: (w?.peakHr ?? 0) > 0 ? StrandPalette.metricRose : StrandPalette.textPrimary)
-                statDivider
-                stat(String(localized: "EFFORT"), UnitFormatter.effortDisplay(w?.liveStrain ?? 0, scale: effortScale),
-                     tint: StrandPalette.strainColor(w?.liveStrain ?? 0))
+                if !isRecoveryActivity {
+                    statDivider
+                    stat(String(localized: "EFFORT"), UnitFormatter.effortDisplay(w?.liveStrain ?? 0, scale: effortScale),
+                         tint: StrandPalette.strainColor(w?.liveStrain ?? 0))
+                }
             }
         }
     }

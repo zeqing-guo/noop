@@ -196,6 +196,7 @@ struct WorkoutsView: View {
         // zone set is the shown set) and the weekly card's calendar weeks.
         var seenStrapKeys = Set<String>()
         let strapZoneRows = (Self.scopedRows(unscopedRows, scope: scope) + weekRows)
+            .filter { !RecoveryActivity.isRecovery($0.sport) }
             .filter { WorkoutZones.importedMinutes($0) == nil && seenStrapKeys.insert(WorkoutZones.strapKey($0)).inserted }
         return ScreenScaffold(title: "Workouts", subtitle: "Every session, threaded together.",
                        onRefresh: { await repo.refresh() },
@@ -224,24 +225,38 @@ struct WorkoutsView: View {
                 // itself stays unscoped so the HR-recovery trend and the auto-widen probe keep seeing the
                 // whole window.
                 let windowRows = Self.scopedRows(unscopedRows, scope: scope)
-                let groups = sportGroups(from: windowRows)
-                let zonesSummary = WorkoutZones.summary(from: windowRows, strapMinutes: strapZoneMinutes)
+                // Recovery activities (sauna, bath, stretching…) get their own card; every training summary
+                // reads only the training sessions, and the session log still lists both. A window holding
+                // only recovery activities shows no empty training cards; an empty window keeps them, as
+                // before. The Android Workouts screen splits its rows the same way.
+                let split = WorkoutSource.partitionRecovery(windowRows)
+                let trainingRows = split.training
+                let showTraining = !trainingRows.isEmpty || split.recovery.isEmpty
+                let groups = sportGroups(from: trainingRows)
+                let zonesSummary = WorkoutZones.summary(from: trainingRows, strapMinutes: strapZoneMinutes)
 
                 workoutActionRow
                 scopeBar
                 rangeBar(rows: windowRows, effectiveRange: resolved)
                 if let postLogNote { postLogBanner(postLogNote) }
-                effortHero(rows: windowRows, effectiveRange: resolved, groups: groups)
-                summarySection(rows: windowRows, effectiveRange: resolved, groups: groups)
+                if showTraining {
+                    effortHero(rows: trainingRows, effectiveRange: resolved, groups: groups)
+                    summarySection(rows: trainingRows, effectiveRange: resolved, groups: groups)
+                }
                 heatmapSection()
-                breakdownSection(groups: groups, rows: windowRows)
-                if let z = zonesSummary {
-                    zonesSection(z, totalSessions: windowRows.count)
+                if showTraining {
+                    breakdownSection(groups: groups, rows: trainingRows)
+                    if let z = zonesSummary {
+                        zonesSection(z, totalSessions: trainingRows.count)
+                    }
                 }
                 weeklyIntensitySection(
                     WorkoutZones.weeklyIntensity(rows: weekRows, strapMinutes: strapZoneMinutes,
                                                  weekBounds: weekBounds))
                 recoveryTrendSection
+                if !split.recovery.isEmpty {
+                    recoveryActivitiesSection(rows: split.recovery)
+                }
                 sessionsSection(rows: windowRows)
             }
         }
@@ -352,7 +367,9 @@ struct WorkoutsView: View {
     private func recoveryTrendRows(from unscopedRows: [WorkoutRow]) -> [WorkoutRow] {
         guard let last = latestTs else { return [] }
         let cutoff = last - 90 * 86_400
-        return unscopedRows.filter { $0.startTs >= cutoff }.sorted { $0.startTs < $1.startTs }
+        // Heart-rate recovery is an after-exercise reading, so recovery activities (sauna, bath…) stay out.
+        return unscopedRows.filter { $0.startTs >= cutoff && !RecoveryActivity.isRecovery($0.sport) }
+            .sorted { $0.startTs < $1.startTs }
     }
 
     /// Stable task identity: changing the range/filter/rows or HRmax cancels and rebuilds the trend.
@@ -1177,6 +1194,62 @@ struct WorkoutsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    // MARK: - Recovery activities (sauna, bath, stretching…; logged apart from training)
+
+    /// The recovery activities in the window, one card per activity in the same shape as the per-sport
+    /// training cards (`sportCard`) but in the Charge colour, with no calories and no zone bar: they carry
+    /// neither. Average heart rate replaces calories, since it is the one thing measured during a sauna or a
+    /// bath. The rule that they are not counted as training is a visible footnote under the cards. Kotlin
+    /// twin: `RecoveryActivitiesSection` in WorkoutsScreen.
+    private func recoveryActivitiesSection(rows: [WorkoutRow]) -> some View {
+        let groups = sportGroups(from: rows)
+        return VStack(alignment: .leading, spacing: NoopMetrics.gap) {
+            SectionHeader("Recovery activities",
+                          overline: "Logged apart from training",
+                          trailing: String(localized: "\(rows.count) total"))
+            LazyVGrid(columns: breakdownColumns, alignment: .leading, spacing: NoopMetrics.gap) {
+                ForEach(groups) { g in
+                    recoveryActivityCard(g, sessions: rows.filter { $0.sport == g.sport })
+                }
+            }
+            Text("Recovery activities carry no Effort or calories and stay out of your training totals. The day's Effort still counts the whole day's heart rate.")
+                .font(StrandFont.footnote)
+                .foregroundStyle(StrandPalette.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func recoveryActivityCard(_ g: SportGroup, sessions: [WorkoutRow]) -> some View {
+        let hrs = sessions.compactMap(\.avgHr)
+        let avgHr: Int? = hrs.isEmpty ? nil : Int((Double(hrs.reduce(0, +)) / Double(hrs.count)).rounded())
+        return NoopCard(tint: StrandPalette.chargeColor) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 10) {
+                    Image(systemName: sportIcon(g.sport))
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(StrandPalette.chargeColor)
+                        .frame(width: 22, alignment: .center)
+                    Text(WorkoutSource.displaySport(g.sport))
+                        .font(StrandFont.headline)
+                        .foregroundStyle(StrandPalette.textPrimary)
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                    Text("\(g.count)")
+                        .font(StrandFont.number(15))
+                        .foregroundStyle(StrandPalette.chargeBright)
+                }
+                Divider().overlay(StrandPalette.hairline)
+                HStack(spacing: 0) {
+                    miniStat(String(localized: "SESSIONS"), "\(g.count)")
+                    miniStat(String(localized: "TIME"), String(localized: "\(oneDecimal(g.totalTimeH))h"))
+                    miniStat(String(localized: "AVG/SESS"), String(localized: "\(Int(g.avgTimePerSessionMin.rounded()))m"))
+                    miniStat(String(localized: "AVG HR"), avgHr.map { "\($0)" } ?? "–",
+                             tint: avgHr == nil ? StrandPalette.textPrimary : StrandPalette.metricRose)
+                }
+            }
+        }
+    }
+
     // MARK: - HR zones (imported split where present, else strap HR; one card)
 
     /// Names only the sources that actually contributed to the card's bar.
@@ -1260,8 +1333,10 @@ struct WorkoutsView: View {
     /// left out unless the wearer turned them on in Settings. Kotlin twin: `weekRows` in WorkoutsScreen.
     private func weeklyIntensityRows(weekBounds: [Int]) -> [WorkoutRow] {
         guard let first = weekBounds.first, let last = weekBounds.last else { return [] }
+        // Recovery activities never count toward weekly training intensity.
         return filter.apply(allRows.filter { $0.startTs >= first && $0.startTs < last })
             .filter { weeklyIncludesWalking || !WorkoutZones.isWalkingSport($0.sport) }
+            .filter { !RecoveryActivity.isRecovery($0.sport) }
     }
 
     /// "Md" in the user's locale (11/2, 2.11., 11月2日), for the card's "From …" caption.
@@ -1596,7 +1671,7 @@ struct WorkoutsView: View {
             HStack(spacing: 7) {
                 Image(systemName: sportIcon(row.sport))
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(StrandPalette.textSecondary)
+                    .foregroundStyle(RecoveryActivity.isRecovery(row.sport) ? StrandPalette.chargeColor : StrandPalette.textSecondary)
                     .frame(width: 16)
                 Text(WorkoutSource.displaySport(row.sport))
                     .font(StrandFont.subhead)
@@ -1608,12 +1683,15 @@ struct WorkoutsView: View {
             cell(durationLabel(row.durationS), width: ColWidth.duration)
             cell(row.avgHr.map { "\($0)" } ?? "–", width: ColWidth.hr,
                  color: row.avgHr != nil ? StrandPalette.metricRose : nil)
-            cell(row.energyKcal.map { grouped($0) } ?? "–", width: ColWidth.kcal,
-                 color: row.energyKcal != nil ? StrandPalette.metricAmber : nil)
+            // A recovery activity shows no calories or Effort (an imported one may still carry them).
+            let kcal = Self.trainingKcal(row)
+            let strain = Self.trainingStrain(row)
+            cell(kcal.map { grouped($0) } ?? "–", width: ColWidth.kcal,
+                 color: kcal != nil ? StrandPalette.metricAmber : nil)
             cell(distanceLabel(row.distanceM), width: ColWidth.dist)
             // #796 - per-session Effort, on the user's scale, tinted the Effort colour when present.
-            cell(Self.effortCellLabel(strain: row.strain, scale: effortScale), width: ColWidth.effort,
-                 color: row.strain != nil ? StrandPalette.effortColor : nil)
+            cell(Self.effortCellLabel(strain: strain, scale: effortScale), width: ColWidth.effort,
+                 color: strain != nil ? StrandPalette.effortColor : nil)
 
             Spacer(minLength: 0)
 
@@ -1675,7 +1753,7 @@ struct WorkoutsView: View {
                 }
                 Image(systemName: sportIcon(row.sport))
                     .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(StrandPalette.textSecondary)
+                    .foregroundStyle(RecoveryActivity.isRecovery(row.sport) ? StrandPalette.chargeColor : StrandPalette.textSecondary)
                     .frame(width: 22)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
@@ -1685,9 +1763,9 @@ struct WorkoutsView: View {
                             .foregroundStyle(StrandPalette.textPrimary)
                             .lineLimit(1)
                         Spacer(minLength: 0)
-                        Text(Self.effortCellLabel(strain: row.strain, scale: effortScale))
+                        Text(Self.effortCellLabel(strain: Self.trainingStrain(row), scale: effortScale))
                             .font(StrandFont.number(15))
-                            .foregroundStyle(row.strain != nil ? StrandPalette.effortColor : StrandPalette.textTertiary)
+                            .foregroundStyle(Self.trainingStrain(row) != nil ? StrandPalette.effortColor : StrandPalette.textTertiary)
                     }
                     Text(compactRowSubtitle(row))
                         .font(StrandFont.footnote)
@@ -1752,7 +1830,7 @@ struct WorkoutsView: View {
     private func compactRowSubtitle(_ row: WorkoutRow) -> String {
         var parts: [String] = [dateLabel(row.startTs), timeRangeLabel(row.startTs, row.endTs)]
         if let d = durationLabelOrNil(row.durationS) { parts.append(d) }
-        if let k = row.energyKcal, k > 0 { parts.append(String(localized: "\(grouped(k)) kcal")) }
+        if let k = Self.trainingKcal(row), k > 0 { parts.append(String(localized: "\(grouped(k)) kcal")) }
         if let d = row.distanceM, d > 0 { parts.append(distanceLabel(row.distanceM)) }
         if let hr = row.avgHr { parts.append(String(localized: "\(hr) bpm")) }
         return parts.joined(separator: " · ")
@@ -1760,7 +1838,9 @@ struct WorkoutsView: View {
 
     /// A full-sentence a11y label for a compact row.
     private func compactRowAccessibilityLabel(_ row: WorkoutRow, selectable: Bool, isSelected: Bool) -> String {
-        let effort = row.strain != nil
+        // The literal keeps reading `row.strain`: it is only reached when the row's Effort is shown at all,
+        // which `trainingStrain` already rules out for a recovery activity.
+        let effort = Self.trainingStrain(row) != nil
             ? String(localized: "Effort \(Self.effortCellLabel(strain: row.strain, scale: effortScale))")
             : String(localized: "no Effort recorded")
         let base = String(localized: "\(WorkoutSource.displaySport(row.sport)), \(compactRowSubtitle(row)), \(effort)")
@@ -1819,6 +1899,16 @@ struct WorkoutsView: View {
                    source: "manual", durationS: row.durationS, energyKcal: row.energyKcal,
                    avgHr: row.avgHr, maxHr: row.maxHr, strain: row.strain, distanceM: row.distanceM,
                    zonesJSON: row.zonesJSON, notes: row.notes, steps: row.steps)
+    }
+
+    /// The session's calories / Effort as the list shows them: none for a recovery activity, whose stored
+    /// row may be an import that still carries a figure. Kotlin twin: the `recoveryActivity` gate in
+    /// WorkoutsScreen.SessionRow.
+    static func trainingKcal(_ row: WorkoutRow) -> Double? {
+        RecoveryActivity.isRecovery(row.sport) ? nil : row.energyKcal
+    }
+    static func trainingStrain(_ row: WorkoutRow) -> Double? {
+        RecoveryActivity.isRecovery(row.sport) ? nil : row.strain
     }
 
     /// #796 - the per-session Effort cell label: the stored 0-100 strain mapped to the user's Effort scale

@@ -1675,6 +1675,9 @@ class WhoopRepository(
      *  - an IMPORTED row is never passed here as `replacing` (duplicating one is a pure add).
      */
     suspend fun saveManualWorkout(row: WorkoutRow, replacing: WorkoutRow? = null) {
+        // A recovery activity stores no Effort / calories / zones, including one edited or merged INTO a
+        // recovery sport from a session that carried them.
+        val row = com.noop.analytics.RecoveryActivityRows.withoutTrainingMetrics(row)
         if (replacing != null && replacing.source.lowercase().endsWith("-noop")) {
             dao.upsertWorkouts(listOf(row))
             dismissDetected(replacing)
@@ -1699,7 +1702,9 @@ class WhoopRepository(
     suspend fun relabelDetected(row: WorkoutRow, sport: String, strapDeviceId: String = "my-whoop") {
         val trimmed = sport.trim()
         if (trimmed.isEmpty()) return
-        val manual = row.copy(deviceId = strapDeviceId, sport = trimmed, source = "manual")
+        val manual = com.noop.analytics.RecoveryActivityRows.withoutTrainingMetrics(
+            row.copy(deviceId = strapDeviceId, sport = trimmed, source = "manual"),
+        )
         dao.upsertWorkouts(listOf(manual))
         dismissDetected(row)
     }

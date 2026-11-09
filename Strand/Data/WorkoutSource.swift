@@ -374,6 +374,34 @@ enum WorkoutSource: Equatable {
                           zonesJSON: old.zonesJSON, notes: old.notes, steps: old.steps)
     }
 
+    // MARK: - Recovery activities (sauna, bath, stretching…)
+
+    /// `row` as it is stored when it is a recovery activity (`RecoveryActivity`): no session Effort, no
+    /// calories and no HR-zone split, because heat or a massage table raises heart rate without any work
+    /// being done. Heart rate itself is kept: it is a real measurement and the HR curve still draws. A
+    /// training session is returned unchanged. Applied on every path that WRITES a session NOOP owns, so
+    /// one edited or relabelled INTO a recovery activity drops the Effort it carried; imported history is
+    /// never rewritten (the screens ignore those fields on a recovery row instead). Twin of Android
+    /// `RecoveryActivityRows.withoutTrainingMetrics`.
+    static func withoutTrainingMetrics(_ row: WorkoutRow) -> WorkoutRow {
+        guard RecoveryActivity.isRecovery(row.sport) else { return row }
+        return WorkoutRow(startTs: row.startTs, endTs: row.endTs, sport: row.sport, source: row.source,
+                          durationS: row.durationS, energyKcal: nil, avgHr: row.avgHr, maxHr: row.maxHr,
+                          strain: nil, distanceM: row.distanceM, zonesJSON: nil, notes: row.notes,
+                          steps: row.steps)
+    }
+
+    /// `rows` split into (training, recovery), each keeping the input order. Twin of Android
+    /// `RecoveryActivityRows.partition`.
+    static func partitionRecovery(_ rows: [WorkoutRow]) -> (training: [WorkoutRow], recovery: [WorkoutRow]) {
+        var training: [WorkoutRow] = []
+        var recovery: [WorkoutRow] = []
+        for row in rows {
+            if RecoveryActivity.isRecovery(row.sport) { recovery.append(row) } else { training.append(row) }
+        }
+        return (training, recovery)
+    }
+
     /// The span cap a manual workout may cover, shared by both builders and the sheet's binding.
     static let maxManualSpanSeconds = 24 * 60 * 60
 

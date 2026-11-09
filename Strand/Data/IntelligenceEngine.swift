@@ -3202,10 +3202,26 @@ final class IntelligenceEngine: ObservableObject {
         else { return }
         let hrMax = Double(profile.hrMax)
         var updated: [WorkoutRow] = []
+        // A recovery activity never takes an Effort or calories (it stores neither on purpose, which would
+        // otherwise read as "under-scored" forever). Only its missing heart rate is filled in. Twin of the
+        // Kotlin branch in IntelligenceEngine.rescoreManualWorkouts.
+        for row in rows where row.source == "manual" && RecoveryActivity.isRecovery(row.sport) && row.avgHr == nil {
+            guard let samples = try? await store.hrSamples(deviceId: deviceId, from: row.startTs,
+                                                           to: row.endTs, limit: 20_000),
+                  let s = ManualWorkoutRescore.scored(windowSamples: samples, profile: up, hrMax: hrMax,
+                                                      restingHR: restingHR,
+                                                      effortMethod: effortMethod)
+            else { continue }
+            updated.append(WorkoutSource.withoutTrainingMetrics(WorkoutRow(
+                startTs: row.startTs, endTs: row.endTs, sport: row.sport, source: row.source,
+                durationS: row.durationS, energyKcal: nil, avgHr: s.avgHr, maxHr: s.maxHr,
+                strain: nil, distanceM: row.distanceM, zonesJSON: nil, notes: row.notes,
+                steps: row.steps)))
+        }
         // A manual row is eligible when it looks under-scored (negligible kcal, #137) OR it's missing
         // strain (the merged-workout case, where kcal is the SUM of inputs so it never looks under-scored
         // yet Effort stays blank forever). `improves` then accepts a strain-only gain for the latter.
-        for row in rows where row.source == "manual"
+        for row in rows where row.source == "manual" && !RecoveryActivity.isRecovery(row.sport)
             && (ManualWorkoutRescore.looksUnderScored(currentKcal: row.energyKcal) || row.strain == nil) {
             guard let samples = try? await store.hrSamples(deviceId: deviceId, from: row.startTs,
                                                            to: row.endTs, limit: 20_000),

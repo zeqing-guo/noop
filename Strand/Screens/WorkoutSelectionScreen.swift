@@ -1,5 +1,6 @@
 import SwiftUI
 import StrandDesign
+import StrandAnalytics
 
 // MARK: - Workout selection browser
 //
@@ -65,10 +66,23 @@ struct WorkoutSelectionScreen: View {
                         emptyResults
                             .padding(.top, NoopMetrics.space8)
                     } else {
-                        LazyVStack(spacing: NoopMetrics.space4) {
-                            ForEach(filtered) { sport in
+                        // Training sports, then the recovery activities (sauna, bath, stretching…) under
+                        // their own heading: same cards, and a recovery session still starts here like any
+                        // other. Kotlin twin: StartWorkoutSheet.
+                        LazyVStack(alignment: .leading, spacing: NoopMetrics.space4) {
+                            ForEach(filtered.filter { !RecoveryActivity.isRecovery($0.name) }) { sport in
                                 WorkoutSelectionCard(sport: sport, actionVerb: actionVerb) {
                                     select(sport.name)
+                                }
+                            }
+                            let recoverySports = filtered.filter { RecoveryActivity.isRecovery($0.name) }
+                            if !recoverySports.isEmpty {
+                                Text("Recovery activities").strandOverline()
+                                    .padding(.top, NoopMetrics.space2)
+                                ForEach(recoverySports) { sport in
+                                    WorkoutSelectionCard(sport: sport, actionVerb: actionVerb) {
+                                        select(sport.name)
+                                    }
                                 }
                             }
                         }

@@ -2905,4 +2905,12 @@
         <item quantity="one">%1$d ordenador espera autorización</item>
         <item quantity="other">%1$d ordenadores esperan autorización</item>
     </plurals>
+    <!-- Recovery activities (sauna, bath, stretching…): logged apart from training. -->
+    <string name="recovery_activity_title">Actividades de recuperación</string>
+    <string name="recovery_activity_overline">Registradas aparte del entrenamiento</string>
+    <string name="recovery_activity_sessions">Sesiones</string>
+    <string name="recovery_activity_detail_note">Las actividades de recuperación no suman Esfuerzo ni calorías y quedan fuera de tus totales de entrenamiento. El Esfuerzo del día sigue contando la frecuencia cardíaca de todo el día.</string>
+    <string name="recovery_sport_hot_bath">Baño caliente</string>
+    <string name="recovery_sport_ice_bath">Baño de hielo</string>
+    <string name="recovery_sport_massage">Masaje</string>
 </resources>

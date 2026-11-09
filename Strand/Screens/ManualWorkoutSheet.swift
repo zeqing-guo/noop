@@ -1,5 +1,6 @@
 import SwiftUI
 import StrandDesign
+import StrandAnalytics
 import WhoopStore
 
 /// Carries the measured natural height of the Sport picker's floating suggestion panel up to the
@@ -188,9 +189,13 @@ struct ManualWorkoutSheet: View {
                         numberInput(String(localized: "optional"), text: $avgHrText, unit: "bpm", field: .avgHr)
                             .accessibilityLabel("Average heart rate in beats per minute, optional")
                     }
-                    field(String(localized: "Calories")) {
-                        numberInput(String(localized: "optional"), text: $kcalText, unit: "kcal", field: .calories)
-                            .accessibilityLabel("Calories in kilocalories, optional")
+                    // A recovery activity stores no calories (Repository.saveManualWorkout drops them), so
+                    // the field is not offered for one. Kotlin twin: ManualWorkoutDialog.
+                    if !RecoveryActivity.isRecovery(sport) {
+                        field(String(localized: "Calories")) {
+                            numberInput(String(localized: "optional"), text: $kcalText, unit: "kcal", field: .calories)
+                                .accessibilityLabel("Calories in kilocalories, optional")
+                        }
                     }
                 }
             }
@@ -270,8 +275,17 @@ struct ManualWorkoutSheet: View {
                     Text("All activities").strandOverline()
                         .padding(.horizontal, 12).padding(.top, 8)
                 }
-                ForEach(sportSuggestions) { sp in
+                // Training sports, then the recovery activities under their own heading (same rows).
+                ForEach(sportSuggestions.filter { !RecoveryActivity.isRecovery($0.name) }) { sp in
                     suggestionRow(sp.name, isDistance: sp.isDistanceSport)
+                }
+                let recoverySuggestions = sportSuggestions.filter { RecoveryActivity.isRecovery($0.name) }
+                if !recoverySuggestions.isEmpty {
+                    Text("Recovery activities").strandOverline()
+                        .padding(.horizontal, 12).padding(.top, 8)
+                    ForEach(recoverySuggestions) { sp in
+                        suggestionRow(sp.name, isDistance: sp.isDistanceSport)
+                    }
                 }
             }
             .background(GeometryReader { geo in

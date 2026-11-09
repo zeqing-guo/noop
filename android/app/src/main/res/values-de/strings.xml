@@ -2918,4 +2918,12 @@
         <item quantity="one">%1$d Computer wartet auf Freigabe</item>
         <item quantity="other">%1$d Computer warten auf Freigabe</item>
     </plurals>
+    <!-- Recovery activities (sauna, bath, stretching…): logged apart from training. -->
+    <string name="recovery_activity_title">Erholungsaktivitäten</string>
+    <string name="recovery_activity_overline">Getrennt vom Training erfasst</string>
+    <string name="recovery_activity_sessions">Einheiten</string>
+    <string name="recovery_activity_detail_note">Erholungsaktivitäten zählen weder Anstrengung noch Kalorien und fließen nicht in deine Trainingssummen ein. Die Anstrengung des Tages berücksichtigt weiterhin die Herzfrequenz des ganzen Tages.</string>
+    <string name="recovery_sport_hot_bath">Heißes Bad</string>
+    <string name="recovery_sport_ice_bath">Eisbad</string>
+    <string name="recovery_sport_massage">Massage</string>
 </resources>

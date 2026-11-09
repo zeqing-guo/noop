@@ -1565,11 +1565,16 @@ struct LiquidTodayView: View {
                         Text(workoutSub(w)).font(StrandFont.caption).foregroundStyle(StrandPalette.textTertiary)
                     }
                     Spacer()
-                    (Text(effortText(w.strain)).font(StrandFont.number(15))
-                        + Text(" EFFORT").font(StrandFont.overlineScaled(9)))
-                        .foregroundStyle(StrandPalette.textPrimary)
+                    // A recovery activity (sauna, bath, stretching…) has no Effort: no figure, no tube.
+                    if !RecoveryActivity.isRecovery(w.sport) {
+                        (Text(effortText(w.strain)).font(StrandFont.number(15))
+                            + Text(" EFFORT").font(StrandFont.overlineScaled(9)))
+                            .foregroundStyle(StrandPalette.textPrimary)
+                    }
                 }
-                LiquidTube(frac: (w.strain ?? 0) / 100, tint: StrandPalette.effortColor, height: 12, animated: false)
+                if !RecoveryActivity.isRecovery(w.sport) {
+                    LiquidTube(frac: (w.strain ?? 0) / 100, tint: StrandPalette.effortColor, height: 12, animated: false)
+                }
             }
         }
     }
@@ -2116,7 +2121,7 @@ struct LiquidTodayView: View {
         if let dm = w.distanceM, dm > 0 {
             parts.append(UnitFormatter.distanceFromMeters(dm, system: distanceUnitSystem))
         }
-        if let k = w.energyKcal { parts.append("\(Int(k.rounded())) kcal") }
+        if let k = WorkoutsView.trainingKcal(w) { parts.append("\(Int(k.rounded())) kcal") }
         return parts.joined(separator: " · ")
     }
 

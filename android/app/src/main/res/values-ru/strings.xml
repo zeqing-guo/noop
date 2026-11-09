@@ -2804,4 +2804,12 @@
         <item quantity="many">%1$d компьютеров ждут разрешения</item>
         <item quantity="other">%1$d компьютера ждут разрешения</item>
     </plurals>
+    <!-- Recovery activities (sauna, bath, stretching…): logged apart from training. -->
+    <string name="recovery_activity_title">Восстановительные занятия</string>
+    <string name="recovery_activity_overline">Учитываются отдельно от тренировок</string>
+    <string name="recovery_activity_sessions">Сессии</string>
+    <string name="recovery_activity_detail_note">Восстановительные занятия не дают Усилия и калорий и не входят в итоги тренировок. Усилие за день по-прежнему учитывает пульс за весь день.</string>
+    <string name="recovery_sport_hot_bath">Горячая ванна</string>
+    <string name="recovery_sport_ice_bath">Ледяная ванна</string>
+    <string name="recovery_sport_massage">Массаж</string>
 </resources>

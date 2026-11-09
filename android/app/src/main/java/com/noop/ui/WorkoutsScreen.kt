@@ -70,6 +70,11 @@ import androidx.compose.material.icons.filled.SportsGymnastics
 import androidx.compose.material.icons.filled.SportsMartialArts
 import androidx.compose.material.icons.filled.SportsVolleyball
 import androidx.compose.material.icons.filled.Terrain
+import androidx.compose.material.icons.filled.AcUnit
+import androidx.compose.material.icons.filled.Air
+import androidx.compose.material.icons.filled.HotTub
+import androidx.compose.material.icons.filled.Spa
+import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material.icons.filled.SportsTennis
@@ -128,6 +133,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.noop.analytics.WorkoutSport
+import com.noop.analytics.RecoveryActivity
+import com.noop.analytics.RecoveryActivityRows
 import com.noop.analytics.HeartRateRecovery
 import com.noop.data.WorkoutRow
 import java.time.Instant
@@ -223,7 +230,10 @@ fun WorkoutsScreen(vm: AppViewModel) {
         val resolved = effectiveRange(allRows, range, filter)
         if (resolved.days == null || resolved.days > 90) WorkoutRange.Quarter else resolved
     }
-    val recoveryRows = filter.apply(sessions(allRows, recoveryRange)).sortedBy { it.startTs }
+    // Heart-rate recovery is an after-exercise reading, so recovery activities (sauna, bath…) stay out.
+    val recoveryRows = filter.apply(sessions(allRows, recoveryRange))
+        .filterNot { RecoveryActivity.isRecovery(it.sport) }
+        .sortedBy { it.startTs }
     val recoveryInputKey = buildString {
         append(recoveryRange.name)
         recoveryRows.forEach { append('|').append(it.startTs).append(':').append(it.endTs) }
@@ -264,9 +274,12 @@ fun WorkoutsScreen(vm: AppViewModel) {
     // does not, because the card's window is its own eight calendar weeks. Walks are left out unless the
     // wearer turned them on in Settings (default off). Read once per entry, like the other screen prefs.
     val weeklyIncludesWalking = remember { NoopPrefs.weeklyIntensityIncludesWalking(zoneContext) }
+    // Recovery activities never count toward weekly training intensity or the zone summaries.
     val weekRows = filter.apply(allRows.filter { it.startTs >= weekBounds.first() && it.startTs < weekBounds.last() })
         .filter { weeklyIncludesWalking || !isWalkingSport(it.sport) }
+        .filterNot { RecoveryActivity.isRecovery(it.sport) }
     val zoneWindowRows = filter.apply(sessions(allRows, effectiveRange(allRows, range, filter)))
+        .filterNot { RecoveryActivity.isRecovery(it.sport) }
     val strapZoneRows = (zoneWindowRows + weekRows).distinctBy { workoutZoneKey(it) }
     val strapZoneInputKey = strapZoneRows.joinToString(",") { workoutZoneKey(it) }
     LaunchedEffect(strapZoneInputKey, lastHistorySyncAt) {
@@ -327,7 +340,13 @@ fun WorkoutsScreen(vm: AppViewModel) {
             // WorkoutFilter narrows the window AFTER the range cut, so every section reads one filtered set.
             val resolved = effectiveRange(allRows, range, filter)
             val windowRows = filter.apply(sessions(allRows, resolved))
-            val groups = sportGroups(windowRows)
+            // Recovery activities (sauna, bath, stretching…) get their own card below; every training
+            // summary reads only the training sessions. The session log still lists both.
+            val (trainingRows, recoveryActivityRows) = RecoveryActivityRows.partition(windowRows)
+            // A window holding only recovery activities shows no empty training cards. A window holding
+            // nothing at all keeps the training cards, as before.
+            val showTraining = trainingRows.isNotEmpty() || recoveryActivityRows.isEmpty()
+            val groups = sportGroups(trainingRows)
             val fellBack = resolved != range
 
             item {
@@ -351,14 +370,21 @@ fun WorkoutsScreen(vm: AppViewModel) {
             )
             }
             postLogNote?.let { item { PostLogNoteBanner(it) } }
-            item { EffortHero(rows = windowRows, effectiveRange = resolved, groups = groups) }
-            item { SummarySection(rows = windowRows, effectiveRange = resolved, groups = groups) }
+            if (showTraining) {
+                item { EffortHero(rows = trainingRows, effectiveRange = resolved, groups = groups) }
+                item { SummarySection(rows = trainingRows, effectiveRange = resolved, groups = groups) }
+            }
             item { CalorieHeatmapSection(recentDays) }
-            item { BreakdownSection(groups = groups, rows = windowRows, strapZoneMinutes = strapZoneMinutes) }
-            item { ZonesSection(windowRows, strapZoneMinutes) }
+            if (showTraining) {
+                item { BreakdownSection(groups = groups, rows = trainingRows, strapZoneMinutes = strapZoneMinutes) }
+                item { ZonesSection(trainingRows, strapZoneMinutes) }
+            }
             item { WeeklyIntensitySection(weeks, filterActive = filter.isActive, includesWalking = weeklyIncludesWalking) }
             if (recoveryTrend.isNotEmpty()) {
                 item { RecoveryTrendSection(recoveryTrend, recoveryRange.localizedCaption()) }
+            }
+            if (recoveryActivityRows.isNotEmpty()) {
+                item { RecoveryActivitiesSection(recoveryActivityRows) }
             }
             item {
             SessionsSection(
@@ -1129,6 +1155,73 @@ private fun MiniStat(label: String, value: String, modifier: Modifier = Modifier
     }
 }
 
+// MARK: - Recovery activities (sauna, bath, stretching…; logged apart from training)
+
+/**
+ * The recovery activities in the window, one card per activity in the same shape as the per-sport
+ * training cards ([SportCard]) but in the Charge colour, with no calories and no zone bar: they carry
+ * neither. Average heart rate replaces calories, since it is the one thing measured during a sauna or
+ * a bath. The redesigned [SectionHeader] draws no overline, so the "not counted as training" rule is a
+ * visible footnote under the cards rather than living only in the overline.
+ */
+@Composable
+private fun RecoveryActivitiesSection(rows: List<WorkoutRow>) {
+    val groups = sportGroups(rows)
+    Column(verticalArrangement = Arrangement.spacedBy(Metrics.gap)) {
+        SectionHeader(
+            title = uiString(R.string.recovery_activity_title),
+            overline = uiString(R.string.recovery_activity_overline),
+            trailing = uiString(R.string.i18n_g3_1_d_total, rows.size),
+        )
+        groups.forEach { g -> RecoveryActivityCard(g, rows.filter { it.sport == g.sport }) }
+        Text(
+            uiString(R.string.recovery_activity_detail_note),
+            style = NoopType.footnote,
+            color = Palette.textTertiary,
+        )
+    }
+}
+
+@Composable
+private fun RecoveryActivityCard(g: SportGroup, sessions: List<WorkoutRow>) {
+    val hrs = sessions.mapNotNull { it.avgHr }
+    val avgHr = if (hrs.isEmpty()) null else (hrs.sum().toDouble() / hrs.size).roundToInt()
+    NoopCard(tint = Palette.chargeColor) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    sportIcon(g.sport),
+                    contentDescription = null,
+                    tint = Palette.chargeColor,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    WorkoutEditing.localizedSport(g.sport),
+                    style = NoopType.headline,
+                    color = Palette.textPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(uiString(R.string.l10n_workouts_screen_g_count_247d8c10, g.count), style = NoopType.number(15f), color = Palette.chargeBright)
+            }
+            CardDivider()
+            Row(modifier = Modifier.fillMaxWidth()) {
+                MiniStat(uiString(R.string.recovery_activity_sessions), "${g.count}", Modifier.weight(1f))
+                MiniStat(uiString(R.string.i18n_g3_time), oneDecimal(g.totalTimeH) + "h", Modifier.weight(1f))
+                MiniStat(uiString(R.string.i18n_g3_avg_sess), "${g.avgTimePerSessionMin.roundToInt()}m", Modifier.weight(1f))
+                MiniStat(
+                    uiString(R.string.i18n_g3_avg_hr),
+                    avgHr?.toString() ?: "–",
+                    Modifier.weight(1f),
+                    tint = if (avgHr != null) Palette.metricRose else Palette.textPrimary,
+                )
+            }
+        }
+    }
+}
+
 // MARK: - HR zones (imported split where present, else strap HR; one card)
 
 @Composable
@@ -1538,6 +1631,9 @@ private fun SessionRow(
 ) {
     // #64: only MANUAL / DETECTED rows are selectable — imported history is read-only.
     val selectable = WorkoutMerge.isMergeable(row)
+    // A recovery activity shows no calories (an imported one may still carry a figure) and wears the
+    // Charge colour on its glyph, so it reads apart from training at a glance.
+    val recoveryActivity = RecoveryActivity.isRecovery(row.sport)
     val rowLabel = "${WorkoutEditing.localizedSport(row.sport)}, ${dateLabel(row.startTs)}" +
         if (selectionMode) {
             when {
@@ -1596,7 +1692,7 @@ private fun SessionRow(
             Icon(
                 sportIcon(row.sport),
                 contentDescription = null,
-                tint = Palette.textSecondary,
+                tint = if (recoveryActivity) Palette.chargeColor else Palette.textSecondary,
                 modifier = Modifier.size(14.dp),
             )
             Spacer(Modifier.width(7.dp))
@@ -1614,10 +1710,11 @@ private fun SessionRow(
             Modifier.weight(1.1f),
             color = if (row.avgHr != null) Palette.metricRose else null,
         )
+        val kcal = row.energyKcal.takeUnless { recoveryActivity }
         Cell(
-            row.energyKcal?.let { grouped(it) } ?: "–",
+            kcal?.let { grouped(it) } ?: "–",
             Modifier.weight(1f),
-            color = if (row.energyKcal != null) Palette.metricAmber else null,
+            color = if (kcal != null) Palette.metricAmber else null,
         )
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
             val (srcLabel, srcTint) = row.sourceBadge
@@ -1646,6 +1743,9 @@ internal fun WorkoutDetailSheet(vm: AppViewModel, row: WorkoutRow, onDismiss: ()
     // Steps for an on-foot sport (#398): the strap's own counter over the window, computed at display time
     // so it "fills in after sync". null for non-foot sports or when no strap counter covers the window.
     var steps by remember(row.startTs) { mutableStateOf<Int?>(null) }
+    // A recovery activity shows its time and heart rate only: no Effort, calories, zone split or
+    // heart-rate recovery (that is an after-exercise reading). A short note says why.
+    val recoveryActivity = RecoveryActivity.isRecovery(row.sport)
     LaunchedEffect(row.startTs, row.endTs) {
         hrCurve = vm.workoutHrBuckets(row.startTs, row.endTs, row.source, row.deviceId)
         steps = if (WorkoutSport.isOnFoot(row.sport)) vm.workoutSteps(row.startTs, row.endTs) else null
@@ -1678,7 +1778,7 @@ internal fun WorkoutDetailSheet(vm: AppViewModel, row: WorkoutRow, onDismiss: ()
                 Icon(
                     sportIcon(row.sport),
                     contentDescription = null,
-                    tint = Palette.effortColor,
+                    tint = if (recoveryActivity) Palette.chargeColor else Palette.effortColor,
                     modifier = Modifier.size(22.dp),
                 )
                 Spacer(Modifier.width(10.dp))
@@ -1694,7 +1794,7 @@ internal fun WorkoutDetailSheet(vm: AppViewModel, row: WorkoutRow, onDismiss: ()
             DetailRow(uiString(R.string.i18n_g3_duration), durationLabel(row.durationS))
             if (row.avgHr != null) DetailRow(uiString(R.string.i18n_g3_avg_hr), "${row.avgHr} bpm")
             if (row.maxHr != null) DetailRow(uiString(R.string.i18n_g3_max_hr), "${row.maxHr} bpm")
-            if (row.energyKcal != null) DetailRow(uiString(R.string.i18n_g3_calories), "${grouped(row.energyKcal)} kcal")
+            if (row.energyKcal != null && !recoveryActivity) DetailRow(uiString(R.string.i18n_g3_calories), "${grouped(row.energyKcal)} kcal")
             if (row.distanceM != null) {
                 val unitSystem = UnitPrefs.distanceSystem(LocalContext.current)
                 DetailRow(uiString(R.string.i18n_g3_distance), UnitFormatter.distanceFromKilometers(row.distanceM / 1000.0, unitSystem))
@@ -1708,10 +1808,17 @@ internal fun WorkoutDetailSheet(vm: AppViewModel, row: WorkoutRow, onDismiss: ()
             // strain - an imported session with none simply omits the card. The display honours the Effort
             // scale toggle (#268), so a WHOOP-axis user sees the rescaled 0–21 value; the stored value is
             // unchanged. Presentation only - no new data is computed here.
-            row.strain?.let { strain ->
+            row.strain?.takeUnless { recoveryActivity }?.let { strain ->
                 val effortScale = UnitPrefs.effortScale(LocalContext.current)
                 CardDivider()
                 SessionEffortCard(strain = strain, effortScale = effortScale)
+            }
+            if (recoveryActivity) {
+                Text(
+                    uiString(R.string.recovery_activity_detail_note),
+                    style = NoopType.footnote,
+                    color = Palette.textTertiary,
+                )
             }
 
             // HR curve over the session window (#410). A faint baseline shows under 2 points.
@@ -1795,7 +1902,7 @@ internal fun WorkoutDetailSheet(vm: AppViewModel, row: WorkoutRow, onDismiss: ()
             }
 
             // HR-zone split — imported percentages when present, else derived from strap HR (#410).
-            zoneMinutes?.let { z ->
+            zoneMinutes?.takeUnless { recoveryActivity }?.let { z ->
                 val total = z.sum()
                 if (total > 0.0) {
                     CardDivider()
@@ -1824,7 +1931,7 @@ internal fun WorkoutDetailSheet(vm: AppViewModel, row: WorkoutRow, onDismiss: ()
                 }
             }
 
-            heartRateRecovery?.let {
+            heartRateRecovery?.takeUnless { recoveryActivity }?.let {
                 CardDivider()
                 HeartRateRecoveryCard(it)
             }
@@ -2355,7 +2462,11 @@ private fun ManualWorkoutDialog(
                 )
                 DialogField(uiString(R.string.i18n_g3_distance_1_s_optional, distUnit), distance, onChange = { distance = it }, numeric = true)
                 DialogField(uiString(R.string.i18n_g3_avg_hr_bpm_optional), avgHr, onChange = { avgHr = it }, numeric = true)
-                DialogField(uiString(R.string.i18n_g3_calories_kcal_optional), kcal, onChange = { kcal = it }, numeric = true)
+                // A recovery activity stores no calories (WhoopRepository.saveManualWorkout drops them), so
+                // the field is not offered for one.
+                if (!RecoveryActivity.isRecovery(sport)) {
+                    DialogField(uiString(R.string.i18n_g3_calories_kcal_optional), kcal, onChange = { kcal = it }, numeric = true)
+                }
                 if (built == null) {
                     Text(
                         uiString(R.string.l10n_workouts_screen_enter_a_sport_a_positive_duration_3da88ad5),
@@ -2504,8 +2615,16 @@ private fun SportPickerField(value: String, onChange: (String) -> Unit) {
                 }
                 Overline(uiString(R.string.i18n_g3_all_activities), modifier = Modifier.padding(top = 6.dp))
             }
-            matches.forEach { sp ->
+            // Training sports, then the recovery activities under their own heading (same rows).
+            val (trainingMatches, recoveryMatches) = matches.partition { !RecoveryActivity.isRecovery(it.name) }
+            trainingMatches.forEach { sp ->
                 SportSuggestionRow(name = sp.name, isDistance = sp.isDistanceSport, onPick = { onChange(sp.name) })
+            }
+            if (recoveryMatches.isNotEmpty()) {
+                Overline(uiString(R.string.recovery_activity_title), modifier = Modifier.padding(top = 6.dp))
+                recoveryMatches.forEach { sp ->
+                    SportSuggestionRow(name = sp.name, isDistance = sp.isDistanceSport, onPick = { onChange(sp.name) })
+                }
             }
         }
     }
@@ -2912,6 +3031,12 @@ internal fun sportIcon(sport: String): ImageVector = when (sport.lowercase().tri
     "inline skating", "skateboarding" -> Icons.Filled.Skateboarding
     "hiit", "gymnastics" -> Icons.Filled.SportsGymnastics
     "yoga", "pilates", "stretching", "meditation" -> Icons.Filled.SelfImprovement
+    // Recovery activities (RecoveryActivity). Each gets its own glyph, as on Apple.
+    "breathwork" -> Icons.Filled.Air
+    "sauna" -> Icons.Filled.Whatshot
+    "hot bath" -> Icons.Filled.HotTub
+    "ice bath" -> Icons.Filled.AcUnit
+    "massage" -> Icons.Filled.Spa
     "boxing", "martial arts", "kickboxing", "fencing" -> Icons.Filled.SportsMartialArts
     "basketball", "netball" -> Icons.Filled.SportsBasketball
     "soccer", "gaelic football" -> Icons.Filled.SportsSoccer
@@ -2957,6 +3082,11 @@ private fun sportIconFuzzy(sport: String): ImageVector {
         s.contains("handball") -> Icons.Filled.SportsHandball
         s.contains("softball") || s.contains("baseball") || s.contains("bowl") -> Icons.Filled.SportsBaseball
         s.contains("yoga") || s.contains("pilates") || s.contains("meditat") || s.contains("stretch") -> Icons.Filled.SelfImprovement
+        s.contains("sauna") -> Icons.Filled.Whatshot
+        (s.contains("ice") && s.contains("bath")) || s.contains("plunge") -> Icons.Filled.AcUnit
+        s.contains("bath") || s.contains("hot tub") || s.contains("hottub") -> Icons.Filled.HotTub
+        s.contains("massage") -> Icons.Filled.Spa
+        s.contains("breath") -> Icons.Filled.Air
         s.contains("strength") || s.contains("weight") || s.contains("lift") -> Icons.Filled.FitnessCenter
         s.contains("box") || s.contains("martial") || s.contains("jiu") || s.contains("judo") || s.contains("karate") || s.contains("muay") || s.contains("wrestl") || s.contains("fenc") -> Icons.Filled.SportsMartialArts
         s.contains("hiit") || s.contains("functional") || s.contains("gymnast") -> Icons.Filled.SportsGymnastics

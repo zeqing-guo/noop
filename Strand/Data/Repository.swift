@@ -2986,6 +2986,9 @@ final class Repository: ObservableObject {
     ///  - an IMPORTED row is never passed here as `replacing` (duplicating one is a pure add), so its
     ///    history is never touched.
     func saveManualWorkout(_ row: WorkoutRow, replacing old: WorkoutRow? = nil) async {
+        // A recovery activity stores no Effort / calories / zones, including one edited INTO a recovery
+        // sport from a session that carried them. Twin of Android WhoopRepository.saveManualWorkout.
+        let row = WorkoutSource.withoutTrainingMetrics(row)
         guard let store = await ensureStore() else { return }
         if let old, WorkoutSource.classify(old.source) == .detected {
             // Write the replacement first. If that insert fails, the grandfathered source row and its
@@ -3031,11 +3034,12 @@ final class Repository: ObservableObject {
         guard WorkoutSource.classify(row.source) == .detected else { return }
         let trimmed = sport.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
-        let manual = WorkoutRow(startTs: row.startTs, endTs: row.endTs, sport: trimmed, source: "manual",
-                                durationS: row.durationS, energyKcal: row.energyKcal,
-                                avgHr: row.avgHr, maxHr: row.maxHr, strain: row.strain,
-                                distanceM: row.distanceM, zonesJSON: row.zonesJSON, notes: row.notes,
-                                steps: row.steps)
+        let manual = WorkoutSource.withoutTrainingMetrics(
+            WorkoutRow(startTs: row.startTs, endTs: row.endTs, sport: trimmed, source: "manual",
+                       durationS: row.durationS, energyKcal: row.energyKcal,
+                       avgHr: row.avgHr, maxHr: row.maxHr, strain: row.strain,
+                       distanceM: row.distanceM, zonesJSON: row.zonesJSON, notes: row.notes,
+                       steps: row.steps))
         do { _ = try await store.upsertWorkouts([manual], deviceId: deviceId) }
         catch { return }
         // Retire through the shared path so the legacy marker also prevents resurrection if deletion
@@ -3113,6 +3117,7 @@ final class Repository: ObservableObject {
         // swallows persistence failures for UI callers, but this destructive follow-up must know whether
         // the insert succeeded: a failed merge write must leave every original untouched.
         guard let store = await ensureStore() else { return }
+        let merged = WorkoutSource.withoutTrainingMetrics(merged)
         do { _ = try await store.upsertWorkouts([merged], deviceId: deviceId) }
         catch { return }
 

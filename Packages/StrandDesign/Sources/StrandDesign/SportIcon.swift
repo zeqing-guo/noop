@@ -117,6 +117,13 @@ public enum KnownWorkoutType: String, CaseIterable, Sendable {
     case wheelchair = "Wheelchair"
     case gaming = "Gaming"
     case motorRacing = "Motor racing"
+    // Recovery activities (StrandAnalytics RecoveryActivity). Raw values byte-identical to WorkoutCatalog /
+    // Android WorkoutSport; Stretching and Meditation are above.
+    case breathwork = "Breathwork"
+    case sauna = "Sauna"
+    case hotBath = "Hot bath"
+    case iceBath = "Ice bath"
+    case massage = "Massage"
     case other = "Other"
 
     /// Case-insensitive exact match against a stored/free-typed sport label.
@@ -181,6 +188,15 @@ public enum KnownWorkoutType: String, CaseIterable, Sendable {
         case s.contains("climb"):                           return .climbing
         case s.contains("stretch") || s.contains("mobility") || s.contains("flex"):
                                                             return .stretching
+        // Recovery activities: an ice bath before a plain bath, since "ice bath" contains "bath".
+        case s.contains("sauna"):                           return .sauna
+        case (s.contains("ice") && s.contains("bath")) || s.contains("plunge"):
+                                                            return .iceBath
+        case s.contains("bath") || s.contains("hot tub") || s.contains("hottub"):
+                                                            return .hotBath
+        case s.contains("massage"):                         return .massage
+        case s.contains("breath"):                          return .breathwork
+        case s.contains("meditat"):                         return .meditation
         case s.contains("bowl"):                            return .bowling
         case s.contains("other") || s.contains("activity") || s.contains("detected"):
                                                             return .other
@@ -389,6 +405,11 @@ public enum WorkoutTypeIconography {
         case .wheelchair:           return .system("figure.roll")
         case .gaming:               return .system("gamecontroller.fill")
         case .motorRacing:          return .system("steeringwheel")
+        case .breathwork:           return .system("lungs")
+        case .sauna:                return .system("flame")
+        case .hotBath:              return .system("bathtub")
+        case .iceBath:              return .system("snowflake")
+        case .massage:              return .system("hands.sparkles")
         case .other:
             return .system("figure.mixed.cardio")
         }

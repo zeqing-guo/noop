@@ -2925,4 +2925,12 @@
         <item quantity="many">%1$d komputerów czeka na zgodę</item>
         <item quantity="other">%1$d komputera czeka na zgodę</item>
     </plurals>
+    <!-- Recovery activities (sauna, bath, stretching…): logged apart from training. -->
+    <string name="recovery_activity_title">Aktywności regeneracyjne</string>
+    <string name="recovery_activity_overline">Liczone osobno od treningu</string>
+    <string name="recovery_activity_sessions">Sesje</string>
+    <string name="recovery_activity_detail_note">Aktywności regeneracyjne nie liczą się do Wysiłku ani kalorii i nie wchodzą do sum treningowych. Wysiłek dnia nadal uwzględnia tętno z całego dnia.</string>
+    <string name="recovery_sport_hot_bath">Gorąca kąpiel</string>
+    <string name="recovery_sport_ice_bath">Kąpiel lodowa</string>
+    <string name="recovery_sport_massage">Masaż</string>
 </resources>

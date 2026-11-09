@@ -1274,7 +1274,14 @@ final class HealthKitBridge: ObservableObject {
         for w in computed + mine where w.source != HealthKitBridge.appleWorkoutSource {
             byKey["\(w.startTs):\(w.sport)"] = w
         }
-        let rows = byKey.values.sorted { $0.startTs < $1.startTs }
+        // A recovery activity Apple Health has no type for (a sauna, a bath, a massage) is not written: an
+        // "Other" workout would count as exercise in every app that reads Health. One that has a type
+        // (Stretching → Flexibility, Meditation / Breathwork → Mind and Body) is. Leaving it out of `rows`
+        // also retires any copy written before through the orphan sweep below. Twin of Android
+        // WorkoutSport.healthConnectExerciseType.
+        let rows = byKey.values
+            .filter { !(RecoveryActivity.isRecovery($0.sport) && Self.activityType(forSport: $0.sport) == .other) }
+            .sorted { $0.startTs < $1.startTs }
 
         func key(_ row: WorkoutRow) -> String { HealthWriteback.appleHealthWorkoutKey(startTs: row.startTs) }
 
@@ -1401,6 +1408,9 @@ final class HealthKitBridge: ObservableObject {
         case "swimming":      return .swimming
         case "surfing":       return .surfingSports
         case "paddling":      return .paddleSports
+        // Recovery activities Apple Health has a type for. The rest of RecoveryActivity is not written.
+        case "stretching":    return .flexibility
+        case "meditation", "breathwork": return .mindAndBody
         default:              return .other
         }
     }

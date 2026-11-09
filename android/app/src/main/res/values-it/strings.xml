@@ -2873,4 +2873,12 @@
         <item quantity="one">%1$d computer in attesa di autorizzazione</item>
         <item quantity="other">%1$d computer in attesa di autorizzazione</item>
     </plurals>
+    <!-- Recovery activities (sauna, bath, stretching…): logged apart from training. -->
+    <string name="recovery_activity_title">Attività di recupero</string>
+    <string name="recovery_activity_overline">Registrate a parte rispetto all\'allenamento</string>
+    <string name="recovery_activity_sessions">Sessioni</string>
+    <string name="recovery_activity_detail_note">Le attività di recupero non contano Sforzo né calorie e restano fuori dai totali di allenamento. Lo Sforzo della giornata continua a considerare la frequenza cardiaca dell\'intera giornata.</string>
+    <string name="recovery_sport_hot_bath">Bagno caldo</string>
+    <string name="recovery_sport_ice_bath">Bagno di ghiaccio</string>
+    <string name="recovery_sport_massage">Massaggio</string>
 </resources>

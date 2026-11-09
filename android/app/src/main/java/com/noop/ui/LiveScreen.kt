@@ -420,8 +420,11 @@ fun LiveScreen(viewModel: AppViewModel, onManageDevices: () -> Unit = {}) {
                             accent = if (bpm == null) Palette.textPrimary else Palette.metricRose)
                         StatTile(modifier = Modifier.weight(1f), label = uiString(R.string.l10n_live_screen_avg_cdc93143), value = if (w.avgHr > 0) "${w.avgHr}" else "—")
                         StatTile(modifier = Modifier.weight(1f), label = uiString(R.string.l10n_live_screen_peak_c83dbbd3), value = if (w.peakHr > 0) "${w.peakHr}" else "—")
-                        StatTile(modifier = Modifier.weight(1f), label = uiString(R.string.l10n_live_screen_effort_8c974bc6), value = UnitFormatter.effortDisplay(w.liveStrain, effortScale),
-                            accent = Palette.strainColor(w.liveStrain))
+                        // No Effort for a recovery activity (sauna, bath, stretching…): it earns none.
+                        if (!com.noop.analytics.RecoveryActivity.isRecovery(w.sport.name)) {
+                            StatTile(modifier = Modifier.weight(1f), label = uiString(R.string.l10n_live_screen_effort_8c974bc6), value = UnitFormatter.effortDisplay(w.liveStrain, effortScale),
+                                accent = Palette.strainColor(w.liveStrain))
+                        }
                     }
                     if (w.gpsEnabled) {
                         Row(horizontalArrangement = Arrangement.spacedBy(Metrics.gap)) {
